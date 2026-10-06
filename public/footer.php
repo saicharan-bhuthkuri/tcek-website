@@ -56,8 +56,7 @@
     </div>
     <div class="footer-bottom">
         <p>&copy; 2026 Trinity College of Engineering & Technology. All Rights Reserved.</p>
-        <p style="color: #00b894; font-weight: 700; margin-top: 10px;">Created and maintained by the Department of
-            AI & ML.</p>
+    </div>
 </footer>
 
 <script>

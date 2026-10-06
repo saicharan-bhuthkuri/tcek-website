@@ -8,7 +8,8 @@
 
 <body>
 
-    <?php $page = 'home'; include 'header.php'; ?>
+    <?php $page = 'home';
+    include 'header.php'; ?>
     <!-- Main Content -->
     <main>
         <!-- Hero Section -->
@@ -77,16 +78,16 @@
                         <p style="margin-bottom: 20px;">
                             To implement this thought, we established an Education Society which aims at breaking
                             grounds for high level educational institutions. Trinity College of Engineering and
-                            Technology (T.C.E.T.) is a premier initiative of this society. The institute aims to impart
+                            Technology (T.C.E.K.) is a premier initiative of this society. The institute aims to impart
                             knowledge by attracting and involving well experienced, qualified faculty and providing best
-                            infrastructural facilities to the students. T.C.E.T. views interaction and collaboration
+                            infrastructural facilities to the students. T.C.E.K. views interaction and collaboration
                             with industry as critical for preparing successful and trend setter technocrats for
                             tomorrow. Workshops and guest lectures with a focus on developing entrepreneur skills will
                             be our mainstay.
                         </p>
                         <p>
                             We are leading step by step to achieve our objectives to transform the Institute into one of
-                            the notable technical institutes of the country. T.C.E.T. is ready with the facilities to
+                            the notable technical institutes of the country. T.C.E.K. is ready with the facilities to
                             provide best services to you. It is for you to avail this opportunity.
                         </p>
                     </div>
@@ -209,191 +210,202 @@
                     <div class="courses-modern-grid">
                         <!-- EEE -->
                         <div class="course-card theme-eee">
-                            <div class="course-card-top">
-                                <div class="course-icon-wrapper">
-                                    <i class="fas fa-bolt"></i>
-                                </div>
-                                <span class="course-badge">B.Tech · 4 Yrs</span>
+                            <div class="course-card-banner">
+                                <span class="course-card-category-icon"><i class="fas fa-bolt"></i></span>
+                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
+                                <img src="assets/courses/eee.png" alt="Electrical & Electronics Engineering (EEE)"
+                                    class="course-banner-img">
                             </div>
-                            <h3>Electrical &amp; Electronics Engineering (EEE)</h3>
-                            <div class="course-tags">
-                                <span class="course-tag"><i class="fas fa-check-circle"></i> Smart Grids</span>
-                                <span class="course-tag">Power Systems</span>
-                                <span class="course-tag">EV Tech</span>
-                            </div>
-                            <div class="course-metrics-row">
-                                <div class="metric-block">
-                                    <span class="metric-num">60</span>
-                                    <span class="metric-name">Intake</span>
+                            <div class="course-card-body">
+                                <h3>Electrical &amp; Electronics Engineering (EEE)</h3>
+                                <div class="course-tags">
+                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Smart Grids</span>
+                                    <span class="course-tag">Power Systems</span>
+                                    <span class="course-tag">EV Tech</span>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">4 Years</span>
-                                    <span class="metric-name">Duration</span>
+                                <div class="course-metrics-row">
+                                    <div class="metric-block">
+                                        <span class="metric-num">60</span>
+                                        <span class="metric-name">Intake</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">4 Years</span>
+                                        <span class="metric-name">Duration</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2008</span>
+                                        <span class="metric-name">Established</span>
+                                    </div>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2008</span>
-                                    <span class="metric-name">Established</span>
+                                <div class="course-card-footer">
+                                    <a href="dept-eee.php" class="btn-course-explore">
+                                        <span>Explore Department</span>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="course-card-footer">
-                                <a href="dept-eee.php" class="btn-course-explore">
-                                    <span>Explore Department</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
                             </div>
                         </div>
 
                         <!-- ECE -->
                         <div class="course-card theme-ece">
-                            <div class="course-card-top">
-                                <div class="course-icon-wrapper">
-                                    <i class="fas fa-microchip"></i>
-                                </div>
-                                <span class="course-badge">B.Tech · 4 Yrs</span>
+                            <div class="course-card-banner">
+                                <span class="course-card-category-icon"><i class="fas fa-microchip"></i></span>
+                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
+                                <img src="assets/courses/ece.png" alt="Electronics & Communication Engineering (ECE)"
+                                    class="course-banner-img">
                             </div>
-                            <h3>Electronics &amp; Communication Engineering (ECE)</h3>
-                            <div class="course-tags">
-                                <span class="course-tag"><i class="fas fa-check-circle"></i> VLSI Design</span>
-                                <span class="course-tag">Embedded Systems</span>
-                                <span class="course-tag">5G &amp; IoT</span>
-                            </div>
-                            <div class="course-metrics-row">
-                                <div class="metric-block">
-                                    <span class="metric-num">60</span>
-                                    <span class="metric-name">Intake</span>
+                            <div class="course-card-body">
+                                <h3>Electronics &amp; Communication Engineering (ECE)</h3>
+                                <div class="course-tags">
+                                    <span class="course-tag"><i class="fas fa-check-circle"></i> VLSI Design</span>
+                                    <span class="course-tag">Embedded Systems</span>
+                                    <span class="course-tag">5G &amp; IoT</span>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">4 Years</span>
-                                    <span class="metric-name">Duration</span>
+                                <div class="course-metrics-row">
+                                    <div class="metric-block">
+                                        <span class="metric-num">60</span>
+                                        <span class="metric-name">Intake</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">4 Years</span>
+                                        <span class="metric-name">Duration</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2008</span>
+                                        <span class="metric-name">Established</span>
+                                    </div>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2008</span>
-                                    <span class="metric-name">Established</span>
+                                <div class="course-card-footer">
+                                    <a href="dept-ece.php" class="btn-course-explore">
+                                        <span>Explore Department</span>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="course-card-footer">
-                                <a href="dept-ece.php" class="btn-course-explore">
-                                    <span>Explore Department</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
                             </div>
                         </div>
 
                         <!-- CSE -->
                         <div class="course-card theme-cse">
-                            <div class="course-card-top">
-                                <div class="course-icon-wrapper">
-                                    <i class="fas fa-laptop-code"></i>
-                                </div>
-                                <span class="course-badge">B.Tech · 4 Yrs</span>
+                            <div class="course-card-banner">
+                                <span class="course-card-category-icon"><i class="fas fa-laptop-code"></i></span>
+                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
+                                <img src="assets/courses/cse.png" alt="Computer Science & Engineering (CSE)"
+                                    class="course-banner-img">
                             </div>
-                            <h3>Computer Science &amp; Engineering (CSE)</h3>
-                            <div class="course-tags">
-                                <span class="course-tag"><i class="fas fa-check-circle"></i> Cloud &amp; DevOps</span>
-                                <span class="course-tag">Full Stack</span>
-                                <span class="course-tag">Cyber Security</span>
-                            </div>
-                            <div class="course-metrics-row">
-                                <div class="metric-block">
-                                    <span class="metric-num">60</span>
-                                    <span class="metric-name">Intake</span>
+                            <div class="course-card-body">
+                                <h3>Computer Science &amp; Engineering (CSE)</h3>
+                                <div class="course-tags">
+                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Cloud &amp;
+                                        DevOps</span>
+                                    <span class="course-tag">Full Stack</span>
+                                    <span class="course-tag">Cyber Security</span>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">4 Years</span>
-                                    <span class="metric-name">Duration</span>
+                                <div class="course-metrics-row">
+                                    <div class="metric-block">
+                                        <span class="metric-num">60</span>
+                                        <span class="metric-name">Intake</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">4 Years</span>
+                                        <span class="metric-name">Duration</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2008</span>
+                                        <span class="metric-name">Established</span>
+                                    </div>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2008</span>
-                                    <span class="metric-name">Established</span>
+                                <div class="course-card-footer">
+                                    <a href="dept-cse.php" class="btn-course-explore">
+                                        <span>Explore Department</span>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="course-card-footer">
-                                <a href="dept-cse.php" class="btn-course-explore">
-                                    <span>Explore Department</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
                             </div>
                         </div>
 
                         <!-- AIML -->
                         <div class="course-card theme-aiml">
-                            <div class="course-card-top">
-                                <div class="course-icon-wrapper">
-                                    <i class="fas fa-brain"></i>
-                                </div>
-                                <span class="course-badge">B.Tech · 4 Yrs</span>
+                            <div class="course-card-banner">
+                                <span class="course-card-category-icon"><i class="fas fa-brain"></i></span>
+                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
+                                <img src="assets/courses/aiml.png"
+                                    alt="Artificial Intelligence & Machine Learning (AIML)" class="course-banner-img">
                             </div>
-                            <h3>Artificial Intelligence &amp; Machine Learning (AIML)</h3>
-                            <div class="course-tags">
-                                <span class="course-tag"><i class="fas fa-check-circle"></i> Deep Learning</span>
-                                <span class="course-tag">Neural Nets</span>
-                                <span class="course-tag">Computer Vision</span>
-                            </div>
-                            <div class="course-metrics-row">
-                                <div class="metric-block">
-                                    <span class="metric-num">60</span>
-                                    <span class="metric-name">Intake</span>
+                            <div class="course-card-body">
+                                <h3>Artificial Intelligence &amp; Machine Learning (AIML)</h3>
+                                <div class="course-tags">
+                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Deep Learning</span>
+                                    <span class="course-tag">Neural Nets</span>
+                                    <span class="course-tag">Computer Vision</span>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">4 Years</span>
-                                    <span class="metric-name">Duration</span>
+                                <div class="course-metrics-row">
+                                    <div class="metric-block">
+                                        <span class="metric-num">60</span>
+                                        <span class="metric-name">Intake</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">4 Years</span>
+                                        <span class="metric-name">Duration</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2021</span>
+                                        <span class="metric-name">Established</span>
+                                    </div>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2021</span>
-                                    <span class="metric-name">Established</span>
+                                <div class="course-card-footer">
+                                    <a href="dept-aiml.php" class="btn-course-explore">
+                                        <span>Explore Department</span>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="course-card-footer">
-                                <a href="dept-aiml.php" class="btn-course-explore">
-                                    <span>Explore Department</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
                             </div>
                         </div>
 
                         <!-- CSE (AI & ML) -->
                         <div class="course-card theme-cse-aiml">
-                            <div class="course-card-top">
-                                <div class="course-icon-wrapper">
-                                    <i class="fas fa-robot"></i>
-                                </div>
-                                <span class="course-badge">B.Tech · 4 Yrs</span>
+                            <div class="course-card-banner">
+                                <span class="course-card-category-icon"><i class="fas fa-robot"></i></span>
+                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
+                                <img src="assets/courses/cse-aiml.jpg" alt="Computer Science and Engineering (AI & ML)"
+                                    class="course-banner-img">
                             </div>
-                            <h3>Computer Science and Engineering (AI &amp; ML)</h3>
-                            <div class="course-tags">
-                                <span class="course-tag"><i class="fas fa-check-circle"></i> GenAI &amp; LLMs</span>
-                                <span class="course-tag">Data Science</span>
-                                <span class="course-tag">Smart Systems</span>
-                            </div>
-                            <div class="course-metrics-row">
-                                <div class="metric-block">
-                                    <span class="metric-num">60</span>
-                                    <span class="metric-name">Intake</span>
+                            <div class="course-card-body">
+                                <h3>Computer Science and Engineering (AI &amp; ML)</h3>
+                                <div class="course-tags">
+                                    <span class="course-tag"><i class="fas fa-check-circle"></i> GenAI &amp; LLMs</span>
+                                    <span class="course-tag">Data Science</span>
+                                    <span class="course-tag">Smart Systems</span>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">4 Years</span>
-                                    <span class="metric-name">Duration</span>
+                                <div class="course-metrics-row">
+                                    <div class="metric-block">
+                                        <span class="metric-num">60</span>
+                                        <span class="metric-name">Intake</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">4 Years</span>
+                                        <span class="metric-name">Duration</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2024</span>
+                                        <span class="metric-name">Established</span>
+                                    </div>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2024</span>
-                                    <span class="metric-name">Established</span>
+                                <div class="course-card-footer">
+                                    <a href="dept-cse-aiml.php" class="btn-course-explore">
+                                        <span>Explore Department</span>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="course-card-footer">
-                                <a href="dept-cse-aiml.php" class="btn-course-explore">
-                                    <span>Explore Department</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -403,113 +415,119 @@
                 <div id="diploma" class="tab-content">
                     <div class="courses-modern-grid">
                         <div class="course-card theme-eee">
-                            <div class="course-card-top">
-                                <div class="course-icon-wrapper">
-                                    <i class="fas fa-plug"></i>
-                                </div>
-                                <span class="course-badge">Polytechnic · 3 Yrs</span>
+                            <div class="course-card-banner">
+                                <span class="course-card-category-icon"><i class="fas fa-plug"></i></span>
+                                <span class="course-card-badge-top">Polytechnic · 3 Yrs</span>
+                                <img src="assets/courses/eee.png" alt="Electrical & Electronics Engineering (DEEE)"
+                                    class="course-banner-img">
                             </div>
-                            <h3>Electrical &amp; Electronics Engineering (DEEE)</h3>
-                            <div class="course-tags">
-                                <span class="course-tag"><i class="fas fa-check-circle"></i> Circuit Design</span>
-                                <span class="course-tag">Power Wiring</span>
-                                <span class="course-tag">Automation</span>
-                            </div>
-                            <div class="course-metrics-row">
-                                <div class="metric-block">
-                                    <span class="metric-num">60</span>
-                                    <span class="metric-name">Intake</span>
+                            <div class="course-card-body">
+                                <h3>Electrical &amp; Electronics Engineering (DEEE)</h3>
+                                <div class="course-tags">
+                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Circuit Design</span>
+                                    <span class="course-tag">Power Wiring</span>
+                                    <span class="course-tag">Automation</span>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">3 Years</span>
-                                    <span class="metric-name">Duration</span>
+                                <div class="course-metrics-row">
+                                    <div class="metric-block">
+                                        <span class="metric-num">60</span>
+                                        <span class="metric-name">Intake</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">3 Years</span>
+                                        <span class="metric-name">Duration</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2013</span>
+                                        <span class="metric-name">Established</span>
+                                    </div>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2013</span>
-                                    <span class="metric-name">Established</span>
+                                <div class="course-card-footer">
+                                    <a href="departments.php" class="btn-course-explore">
+                                        <span>Course Details</span>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="course-card-footer">
-                                <a href="departments.php" class="btn-course-explore">
-                                    <span>Course Details</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
                             </div>
                         </div>
 
                         <div class="course-card theme-ece">
-                            <div class="course-card-top">
-                                <div class="course-icon-wrapper">
-                                    <i class="fas fa-satellite-dish"></i>
-                                </div>
-                                <span class="course-badge">Polytechnic · 3 Yrs</span>
+                            <div class="course-card-banner">
+                                <span class="course-card-category-icon"><i class="fas fa-satellite-dish"></i></span>
+                                <span class="course-card-badge-top">Polytechnic · 3 Yrs</span>
+                                <img src="assets/courses/ece.png" alt="Electronics & Communication Engineering (DECE)"
+                                    class="course-banner-img">
                             </div>
-                            <h3>Electronics &amp; Communication Engineering (DECE)</h3>
-                            <div class="course-tags">
-                                <span class="course-tag"><i class="fas fa-check-circle"></i> Digital Circuits</span>
-                                <span class="course-tag">Microcontrollers</span>
-                                <span class="course-tag">Comms</span>
-                            </div>
-                            <div class="course-metrics-row">
-                                <div class="metric-block">
-                                    <span class="metric-num">60</span>
-                                    <span class="metric-name">Intake</span>
+                            <div class="course-card-body">
+                                <h3>Electronics &amp; Communication Engineering (DECE)</h3>
+                                <div class="course-tags">
+                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Digital Circuits</span>
+                                    <span class="course-tag">Microcontrollers</span>
+                                    <span class="course-tag">Comms</span>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">3 Years</span>
-                                    <span class="metric-name">Duration</span>
+                                <div class="course-metrics-row">
+                                    <div class="metric-block">
+                                        <span class="metric-num">60</span>
+                                        <span class="metric-name">Intake</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">3 Years</span>
+                                        <span class="metric-name">Duration</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2013</span>
+                                        <span class="metric-name">Established</span>
+                                    </div>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2013</span>
-                                    <span class="metric-name">Established</span>
+                                <div class="course-card-footer">
+                                    <a href="departments.php" class="btn-course-explore">
+                                        <span>Course Details</span>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="course-card-footer">
-                                <a href="departments.php" class="btn-course-explore">
-                                    <span>Course Details</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
                             </div>
                         </div>
 
                         <div class="course-card theme-cse">
-                            <div class="course-card-top">
-                                <div class="course-icon-wrapper">
-                                    <i class="fas fa-desktop"></i>
-                                </div>
-                                <span class="course-badge">Polytechnic · 3 Yrs</span>
+                            <div class="course-card-banner">
+                                <span class="course-card-category-icon"><i class="fas fa-desktop"></i></span>
+                                <span class="course-card-badge-top">Polytechnic · 3 Yrs</span>
+                                <img src="assets/courses/cse.png" alt="Computer Science Engineering (DCSE)"
+                                    class="course-banner-img">
                             </div>
-                            <h3>Computer Science Engineering (DCSE)</h3>
-                            <div class="course-tags">
-                                <span class="course-tag"><i class="fas fa-check-circle"></i> Programming</span>
-                                <span class="course-tag">Web Technologies</span>
-                                <span class="course-tag">Database</span>
-                            </div>
-                            <div class="course-metrics-row">
-                                <div class="metric-block">
-                                    <span class="metric-num">60</span>
-                                    <span class="metric-name">Intake</span>
+                            <div class="course-card-body">
+                                <h3>Computer Science Engineering (DCSE)</h3>
+                                <div class="course-tags">
+                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Programming</span>
+                                    <span class="course-tag">Web Technologies</span>
+                                    <span class="course-tag">Database</span>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">3 Years</span>
-                                    <span class="metric-name">Duration</span>
+                                <div class="course-metrics-row">
+                                    <div class="metric-block">
+                                        <span class="metric-num">60</span>
+                                        <span class="metric-name">Intake</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">3 Years</span>
+                                        <span class="metric-name">Duration</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2023</span>
+                                        <span class="metric-name">Established</span>
+                                    </div>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2023</span>
-                                    <span class="metric-name">Established</span>
+                                <div class="course-card-footer">
+                                    <a href="departments.php" class="btn-course-explore">
+                                        <span>Course Details</span>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="course-card-footer">
-                                <a href="departments.php" class="btn-course-explore">
-                                    <span>Course Details</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
                             </div>
                         </div>
                     </div>
@@ -519,40 +537,43 @@
                 <div id="mba" class="tab-content">
                     <div class="courses-modern-grid mba-single-grid">
                         <div class="course-card theme-mba flagship-card">
-                            <div class="course-card-top">
-                                <div class="course-icon-wrapper">
-                                    <i class="fas fa-briefcase"></i>
-                                </div>
-                                <span class="course-badge">Post Graduate · 2 Yrs</span>
+                            <div class="course-card-banner" style="height: 220px;">
+                                <span class="course-card-category-icon"><i class="fas fa-briefcase"></i></span>
+                                <span class="course-card-badge-top">Post Graduate · 2 Yrs</span>
+                                <img src="assets/courses/mba.jpg" alt="Masters in Business Administration (MBA)"
+                                    class="course-banner-img" style="max-height: 180px;">
                             </div>
-                            <h3>Masters in Business Administration (MBA)</h3>
-                            <div class="course-tags">
-                                <span class="course-tag"><i class="fas fa-check-circle"></i> Financial Analytics</span>
-                                <span class="course-tag">Digital Marketing</span>
-                                <span class="course-tag">Strategic HR</span>
-                                <span class="course-tag">Corporate Leadership</span>
-                            </div>
-                            <div class="course-metrics-row">
-                                <div class="metric-block">
-                                    <span class="metric-num">120</span>
-                                    <span class="metric-name">Total Seats</span>
+                            <div class="course-card-body">
+                                <h3>Masters in Business Administration (MBA)</h3>
+                                <div class="course-tags">
+                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Financial
+                                        Analytics</span>
+                                    <span class="course-tag">Digital Marketing</span>
+                                    <span class="course-tag">Strategic HR</span>
+                                    <span class="course-tag">Corporate Leadership</span>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2 Years</span>
-                                    <span class="metric-name">Full Time</span>
+                                <div class="course-metrics-row">
+                                    <div class="metric-block">
+                                        <span class="metric-num">120</span>
+                                        <span class="metric-name">Total Seats</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2 Years</span>
+                                        <span class="metric-name">Full Time</span>
+                                    </div>
+                                    <div class="metric-divider"></div>
+                                    <div class="metric-block">
+                                        <span class="metric-num">2009</span>
+                                        <span class="metric-name">Established</span>
+                                    </div>
                                 </div>
-                                <div class="metric-divider"></div>
-                                <div class="metric-block">
-                                    <span class="metric-num">2009</span>
-                                    <span class="metric-name">Established</span>
+                                <div class="course-card-footer">
+                                    <a href="dept-mba.php" class="btn-course-explore">
+                                        <span>Explore MBA Department</span>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </a>
                                 </div>
-                            </div>
-                            <div class="course-card-footer">
-                                <a href="dept-mba.php" class="btn-course-explore">
-                                    <span>Explore MBA Department</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
                             </div>
                         </div>
                     </div>

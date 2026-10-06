@@ -2345,9 +2345,9 @@ footer {
 /* Modern Course Card */
 .course-card {
     background: #ffffff;
-    border-radius: 22px;
-    padding: 30px;
-    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 20px;
+    padding: 0;
+    border: 1px solid rgba(226, 232, 240, 0.85);
     box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.05), 0 0 0 1px rgba(0, 0, 0, 0.02);
     display: flex;
     flex-direction: column;
@@ -2367,72 +2367,107 @@ footer {
     transform: scaleX(0.25);
     transform-origin: left;
     transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    z-index: 5;
 }
 
 .course-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 22px 45px -12px rgba(0, 0, 0, 0.1), 0 0 0 1px var(--course-border, rgba(0, 184, 148, 0.25));
+    box-shadow: 0 22px 45px -12px rgba(0, 0, 0, 0.12), 0 0 0 1px var(--course-border, rgba(0, 184, 148, 0.25));
 }
 
 .course-card:hover::before {
     transform: scaleX(1);
 }
 
-/* Card Top Section: Icon & Degree Badge */
-.course-card-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-}
-
-.course-icon-wrapper {
-    width: 58px;
-    height: 58px;
-    border-radius: 16px;
-    background: var(--icon-bg, rgba(0, 184, 148, 0.1));
+/* Card Visual Banner / Image Showcase */
+.course-card-banner {
+    position: relative;
+    height: 195px;
+    background: #f8fafc;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.35s ease;
-    box-shadow: 0 6px 16px var(--icon-shadow, rgba(0, 184, 148, 0.15));
+    overflow: hidden;
+    padding: 16px;
+    border-bottom: 1px solid #edf2f7;
 }
 
-.course-icon-wrapper i {
-    font-size: 24px;
-    color: var(--icon-color, #00b894);
-    transition: transform 0.35s ease;
+.course-banner-img {
+    max-height: 160px;
+    max-width: 88%;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+    transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.06));
 }
 
-.course-card:hover .course-icon-wrapper {
-    transform: scale(1.08) rotate(3deg);
-    background: var(--icon-hover-bg, #00b894);
+.course-card:hover .course-banner-img {
+    transform: scale(1.08);
 }
 
-.course-card:hover .course-icon-wrapper i {
-    color: #ffffff;
-    transform: scale(1.1);
-}
-
-.course-badge {
-    display: inline-block;
-    padding: 6px 14px;
-    font-size: 12px;
-    font-weight: 600;
-    border-radius: 30px;
-    background: #f1f5f9;
+/* Floating Category Icon & Degree Badge */
+.course-card-badge-top {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    padding: 5px 12px;
+    font-size: 11.5px;
+    font-weight: 700;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(8px);
     color: #475569;
-    border: 1px solid #e2e8f0;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+    z-index: 3;
     letter-spacing: 0.2px;
+}
+
+.course-card-category-icon {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    width: 36px;
+    height: 36px;
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--icon-color, #00b894);
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(226, 232, 240, 0.85);
+    font-size: 14px;
+    z-index: 3;
+    transition: all 0.3s ease;
+}
+
+.course-card:hover .course-card-category-icon {
+    background: var(--icon-hover-bg, #00b894);
+    color: #ffffff;
+    transform: scale(1.06);
+}
+
+/* Card Body Section */
+.course-card-body {
+    padding: 24px 26px 26px 26px;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
 }
 
 /* Card Title */
 .course-card h3 {
-    font-size: 19px;
+    font-size: 18.5px;
     font-weight: 700;
     color: #1e293b;
-    line-height: 1.45;
+    line-height: 1.4;
     margin-bottom: 12px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
     transition: color 0.3s ease;
 }
 
@@ -2566,6 +2601,10 @@ footer {
     --btn-shadow: rgba(245, 158, 11, 0.3);
 }
 
+.theme-eee .course-card-banner {
+    background: radial-gradient(circle at center, rgba(245, 158, 11, 0.08) 0%, #fffbeb 100%);
+}
+
 /* ECE (Indigo / Violet) */
 .theme-ece {
     --course-accent: linear-gradient(90deg, #6366f1, #4f46e5);
@@ -2576,6 +2615,10 @@ footer {
     --icon-hover-bg: linear-gradient(135deg, #6366f1, #4f46e5);
     --btn-hover-bg: linear-gradient(135deg, #6366f1, #4f46e5);
     --btn-shadow: rgba(99, 102, 241, 0.3);
+}
+
+.theme-ece .course-card-banner {
+    background: radial-gradient(circle at center, rgba(99, 102, 241, 0.08) 0%, #f5f3ff 100%);
 }
 
 /* CSE (Emerald / Teal) */
@@ -2590,6 +2633,10 @@ footer {
     --btn-shadow: rgba(16, 185, 129, 0.3);
 }
 
+.theme-cse .course-card-banner {
+    background: radial-gradient(circle at center, rgba(16, 185, 129, 0.08) 0%, #f0fdf4 100%);
+}
+
 /* AIML (Purple / Violet) */
 .theme-aiml {
     --course-accent: linear-gradient(90deg, #8b5cf6, #7c3aed);
@@ -2600,6 +2647,10 @@ footer {
     --icon-hover-bg: linear-gradient(135deg, #8b5cf6, #7c3aed);
     --btn-hover-bg: linear-gradient(135deg, #8b5cf6, #7c3aed);
     --btn-shadow: rgba(139, 92, 246, 0.3);
+}
+
+.theme-aiml .course-card-banner {
+    background: radial-gradient(circle at center, rgba(139, 92, 246, 0.08) 0%, #faf5ff 100%);
 }
 
 /* CSE-AIML (Cyan / Sky) */
@@ -2614,6 +2665,10 @@ footer {
     --btn-shadow: rgba(6, 182, 212, 0.3);
 }
 
+.theme-cse-aiml .course-card-banner {
+    background: radial-gradient(circle at center, rgba(6, 182, 212, 0.08) 0%, #f0fdfa 100%);
+}
+
 /* MBA Flagship (Rose / Crimson) */
 .theme-mba {
     --course-accent: linear-gradient(90deg, #f43f5e, #e11d48);
@@ -2624,6 +2679,10 @@ footer {
     --icon-hover-bg: linear-gradient(135deg, #f43f5e, #e11d48);
     --btn-hover-bg: linear-gradient(135deg, #f43f5e, #e11d48);
     --btn-shadow: rgba(244, 63, 94, 0.3);
+}
+
+.theme-mba .course-card-banner {
+    background: radial-gradient(circle at center, rgba(244, 63, 94, 0.07) 0%, #fff1f2 100%);
 }
 
 .flagship-card {
