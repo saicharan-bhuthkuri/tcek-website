@@ -402,129 +402,6 @@
             }
         </script>
 
-        <!-- Why Us Section -->
-        <section style="background: #fdfdfd;">
-            <div class="container">
-                <div class="section-header">
-                    <h2>Why Us?</h2>
-                    <!-- Intro Text -->
-                    <div
-                        style="font-size: 16px; color: #636e72; line-height: 1.8; margin-bottom: 40px; text-align: left;">
-                        <p style="margin-bottom: 20px;">
-                            To implement this thought, we established an Education Society which aims at breaking
-                            grounds for high level educational institutions. Trinity College of Engineering and
-                            Technology (T.C.E.K.) is a premier initiative of this society. The institute aims to impart
-                            knowledge by attracting and involving well experienced, qualified faculty and providing best
-                            infrastructural facilities to the students. T.C.E.K. views interaction and collaboration
-                            with industry as critical for preparing successful and trend setter technocrats for
-                            tomorrow. Workshops and guest lectures with a focus on developing entrepreneur skills will
-                            be our mainstay.
-                        </p>
-                        <p>
-                            We are leading step by step to achieve our objectives to transform the Institute into one of
-                            the notable technical institutes of the country. T.C.E.K. is ready with the facilities to
-                            provide best services to you. It is for you to avail this opportunity.
-                        </p>
-                    </div>
-                </div>
-
-                <div class="features-grid">
-                    <div class="card">
-                        <div class="modal-icon" style="color:#00b894;"><i class="fas fa-eye"></i></div>
-                        <h3>Our Vision</h3>
-                        <p>Becoming a vibrant knowledge hub and a center of excellence in education. Generating cutting
-                            edge technology using research and innovation to make India a developed nation. Creating
-                            leaders in the field of science, technology and management by providing quality education.
-                            To be the fountain head in producing highly skilled, globally competent engineers.</p>
-                    </div>
-                    <div class="card">
-                        <div class="modal-icon" style="color:#00b894;"><i class="fas fa-heart"></i></div>
-                        <h3>Our Values</h3>
-                        <p>Such an esteemed institutions are Trinity Educationaly Institutions, where excellence
-                            exemplifies setting new standards in the field of academics with it continuous process to
-                            its consistency.</p>
-                    </div>
-                </div>
-
-                <!-- Mission Section -->
-                <!-- Mission Section Redesign -->
-                <!-- Mission Section Redesign (Split Layout) -->
-                <div class="mission-wrapper">
-                    <div class="mission-split-container">
-                        <!-- Left Side: Visual & Title -->
-                        <div class="mission-content-left">
-                            <div class="section-header" style="text-align: left; margin-bottom: 30px;">
-                                <span
-                                    style="display: block; font-size: 14px; font-weight: 700; color: #00b894; margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase;">Our
-                                    Goal</span>
-                                <h2 style="margin-bottom: 15px;">Our Mission</h2>
-                                <p style="font-size: 16px; margin-bottom: 0;">Driving innovation and excellence in
-                                    technical education to shape the future.</p>
-                            </div>
-                            <!-- Generated Illustration -->
-                            <img src="assets/Top Header/mission_abstract.png" alt="Mission and Growth Illustration">
-                        </div>
-
-                        <!-- Right Side: Vertical List -->
-                        <div class="mission-list">
-                            <!-- M1 -->
-                            <div class="mission-item">
-                                <div class="mission-icon-box">
-                                    <i class="fas fa-graduation-cap"></i>
-                                </div>
-                                <div class="mission-info">
-                                    <h4>Accessible Education</h4>
-                                    <p>Committed to make higher education available to all those who are deprived of
-                                        object-oriented modular education with an emphasis on practical knowledge
-                                        keeping in view the emerging industrial needs.</p>
-                                </div>
-                            </div>
-
-                            <!-- M2 -->
-                            <div class="mission-item">
-                                <div class="mission-icon-box">
-                                    <i class="fas fa-briefcase"></i>
-                                </div>
-                                <div class="mission-info">
-                                    <h4>Skill-Based Training</h4>
-                                    <p>To provide an affordable high-quality education student centered
-                                        teaching-learning processes to the professional aspirants of rural areas to
-                                        impart skill-based training and achieve 100% placements.</p>
-                                </div>
-                            </div>
-
-                            <!-- M3 -->
-                            <div class="mission-item">
-                                <div class="mission-icon-box">
-                                    <i class="fas fa-users-cog"></i>
-                                </div>
-                                <div class="mission-info">
-                                    <h4>Conducive Atmosphere</h4>
-                                    <p>To create a healthy and conducive atmosphere among the faculty, students both
-                                        professionally and ethically and to have an effective interaction with industry
-                                        professionals and alumni.</p>
-                                </div>
-                            </div>
-
-                            <!-- M4 -->
-                            <div class="mission-item">
-                                <div class="mission-icon-box">
-                                    <i class="fas fa-microscope"></i>
-                                </div>
-                                <div class="mission-info">
-                                    <h4>Research & Development</h4>
-                                    <p>To promote research activities among the students and to generate technically
-                                        sound and highly skilled Engineers to cater the needs of the nation.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            </div>
-            </div>
-        </section>
-
         <!-- Features/Courses Section -->
         <section id="courses">
             <div class="container">
@@ -1229,6 +1106,125 @@
                         <div class="recruiter-chip"><span class="chip-dot"></span> Tech Mahindra</div>
                         <div class="recruiter-chip"><span class="chip-dot"></span> Cognizant</div>
                         <div class="recruiter-chip"><span class="chip-dot"></span> TASK Telangana</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Why Us, Vision & Mission Section -->
+        <section id="why-us" style="background: #ffffff; padding: 90px 20px; border-top: 1px solid #f1f5f9;">
+            <div class="container">
+                <div class="section-header">
+                    <h2>Why Us?</h2>
+                    <!-- Intro Text -->
+                    <div
+                        style="font-size: 16px; color: #636e72; line-height: 1.8; margin-bottom: 40px; text-align: left;">
+                        <p style="margin-bottom: 20px;">
+                            To implement this thought, we established an Education Society which aims at breaking
+                            grounds for high level educational institutions. Trinity College of Engineering and
+                            Technology (T.C.E.K.) is a premier initiative of this society. The institute aims to impart
+                            knowledge by attracting and involving well experienced, qualified faculty and providing best
+                            infrastructural facilities to the students. T.C.E.K. views interaction and collaboration
+                            with industry as critical for preparing successful and trend setter technocrats for
+                            tomorrow. Workshops and guest lectures with a focus on developing entrepreneur skills will
+                            be our mainstay.
+                        </p>
+                        <p>
+                            We are leading step by step to achieve our objectives to transform the Institute into one of
+                            the notable technical institutes of the country. T.C.E.K. is ready with the facilities to
+                            provide best services to you. It is for you to avail this opportunity.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="features-grid">
+                    <div class="card">
+                        <div class="modal-icon" style="color:#00b894;"><i class="fas fa-eye"></i></div>
+                        <h3>Our Vision</h3>
+                        <p>Becoming a vibrant knowledge hub and a center of excellence in education. Generating cutting
+                            edge technology using research and innovation to make India a developed nation. Creating
+                            leaders in the field of science, technology and management by providing quality education.
+                            To be the fountain head in producing highly skilled, globally competent engineers.</p>
+                    </div>
+                    <div class="card">
+                        <div class="modal-icon" style="color:#00b894;"><i class="fas fa-heart"></i></div>
+                        <h3>Our Values</h3>
+                        <p>Such an esteemed institutions are Trinity Educationaly Institutions, where excellence
+                            exemplifies setting new standards in the field of academics with it continuous process to
+                            its consistency.</p>
+                    </div>
+                </div>
+
+                <!-- Mission Section (Split Layout) -->
+                <div class="mission-wrapper" style="margin-top: 50px;">
+                    <div class="mission-split-container">
+                        <!-- Left Side: Visual & Title -->
+                        <div class="mission-content-left">
+                            <div class="section-header" style="text-align: left; margin-bottom: 30px;">
+                                <span
+                                    style="display: block; font-size: 14px; font-weight: 700; color: #00b894; margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase;">Our
+                                    Goal</span>
+                                <h2 style="margin-bottom: 15px;">Our Mission</h2>
+                                <p style="font-size: 16px; margin-bottom: 0;">Driving innovation and excellence in
+                                    technical education to shape the future.</p>
+                            </div>
+                            <!-- Generated Illustration -->
+                            <img src="assets/Top Header/mission_abstract.png" alt="Mission and Growth Illustration">
+                        </div>
+
+                        <!-- Right Side: Vertical List -->
+                        <div class="mission-list">
+                            <!-- M1 -->
+                            <div class="mission-item">
+                                <div class="mission-icon-box">
+                                    <i class="fas fa-graduation-cap"></i>
+                                </div>
+                                <div class="mission-info">
+                                    <h4>Accessible Education</h4>
+                                    <p>Committed to make higher education available to all those who are deprived of
+                                        object-oriented modular education with an emphasis on practical knowledge
+                                        keeping in view the emerging industrial needs.</p>
+                                </div>
+                            </div>
+
+                            <!-- M2 -->
+                            <div class="mission-item">
+                                <div class="mission-icon-box">
+                                    <i class="fas fa-briefcase"></i>
+                                </div>
+                                <div class="mission-info">
+                                    <h4>Skill-Based Training</h4>
+                                    <p>To provide an affordable high-quality education student centered
+                                        teaching-learning processes to the professional aspirants of rural areas to
+                                        impart skill-based training and achieve 100% placements.</p>
+                                </div>
+                            </div>
+
+                            <!-- M3 -->
+                            <div class="mission-item">
+                                <div class="mission-icon-box">
+                                    <i class="fas fa-users-cog"></i>
+                                </div>
+                                <div class="mission-info">
+                                    <h4>Conducive Atmosphere</h4>
+                                    <p>To create a healthy and conducive atmosphere among the faculty, students both
+                                        professionally and ethically and to have an effective interaction with industry
+                                        professionals and alumni.</p>
+                                </div>
+                            </div>
+
+                            <!-- M4 -->
+                            <div class="mission-item">
+                                <div class="mission-icon-box">
+                                    <i class="fas fa-microscope"></i>
+                                </div>
+                                <div class="mission-info">
+                                    <h4>Research & Development</h4>
+                                    <p>To promote research activities among the students and to generate technically
+                                        sound and highly skilled Engineers to cater the needs of the nation.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
