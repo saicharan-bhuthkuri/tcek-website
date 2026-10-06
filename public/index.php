@@ -210,6 +210,7 @@
                     </div>
 
                     <div class="press-clippings-grid">
+                        <!-- Row 1: Academic & Milestone Press Clippings -->
                         <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper.jpg', 'Eenadu / Sakshi: Autonomous Status Celebration')">
                             <div class="press-thumb-wrap">
                                 <img src="assets/Gallery/paper.jpg" alt="Press Coverage of Autonomous Status">
@@ -259,6 +260,112 @@
                             <div class="press-info">
                                 <span class="press-source">Campus News</span>
                                 <h6 class="press-headline">State-Level Technical Symposium &amp; Project Expo</h6>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Industrial Visits, Placements & Sports Press Clippings -->
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper4.jpg', 'Sakshi: Campus Placement Drive - 224 Placed Across 17 MNCs')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/paper4.jpg" alt="Press Coverage of Campus Placement Drive">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Sakshi Daily</span>
+                                <h6 class="press-headline">Campus Placement Drive: 224 Placed in 17 MNCs</h6>
+                            </div>
+                        </div>
+
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper5.jpg', 'Mana Vartha: Electrical & Electronics Mini Hydel Industrial Visit')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/paper5.jpg" alt="Press Coverage of Industrial Visit">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Mana Vartha</span>
+                                <h6 class="press-headline">Electrical &amp; Electronics Mini Hydel Industrial Visit</h6>
+                            </div>
+                        </div>
+
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/infosys.jpg', 'Prabha News: Trinity Tech Students Visit Infosys SEZ with TASK')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/infosys.jpg" alt="Press Coverage of Infosys SEZ Visit">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Prabha News</span>
+                                <h6 class="press-headline">Trinity Tech Students Visit Infosys SEZ with TASK</h6>
+                            </div>
+                        </div>
+
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/papers.jpg', 'Prabha News: National Level Martial Arts Championship Gold')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/papers.jpg" alt="Press Coverage of Sports Achievement">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Sports Honor</span>
+                                <h6 class="press-headline">National Level Martial Arts Championship Gold</h6>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Institutional Notifications & Graduation Press -->
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/autonomous.jpg', 'UGC Gazette: Autonomous Status Conferred for 5 Years')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/autonomous.jpg" alt="Official UGC Autonomy Notification">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">UGC Gazette</span>
+                                <h6 class="press-headline">Autonomous Status Conferred for 5 Academic Years</h6>
+                            </div>
+                        </div>
+
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/naac2.jpg', 'NAAC Council: Accredited with National B++ Grade Benchmark')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/naac2.jpg" alt="Official NAAC B++ Accreditation Release">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">NAAC Council</span>
+                                <h6 class="press-headline">Accredited with Prestigious B++ Quality Benchmark</h6>
+                            </div>
+                        </div>
+
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/pamplet1.jpg', 'Academic Bulletin: 17 Years of Engineering Academic Excellence')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/pamplet1.jpg" alt="Official 17 Years Excellence Release">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Campus Bulletin</span>
+                                <h6 class="press-headline">17 Years of Engineering Academic Excellence</h6>
+                            </div>
+                        </div>
+
+                        <div class="press-card" onclick="openNewsLightbox('assets/College Event/feli2.jpg', 'Special Feature: Annual Convocation & Graduation Ceremony')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/College Event/feli2.jpg" alt="Graduation Day and Convocation Ceremony">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Special Feature</span>
+                                <h6 class="press-headline">Annual Convocation &amp; Graduation Honors Ceremony</h6>
                             </div>
                         </div>
                     </div>
@@ -809,70 +916,319 @@
             </div>
         </section>
 
-        <!-- Achievements Section -->
+        <!-- Achievements & Placements Section -->
         <section id="achievements">
             <div class="container">
-                <div class="section-header">
-                    <h2>Our Achievements</h2>
-                    <p>Celebrating the success stories of our brilliant students</p>
+                <div class="ach-header-wrap">
+                    <div class="ach-pill">
+                        <span class="ach-pill-dot"></span>
+                        <span>Campus Placement Success • Class of 2022-2024</span>
+                    </div>
+                    <h2>Our Achievements & Placements</h2>
+                    <p>Celebrating the remarkable success stories of our students advancing into global IT leaders and multinational technology corporations</p>
                 </div>
 
+                <!-- Placement Highlights Stats Bar -->
+                <div class="ach-stats-grid">
+                    <div class="ach-stat-item">
+                        <div class="ach-stat-icon"><i class="fas fa-chart-line"></i></div>
+                        <div class="ach-stat-info">
+                            <span class="ach-stat-number">85%+</span>
+                            <span class="ach-stat-label">Placement Record</span>
+                        </div>
+                    </div>
+                    <div class="ach-stat-item">
+                        <div class="ach-stat-icon"><i class="fas fa-trophy"></i></div>
+                        <div class="ach-stat-info">
+                            <span class="ach-stat-number">₹12 LPA</span>
+                            <span class="ach-stat-label">Highest Package</span>
+                        </div>
+                    </div>
+                    <div class="ach-stat-item">
+                        <div class="ach-stat-icon"><i class="fas fa-building"></i></div>
+                        <div class="ach-stat-info">
+                            <span class="ach-stat-number">50+</span>
+                            <span class="ach-stat-label">Corporate Recruiters</span>
+                        </div>
+                    </div>
+                    <div class="ach-stat-item">
+                        <div class="ach-stat-icon"><i class="fas fa-award"></i></div>
+                        <div class="ach-stat-info">
+                            <span class="ach-stat-number">TASK Partner</span>
+                            <span class="ach-stat-label">Govt. Skill Synergy</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Showcase Card Slider -->
                 <div class="achievements-container">
-                    <div class="achievement-slider">
-                        <!-- Slide 1: Zainab Khatoon -->
-                        <div class="achievement-slide active">
-                            <div class="achievement-content">
-                                <div class="ach-image">
-                                    <img src="assets/Achievements/zainab_tcs.png" alt="Zainab Khatoon - TCS">
-                                </div>
-                                <div class="ach-text">
-                                    <div class="ach-quote">
-                                        "As a CSE student at our institution, I, Zainab Khatoon, am thrilled to share my
-                                        positive experience with our campus placement services. The dedicated training
-                                        and comprehensive support provided by our institution have been instrumental in
-                                        shaping my career. The focus on practical skills, mock interviews, and
-                                        industry-specific knowledge has thoroughly prepared me for the job market.
-                                        Thanks to these efforts, I secured a placement with TCS. The campus environment
-                                        fosters continuous learning and professional growth, making it an ideal place
-                                        for aspiring engineers. I am proud to be part of an institution that prioritizes
-                                        student success and career readiness."
+                    <div class="achievements-showcase-card">
+                        <div class="achievement-slider">
+                            <!-- Slide 1: G. Bhavitha -->
+                            <div class="achievement-slide active">
+                                <div class="ach-card-layout">
+                                    <div class="ach-poster-side">
+                                        <div class="ach-badge-tag">
+                                            <i class="fas fa-certificate"></i> Verified Campus Placement
+                                        </div>
+                                        <div class="ach-poster-frame">
+                                            <img src="assets/Achievements/bhavitha_capgemini.png" alt="G. Bhavitha - Placed in Capgemini (4 LPA)" class="ach-poster-img">
+                                        </div>
+                                        <div class="ach-poster-footer">
+                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK Peddapalli</span>
+                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of 2022</span>
+                                        </div>
                                     </div>
-                                    <div class="ach-author">
-                                        <h4>Zainab Khatoon</h4>
-                                        <p>CSE - Placed in TCS (3.6 LPA)</p>
+                                    <div class="ach-story-side">
+                                        <div class="ach-story-header">
+                                            <div class="ach-quote-bubble">
+                                                <i class="fas fa-quote-left"></i>
+                                            </div>
+                                            <div class="company-badge-pill capgemini">
+                                                <i class="fas fa-briefcase"></i> Placed in Capgemini
+                                            </div>
+                                        </div>
+                                        <p class="ach-story-text">
+                                            "As a CSE student at our institution, I, Bhavitha, can confidently say that our campus placement services are <span class="ach-text-bold">exceptional</span>. The training and support we receive are tailored to ensure we are <span class="ach-text-bold">well-prepared for the job market</span>. From enhancing our technical skills to providing interview preparation, the focus on our future careers is evident. Thanks to these efforts, I was successfully placed in <span class="ach-text-bold">Capgemini</span>."
+                                        </p>
+                                        <div class="ach-student-profile">
+                                            <div class="ach-avatar">
+                                                <span>GB</span>
+                                            </div>
+                                            <div class="ach-profile-meta">
+                                                <h4 class="ach-student-name">G. Bhavitha</h4>
+                                                <div class="ach-student-sub">
+                                                    <span class="ach-dept-text">Computer Science & Engineering</span>
+                                                    <span class="ach-roll-tag">HT No: 18UD1AO410</span>
+                                                </div>
+                                            </div>
+                                            <div class="ach-offer-pill">
+                                                <span class="offer-lbl">ANNUAL PACKAGE</span>
+                                                <span class="offer-val">4.0 LPA</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Slide 2: Zainab Khatoon -->
+                            <div class="achievement-slide">
+                                <div class="ach-card-layout">
+                                    <div class="ach-poster-side">
+                                        <div class="ach-badge-tag">
+                                            <i class="fas fa-certificate"></i> Verified Campus Placement
+                                        </div>
+                                        <div class="ach-poster-frame">
+                                            <img src="assets/Achievements/zainab_tcs.png" alt="Zainab Khatoon - Placed in TCS (3.6 LPA)" class="ach-poster-img">
+                                        </div>
+                                        <div class="ach-poster-footer">
+                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK Peddapalli</span>
+                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of 2022</span>
+                                        </div>
+                                    </div>
+                                    <div class="ach-story-side">
+                                        <div class="ach-story-header">
+                                            <div class="ach-quote-bubble">
+                                                <i class="fas fa-quote-left"></i>
+                                            </div>
+                                            <div class="company-badge-pill tcs">
+                                                <i class="fas fa-briefcase"></i> Placed in TCS
+                                            </div>
+                                        </div>
+                                        <p class="ach-story-text">
+                                            "The dedicated training and comprehensive support provided by our institution have been instrumental in <span class="ach-text-bold">shaping my engineering career</span>. The focus on practical skills, mock interviews, and industry-specific knowledge thoroughly prepared me for the job market. Thanks to these efforts, I secured a placement with <span class="ach-text-bold">Tata Consultancy Services</span> as Assistant System Engineer."
+                                        </p>
+                                        <div class="ach-student-profile">
+                                            <div class="ach-avatar">
+                                                <span>ZK</span>
+                                            </div>
+                                            <div class="ach-profile-meta">
+                                                <h4 class="ach-student-name">Zainab Khatoon</h4>
+                                                <div class="ach-student-sub">
+                                                    <span class="ach-dept-text">Computer Science & Engineering</span>
+                                                    <span class="ach-roll-tag">HT No: 19UD1A0542</span>
+                                                </div>
+                                            </div>
+                                            <div class="ach-offer-pill">
+                                                <span class="offer-lbl">ANNUAL PACKAGE</span>
+                                                <span class="offer-val">3.6 LPA</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Slide 3: J. Pooja -->
+                            <div class="achievement-slide">
+                                <div class="ach-card-layout">
+                                    <div class="ach-poster-side">
+                                        <div class="ach-badge-tag">
+                                            <i class="fas fa-certificate"></i> Verified Campus Placement
+                                        </div>
+                                        <div class="ach-poster-frame">
+                                            <img src="assets/placements/student1.jpeg" alt="J. Pooja - Placed in Infosys (3.6 LPA)" class="ach-poster-img">
+                                        </div>
+                                        <div class="ach-poster-footer">
+                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK Peddapalli</span>
+                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of 2022</span>
+                                        </div>
+                                    </div>
+                                    <div class="ach-story-side">
+                                        <div class="ach-story-header">
+                                            <div class="ach-quote-bubble">
+                                                <i class="fas fa-quote-left"></i>
+                                            </div>
+                                            <div class="company-badge-pill infosys">
+                                                <i class="fas fa-briefcase"></i> Placed in Infosys
+                                            </div>
+                                        </div>
+                                        <p class="ach-story-text">
+                                            "Trinity College provided an enriching academic ecosystem with active guidance from experienced mentors and the <span class="ach-text-bold">Training & Placement Cell</span>. Continuous aptitude assessments, soft-skill workshops, and coding challenges gave me the edge required to crack the <span class="ach-text-bold">Infosys</span> national assessment and interview rounds."
+                                        </p>
+                                        <div class="ach-student-profile">
+                                            <div class="ach-avatar">
+                                                <span>JP</span>
+                                            </div>
+                                            <div class="ach-profile-meta">
+                                                <h4 class="ach-student-name">J. Pooja</h4>
+                                                <div class="ach-student-sub">
+                                                    <span class="ach-dept-text">Computer Science & Engineering</span>
+                                                    <span class="ach-roll-tag">HT No: 19UD5A0206</span>
+                                                </div>
+                                            </div>
+                                            <div class="ach-offer-pill">
+                                                <span class="offer-lbl">ANNUAL PACKAGE</span>
+                                                <span class="offer-val">3.6 LPA</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Slide 4: Ananth Kumar -->
+                            <div class="achievement-slide">
+                                <div class="ach-card-layout">
+                                    <div class="ach-poster-side">
+                                        <div class="ach-badge-tag">
+                                            <i class="fas fa-certificate"></i> Verified Campus Placement
+                                        </div>
+                                        <div class="ach-poster-frame">
+                                            <img src="assets/placements/student5.jpeg" alt="Ananth Kumar - Placed in Wipro (3.5 LPA)" class="ach-poster-img">
+                                        </div>
+                                        <div class="ach-poster-footer">
+                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK Peddapalli</span>
+                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of 2022</span>
+                                        </div>
+                                    </div>
+                                    <div class="ach-story-side">
+                                        <div class="ach-story-header">
+                                            <div class="ach-quote-bubble">
+                                                <i class="fas fa-quote-left"></i>
+                                            </div>
+                                            <div class="company-badge-pill wipro">
+                                                <i class="fas fa-briefcase"></i> Placed in Wipro
+                                            </div>
+                                        </div>
+                                        <p class="ach-story-text">
+                                            "The hands-on laboratory experience and guidance from our faculty at TCEK helped me build strong engineering fundamentals. The college's industry partnerships, <span class="ach-text-bold">TASK skill bootcamps</span>, and placement training gave us real-world corporate readiness, helping me secure an offer at <span class="ach-text-bold">Wipro</span>."
+                                        </p>
+                                        <div class="ach-student-profile">
+                                            <div class="ach-avatar">
+                                                <span>AK</span>
+                                            </div>
+                                            <div class="ach-profile-meta">
+                                                <h4 class="ach-student-name">Ananth Kumar</h4>
+                                                <div class="ach-student-sub">
+                                                    <span class="ach-dept-text">Computer Science & Engineering</span>
+                                                    <span class="ach-roll-tag">HT No: 18UD1AO422</span>
+                                                </div>
+                                            </div>
+                                            <div class="ach-offer-pill">
+                                                <span class="offer-lbl">ANNUAL PACKAGE</span>
+                                                <span class="offer-val">3.5 LPA</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Slide 2: G. Bhavitha -->
-                        <div class="achievement-slide">
-                            <div class="achievement-content">
-                                <div class="ach-image">
-                                    <img src="assets/Achievements/bhavitha_capgemini.png" alt="G. Bhavitha - Capgemini">
-                                </div>
-                                <div class="ach-text">
-                                    <div class="ach-quote">
-                                        "As a CSE student at our institution, I, Bhavitha, can confidently say that our
-                                        campus placement services are exceptional. The training and support we receive
-                                        are tailored to ensure we are well-prepared for the job market. From enhancing
-                                        our technical skills to providing interview preparation, the focus on our future
-                                        careers is evident. Thanks to these efforts, I was successfully placed in
-                                        Capgemini. The campus environment is conducive to learning and growth, with
-                                        resources readily available to help us succeed. I am proud to be a part of this
-                                        institution, where the emphasis on placements truly sets us apart."
-                                    </div>
-                                    <div class="ach-author">
-                                        <h4>G. Bhavitha</h4>
-                                        <p>CSE - Placed in Capgemini (4 LPA)</p>
-                                    </div>
-                                </div>
+                        <!-- Slider Controls Bar -->
+                        <div class="ach-controls-bar">
+                            <div class="ach-counter">
+                                <span class="ach-current-num">01</span>
+                                <span class="ach-separator">/</span>
+                                <span class="ach-total-num">04</span>
+                            </div>
+                            <div class="ach-dots" id="achDots">
+                                <button class="ach-dot active" data-index="0" aria-label="Slide 1: G. Bhavitha"></button>
+                                <button class="ach-dot" data-index="1" aria-label="Slide 2: Zainab Khatoon"></button>
+                                <button class="ach-dot" data-index="2" aria-label="Slide 3: J. Pooja"></button>
+                                <button class="ach-dot" data-index="3" aria-label="Slide 4: Ananth Kumar"></button>
+                            </div>
+                            <div class="ach-nav-btns">
+                                <button class="ach-ctrl-btn ach-prev" aria-label="Previous Student"><i class="fas fa-arrow-left"></i></button>
+                                <button class="ach-ctrl-btn ach-next" aria-label="Next Student"><i class="fas fa-arrow-right"></i></button>
                             </div>
                         </div>
+                    </div>
+                </div>
 
-                        <!-- Navigation Buttons -->
-                        <button class="ach-nav-btn ach-prev"><i class="fas fa-chevron-left"></i></button>
-                        <button class="ach-nav-btn ach-next"><i class="fas fa-chevron-right"></i></button>
+                <!-- Placed Students Quick-Strip / Mini Wall -->
+                <div class="ach-alumni-strip">
+                    <div class="ach-alumni-heading">
+                        <i class="fas fa-users"></i>
+                        <span>More Star Placements:</span>
+                    </div>
+                    <div class="ach-alumni-badges">
+                        <div class="ach-alumni-pill">
+                            <img src="assets/placements/student2.jpeg" alt="B. Sravani - Capgemini">
+                            <div class="pill-meta">
+                                <strong>B. Sravani</strong>
+                                <span>Capgemini (4 LPA)</span>
+                            </div>
+                        </div>
+                        <div class="ach-alumni-pill">
+                            <img src="assets/placements/student4.jpeg" alt="G. Swetha - Capgemini">
+                            <div class="pill-meta">
+                                <strong>G. Swetha</strong>
+                                <span>Capgemini (4 LPA)</span>
+                            </div>
+                        </div>
+                        <div class="ach-alumni-pill">
+                            <img src="assets/placements/student6.jpeg" alt="J. Hima Bindu - Capgemini">
+                            <div class="pill-meta">
+                                <strong>J. Hima Bindu</strong>
+                                <span>Capgemini (4 LPA)</span>
+                            </div>
+                        </div>
+                        <div class="ach-alumni-pill">
+                            <img src="assets/placements/student7.jpeg" alt="M. Meghana - TCS">
+                            <div class="pill-meta">
+                                <strong>M. Meghana</strong>
+                                <span>TCS (3.36 LPA)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="ach-cta-wrap">
+                        <a href="placement-cell.php" class="btn-ach-explore">
+                            <span>Explore Placement Cell</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Recruiter Logos Strip -->
+                <div class="ach-recruiters-section">
+                    <div class="ach-recruiters-title">Proud Corporate Hiring & Training Partners</div>
+                    <div class="ach-recruiters-grid">
+                        <div class="recruiter-chip"><span class="chip-dot"></span> Capgemini</div>
+                        <div class="recruiter-chip"><span class="chip-dot"></span> Tata Consultancy Services</div>
+                        <div class="recruiter-chip"><span class="chip-dot"></span> Infosys</div>
+                        <div class="recruiter-chip"><span class="chip-dot"></span> Wipro</div>
+                        <div class="recruiter-chip"><span class="chip-dot"></span> Tech Mahindra</div>
+                        <div class="recruiter-chip"><span class="chip-dot"></span> Cognizant</div>
+                        <div class="recruiter-chip"><span class="chip-dot"></span> TASK Telangana</div>
                     </div>
                 </div>
             </div>

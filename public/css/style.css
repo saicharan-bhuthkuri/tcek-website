@@ -1904,246 +1904,755 @@ footer {
     font-size: 14px;
 }
 
-/* Achievements Section */
+/* ==========================================================================
+   ACHIEVEMENTS & PLACEMENTS SHOWCASE SECTION
+   ========================================================================== */
 #achievements {
-    background: #fdfdfd;
-    padding: 100px 20px;
+    background: #ffffff;
+    padding: 85px 20px 95px;
     position: relative;
-    overflow: hidden;
+    border-top: 1px solid #f1f5f9;
 }
 
-.achievements-container {
-    max-width: 1200px;
-    /* Wider for split layout */
+.ach-header-wrap {
+    text-align: center;
+    max-width: 820px;
+    margin: 0 auto 36px;
+}
+
+.ach-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #059669;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 6px rgba(16, 185, 129, 0.08);
+}
+
+.ach-pill-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    display: inline-block;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: achPillPulse 2s infinite;
+}
+
+@keyframes achPillPulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+.ach-header-wrap h2 {
+    font-size: 38px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.8px;
+    margin-bottom: 12px;
+}
+
+.ach-header-wrap p {
+    font-size: 16.5px;
+    color: #64748b;
+    line-height: 1.6;
     margin: 0 auto;
+}
+
+/* Stats Highlights Grid */
+.ach-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 20px;
+    max-width: 1180px;
+    margin: 0 auto 40px;
+}
+
+.ach-stat-item {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    box-shadow: 0 4px 16px rgba(15, 23, 42, 0.03);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+
+.ach-stat-item:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(0, 184, 148, 0.1);
+    border-color: #a7f3d0;
+}
+
+.ach-stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(0, 184, 148, 0.1);
+    color: #00b894;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.ach-stat-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ach-stat-number {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+}
+
+.ach-stat-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+/* Showcase Card & Slider */
+.achievements-container {
+    max-width: 1180px;
+    margin: 0 auto 35px;
     position: relative;
+}
+
+.achievements-showcase-card {
+    background: #ffffff;
+    border-radius: 24px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 20px 50px -10px rgba(15, 23, 42, 0.08);
+    overflow: hidden;
 }
 
 .achievement-slider {
     position: relative;
-    padding: 0 40px;
-    /* Space for outside arrows */
+    width: 100%;
 }
 
-/* Card Container */
 .achievement-slide {
     display: none;
-    animation: fadeEffect 0.8s ease-in-out;
-    background: #fff;
-    border-radius: 20px;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-    /* Premium shadow */
-    overflow: hidden;
-    padding: 0;
+    opacity: 0;
+    transition: opacity 0.4s ease-in-out;
 }
 
 .achievement-slide.active {
     display: block;
+    opacity: 1;
 }
 
-@keyframes fadeEffect {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Flex Layout */
-.achievement-content {
-    display: flex;
+/* Slide Card Split Layout */
+.ach-card-layout {
+    display: grid;
+    grid-template-columns: 46% 54%;
+    min-height: 480px;
     align-items: stretch;
-    /* Full height stretch */
-    min-height: 450px;
 }
 
-/* LEFT: Image Area */
-.ach-image {
-    flex: 0 0 40%;
+/* LEFT: Poster Frame (NO CROPPING) */
+.ach-poster-side {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    padding: 34px 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     position: relative;
-    background: linear-gradient(135deg, #e0f8f3 0%, #f0fffa 100%);
-    /* Subtle teal tint */
+    border-right: 1px solid #f1f5f9;
+}
+
+.ach-badge-tag {
+    background: #ffffff;
+    border: 1px solid rgba(0, 184, 148, 0.3);
+    color: #047857;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 6px 14px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.ach-badge-tag i {
+    color: #00b894;
+}
+
+.ach-poster-frame {
+    background: #ffffff;
+    padding: 10px;
+    border-radius: 16px;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.09);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    max-width: 380px;
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 40px;
-    overflow: hidden;
+    transition: transform 0.3s ease;
 }
 
-/* Decorative Circle */
-.ach-image::before {
-    content: '';
-    position: absolute;
-    width: 300px;
-    height: 300px;
-    background: rgba(0, 184, 148, 0.1);
-    border-radius: 50%;
-    z-index: 1;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
+.ach-poster-frame:hover {
+    transform: scale(1.01);
 }
 
-.ach-image img {
-    position: relative;
-    z-index: 2;
+.ach-poster-img {
     width: 100%;
-    max-width: 320px;
+    height: auto;
+    max-height: 380px;
+    object-fit: contain;
     border-radius: 12px;
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15);
-    transform: perspective(1000px) rotateY(5deg);
-    transition: transform 0.5s ease;
-}
-
-.achievement-slide:hover .ach-image img {
-    transform: perspective(1000px) rotateY(0deg) scale(1.02);
-}
-
-/* RIGHT: Text Area */
-.ach-text {
-    flex: 1;
-    padding: 60px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    background: #fff;
-}
-
-.ach-quote {
-    font-size: 18px;
-    line-height: 1.8;
-    /* Airy line height */
-    color: #4a4a4a;
-    /* Softer black */
-    margin-bottom: 40px;
-    font-weight: 300;
-    /* Light weight for elegance */
-    position: relative;
-    font-family: 'Poppins', sans-serif;
-    font-style: normal;
-}
-
-/* Quote icon */
-.ach-quote::before {
-    content: '\201C';
-    font-size: 80px;
-    color: #00b894;
-    opacity: 0.15;
-    position: absolute;
-    top: -40px;
-    left: -20px;
-    font-family: serif;
-    line-height: 1;
-}
-
-.ach-author h4 {
-    font-size: 24px;
-    color: #2d3436;
-    font-weight: 700;
-    margin-bottom: 8px;
-    letter-spacing: -0.5px;
-}
-
-.ach-author p {
-    font-size: 14px;
-    color: #00b894;
-    text-transform: uppercase;
-    font-weight: 700;
-    letter-spacing: 1.5px;
     display: block;
 }
 
-/* Navigation Buttons (Outside Card) */
-.ach-nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: white;
-    border: none;
+.ach-poster-footer {
+    margin-top: 14px;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 380px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #64748b;
+    padding: 0 4px;
+}
+
+.poster-univ-code {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #475569;
+}
+
+.poster-verified {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #00b894;
+    font-weight: 700;
+}
+
+/* RIGHT: Student Story & Profile */
+.ach-story-side {
+    padding: 44px 48px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #ffffff;
+}
+
+.ach-story-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 22px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.ach-quote-bubble {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(0, 184, 148, 0.1);
+    color: #00b894;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+}
+
+.company-badge-pill {
+    padding: 7px 16px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.company-badge-pill.capgemini {
+    background: #eff6ff;
+    color: #1d4ed8;
+    border: 1px solid #bfdbfe;
+}
+
+.company-badge-pill.tcs {
+    background: #faf5ff;
+    color: #7e22ce;
+    border: 1px solid #e9d5ff;
+}
+
+.company-badge-pill.infosys {
+    background: #f0fdf4;
+    color: #15803d;
+    border: 1px solid #bbf7d0;
+}
+
+.company-badge-pill.wipro {
+    background: #fff7ed;
+    color: #c2410c;
+    border: 1px solid #fed7aa;
+}
+
+.ach-story-text {
+    font-size: 16.5px;
+    line-height: 1.85;
+    color: #334155;
+    margin-bottom: 26px;
+    font-weight: 400;
+}
+
+.ach-text-bold {
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Student Profile Block */
+.ach-student-profile {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding-top: 22px;
+    border-top: 1px solid #f1f5f9;
+    flex-wrap: wrap;
+}
+
+.ach-avatar {
     width: 50px;
     height: 50px;
     border-radius: 50%;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #00b894 0%, #009376 100%);
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 17px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.25);
+    flex-shrink: 0;
+}
+
+.ach-profile-meta {
+    flex: 1;
+    min-width: 180px;
+}
+
+.ach-student-name {
+    font-size: 21px;
+    font-weight: 800;
+    color: #0f172a;
+    margin: 0 0 4px;
+    letter-spacing: -0.3px;
+}
+
+.ach-student-sub {
+    display: flex;
+    flex-direction: column;
+}
+
+.ach-dept-text {
+    font-size: 13.5px;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.ach-roll-tag {
+    font-size: 12px;
+    color: #00b894;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.ach-offer-pill {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 8px 18px;
+    text-align: right;
+    flex-shrink: 0;
+}
+
+.offer-lbl {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #059669;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+}
+
+.offer-val {
+    display: block;
+    font-size: 20px;
+    font-weight: 800;
+    color: #065f46;
+    line-height: 1.2;
+    margin-top: 2px;
+}
+
+/* Controls Bar at bottom of Showcase Card */
+.ach-controls-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 36px;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+}
+
+.ach-counter {
+    font-size: 14px;
+    font-weight: 700;
+    color: #64748b;
+    font-family: 'Poppins', monospace, sans-serif;
+    letter-spacing: 1px;
+}
+
+.ach-current-num {
+    color: #00b894;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.ach-separator {
+    margin: 0 4px;
+    color: #cbd5e1;
+}
+
+.ach-dots {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.ach-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 999px;
+    background: #cbd5e1;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+}
+
+.ach-dot:hover {
+    background: #94a3b8;
+}
+
+.ach-dot.active {
+    width: 32px;
+    background: #00b894;
+    box-shadow: 0 2px 8px rgba(0, 184, 148, 0.35);
+}
+
+.ach-nav-btns {
+    display: flex;
+    gap: 10px;
+}
+
+.ach-ctrl-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #1e293b;
+    font-size: 14px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    color: #2d3436;
-    transition: all 0.3s ease;
-    z-index: 10;
+    transition: all 0.25s ease;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
 }
 
-.ach-nav-btn:hover {
+.ach-ctrl-btn:hover {
     background: #00b894;
-    color: white;
-    transform: translateY(-50%) scale(1.1);
+    border-color: #00b894;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 184, 148, 0.3);
 }
 
-.ach-prev {
-    left: -10px;
-    /* Pull outside slightly */
+/* Placed Students Quick-Strip / Mini Wall */
+.ach-alumni-strip {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 18px;
+    padding: 16px 24px;
+    margin: 0 auto 35px;
+    max-width: 1180px;
+    gap: 20px;
+    flex-wrap: wrap;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03);
 }
 
-.ach-next {
-    right: -10px;
+.ach-alumni-heading {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #334155;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Responsive Achievements */
-@media (max-width: 900px) {
-    .achievement-slider {
-        padding: 0;
-        /* Remove side padding on mobile */
-    }
+.ach-alumni-heading i {
+    color: #00b894;
+}
 
-    .achievement-content {
-        flex-direction: column;
+.ach-alumni-badges {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    flex: 1;
+}
+
+.ach-alumni-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 5px 14px 5px 6px;
+    border-radius: 999px;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.ach-alumni-pill:hover {
+    transform: translateY(-2px);
+    border-color: #a7f3d0;
+}
+
+.ach-alumni-pill img {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #00b894;
+    background: #ffffff;
+}
+
+.pill-meta strong {
+    font-size: 12.5px;
+    color: #0f172a;
+    display: block;
+    line-height: 1.2;
+}
+
+.pill-meta span {
+    font-size: 11px;
+    color: #00b894;
+    font-weight: 700;
+    display: block;
+}
+
+.ach-cta-wrap {
+    flex-shrink: 0;
+}
+
+.btn-ach-explore {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #00b894;
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.2);
+}
+
+.btn-ach-explore:hover {
+    background: #009376;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 184, 148, 0.35);
+}
+
+/* Recruiter Logos Strip */
+.ach-recruiters-section {
+    text-align: center;
+    max-width: 1180px;
+    margin: 0 auto;
+}
+
+.ach-recruiters-title {
+    font-size: 11.5px;
+    font-weight: 800;
+    color: #94a3b8;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    margin-bottom: 14px;
+}
+
+.ach-recruiters-grid {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.recruiter-chip {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #475569;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 7px 18px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+}
+
+.recruiter-chip:hover {
+    border-color: #00b894;
+    color: #00b894;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.12);
+}
+
+.chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #00b894;
+}
+
+/* Responsive Media Queries for Achievements */
+@media (max-width: 1024px) {
+    .ach-card-layout {
+        grid-template-columns: 1fr;
         min-height: auto;
     }
 
-    .ach-image {
-        width: 100%;
-        padding: 40px 20px;
-        min-height: 300px;
+    .ach-poster-side {
+        border-right: none;
+        border-bottom: 1px solid #f1f5f9;
+        padding: 30px 20px;
     }
 
-    .ach-image img {
-        transform: none;
-        /* No 3D transform on mobile */
-        max-width: 250px;
+    .ach-story-side {
+        padding: 34px 30px;
     }
 
-    .ach-text {
-        padding: 40px 25px;
-        text-align: center;
-    }
-
-    .ach-quote::before {
-        left: 50%;
-        transform: translateX(-50%);
-        top: -30px;
-    }
-
-    .ach-nav-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 16px;
-        background: rgba(255, 255, 255, 0.9);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .ach-prev {
-        left: 5px;
-    }
-
-    .ach-next {
-        right: 5px;
+    .ach-stats-grid {
+        grid-template-columns: repeat(2, 1fr);
     }
 }
+
+@media (max-width: 768px) {
+    #achievements {
+        padding: 60px 15px 70px;
+    }
+
+    .ach-header-wrap h2 {
+        font-size: 28px;
+    }
+
+    .ach-header-wrap p {
+        font-size: 15px;
+    }
+
+    .ach-story-side {
+        padding: 26px 20px;
+    }
+
+    .ach-student-profile {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .ach-offer-pill {
+        margin-left: 0;
+        width: 100%;
+        text-align: left;
+    }
+
+    .ach-controls-bar {
+        padding: 14px 20px;
+    }
+
+    .ach-alumni-strip {
+        padding: 18px 16px;
+    }
+
+    .ach-alumni-badges {
+        width: 100%;
+    }
+
+    .ach-cta-wrap {
+        width: 100%;
+    }
+
+    .btn-ach-explore {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+@media (max-width: 520px) {
+    .ach-stats-grid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .ach-poster-footer {
+        flex-direction: column;
+        gap: 4px;
+        align-items: center;
+    }
+}
+
 
 /* Restored Memo Table Styles */
 .memo-table th,
