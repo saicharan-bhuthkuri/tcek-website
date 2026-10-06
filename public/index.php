@@ -1244,10 +1244,16 @@
                         <div class="rnd-signature">
                             <i class="fas fa-signature"></i> — Team Research &amp; Development (R&amp;D)
                         </div>
-                        <a href="research-publications.php" class="btn-rnd-explore">
-                            <span>Explore Research Publications</span>
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
+                        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <a href="rnd-rankings.php" class="btn-rnd-explore" style="background: #00b894; color: #ffffff;">
+                                <span>View Full R&amp;D Rankings &amp; Scorecard</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                            <a href="research-publications.php" class="btn-rnd-explore" style="background: #f1f5f9; color: #334155;">
+                                <span>Research Publications</span>
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                        </div>
                     </div>
                     <div class="rnd-ack-side">
                         <div class="rnd-ack-box">

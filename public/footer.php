@@ -14,6 +14,7 @@
                 <li><a href="index.php">Home</a></li>
                 <li><a href="admission.php">Admissions</a></li>
                 <li><a href="courses.php">Courses</a></li>
+                <li><a href="rnd-rankings.php">R&amp;D Rankings</a></li>
                 <li><a href="contact.php">Contact</a></li>
             </ul>
             <div class="social-links">

@@ -34,6 +34,7 @@
             <li><a href="placement-cell.php" class="<?php echo ($page == 'placement') ? 'active' : ''; ?>">Placement Cell</a></li>
             <li><a href="facilities.php" class="<?php echo ($page == 'facilities') ? 'active' : ''; ?>">Facilities</a></li>
             <li><a href="research-publications.php" class="<?php echo ($page == 'research') ? 'active' : ''; ?>">Research Publications</a></li>
+            <li><a href="rnd-rankings.php" class="<?php echo ($page == 'rnd-rankings') ? 'active' : ''; ?>">R&amp;D Rankings</a></li>
             <li><a href="e-content.php" class="<?php echo ($page == 'e-content') ? 'active' : ''; ?>">E-CONTENT</a></li>
             <li><a href="committees.php" class="<?php echo ($page == 'committees') ? 'active' : ''; ?>">Committees</a></li>
             <li><a href="policies.php" class="<?php echo ($page == 'policies') ? 'active' : ''; ?>">Policies</a></li>

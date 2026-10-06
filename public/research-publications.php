@@ -38,6 +38,13 @@
                     <h3>Patents</h3>
                     <p>Intellectual property and patents filed/awarded to the institution.</p>
                 </a>
+
+                <!-- R&D Department Rankings -->
+                <a href="rnd-rankings.php" class="facility-card">
+                    <div class="facility-icon"><i class="fas fa-trophy"></i></div>
+                    <h3>R&amp;D Department Rankings</h3>
+                    <p>Official quarterly departmental rankings, scorecards, patents, and research innovation honors.</p>
+                </a>
             </div>
         </div>
     </section>
