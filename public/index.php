@@ -67,107 +67,233 @@
             </div>
         </section>
 
-        <!-- TCEK News Section -->
+        <!-- TCEK News Section (Magazine & Bulletin Redesign) -->
         <section class="tcek-news-section" id="news">
             <div class="container">
-                <div class="section-header">
-                    <span class="news-badge-pill"><i class="fas fa-bullhorn"></i> Official Announcements</span>
-                    <h2>TCEK NEWS</h2>
-                    <p>Stay updated with our latest academic milestones, admissions notices &amp; campus achievements</p>
+                <!-- Section Header -->
+                <div class="news-header-wrap">
+                    <span class="news-top-pill">
+                        <span class="pulse-indicator"></span> Official Announcements
+                    </span>
+                    <h2>TCEK NEWS &amp; ANNOUNCEMENTS</h2>
+                    <p>Stay informed with our latest university milestones, academic circulars, campus drives &amp; press coverage</p>
                 </div>
 
-                <!-- Breaking News Strip -->
-                <div class="news-breaking-strip">
-                    <div class="breaking-label"><i class="fas fa-bolt"></i> LATEST FLASH</div>
-                    <div class="breaking-ticker-text">
-                        <span>🎓 <strong>Admissions Open 2024–25:</strong> B.Tech, Diploma (Polytechnic) &amp; MBA | EAPCET / POLYCET / ICET Code: <strong>TCEK</strong> | Helpline: <strong>7396903383</strong></span>
+                <!-- Modern Breaking Ticker Bar -->
+                <div class="news-ticker-modern">
+                    <div class="ticker-badge"><i class="fas fa-bullhorn"></i> LATEST NOTICE</div>
+                    <div class="ticker-marquee">
+                        <span>⚡ <strong>Admissions Open 2024–25:</strong> B.Tech, Diploma (Polytechnic) &amp; MBA | EAPCET / POLYCET / ICET Code: <strong>TCEK</strong> | Helpline: <strong>7396903383</strong>, <strong>8522954369</strong></span>
                     </div>
-                    <a href="admission.php" class="breaking-action-btn">
+                    <a href="admission.php" class="ticker-link-pill">
                         <span>Admissions Portal</span>
                         <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
 
-                <!-- News Cards Grid -->
-                <div class="tcek-news-grid">
-                    <!-- News Card 1: Autonomous Status -->
-                    <article class="tcek-news-card">
-                        <div class="news-card-media">
-                            <img src="assets/Gallery/autonomous.jpg" alt="UGC Autonomous Status Conferred">
-                            <div class="news-media-overlay">
-                                <span class="news-category-badge badge-academic">UGC Autonomous</span>
-                                <span class="news-date-badge"><i class="far fa-calendar-alt"></i> 2025 – 2030</span>
+                <!-- 2-Column Asymmetric Main News Hub -->
+                <div class="news-main-hub">
+                    <!-- Left: Featured Spotlight Card -->
+                    <div class="news-spotlight-card">
+                        <div class="spotlight-media-wrap">
+                            <img src="assets/College Event/caps.jpg" alt="Trinity College Autonomous Milestone Celebration" class="spotlight-img">
+                            <div class="spotlight-media-overlay">
+                                <span class="spotlight-badge"><i class="fas fa-award"></i> Major Milestone</span>
+                                <span class="spotlight-date-chip"><i class="far fa-calendar-alt"></i> AY 2025–2026 to 2029–2030</span>
                             </div>
                         </div>
-                        <div class="news-card-content">
-                            <h3>Conferred UGC &amp; JNTUH Autonomous Status</h3>
-                            <p>Trinity College of Engineering and Technology Peddapalli has been officially granted UGC Autonomous status for 5 consecutive academic years, empowering academic innovation.</p>
-                            <a href="ugc.php" class="news-card-action">
-                                <span>Read Details</span>
-                                <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                    </article>
+                        <div class="spotlight-body">
+                            <div class="spotlight-meta">
+                                <span class="meta-tag"><i class="fas fa-university"></i> UGC &amp; JNTUH Autonomous</span>
+                                <span class="meta-tag"><i class="fas fa-check-circle"></i> 5 Years Validity</span>
+                            </div>
+                            <h3>Trinity College Conferred UGC &amp; JNTUH Autonomous Status for 5 Academic Years</h3>
+                            <p>We are immensely proud to announce that Trinity College of Engineering &amp; Technology has been officially conferred Autonomous status by UGC and JNTUH. This prestigious milestone grants academic independence to formulate advanced, industry-aligned curricula, introduce cutting-edge electives in AI, Data Science &amp; VLSI, and provide enhanced research and placement avenues for our students.</p>
+                            
+                            <div class="spotlight-highlights-grid">
+                                <div class="highlight-pill">
+                                    <i class="fas fa-graduation-cap"></i>
+                                    <div>
+                                        <strong>Curriculum Autonomy</strong>
+                                        <span>Industry 4.0 Syllabus</span>
+                                    </div>
+                                </div>
+                                <div class="highlight-pill">
+                                    <i class="fas fa-medal"></i>
+                                    <div>
+                                        <strong>Degree Prestige</strong>
+                                        <span>Recognized by UGC &amp; JNTUH</span>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <!-- News Card 2: NAAC Accreditation -->
-                    <article class="tcek-news-card">
-                        <div class="news-card-media">
-                            <img src="assets/Gallery/naac2.jpg" alt="NAAC B++ Grade Accreditation">
-                            <div class="news-media-overlay">
-                                <span class="news-category-badge badge-naac">NAAC 'B++'</span>
-                                <span class="news-date-badge"><i class="far fa-check-circle"></i> District First</span>
+                            <div class="spotlight-footer">
+                                <a href="ugc.php" class="btn-spotlight-action">
+                                    <span>Read UGC Notification</span>
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                                <a href="academics.php" class="btn-spotlight-link">
+                                    <span>Explore Academics</span>
+                                    <i class="fas fa-chevron-right"></i>
+                                </a>
                             </div>
                         </div>
-                        <div class="news-card-content">
-                            <h3>First &amp; Only NAAC Accredited College in Peddapalli</h3>
-                            <p>TCEK stands proud as the pioneer institution in Peddapalli district with NAAC 'B++' accreditation, affirming our premier academic infrastructure and research quality.</p>
-                            <a href="naac.php" class="news-card-action">
-                                <span>View Accreditation</span>
-                                <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                    </article>
+                    </div>
 
-                    <!-- News Card 3: Admissions Open -->
-                    <article class="tcek-news-card">
-                        <div class="news-card-media">
-                            <img src="assets/Gallery/pamplet1.jpg" alt="Admissions Open 2024-25">
-                            <div class="news-media-overlay">
-                                <span class="news-category-badge badge-admission">Admissions Open</span>
-                                <span class="news-date-badge"><i class="fas fa-user-graduate"></i> AY 2024–25</span>
+                    <!-- Right: Digital Bulletin Board -->
+                    <div class="news-bulletin-board">
+                        <div class="bulletin-header">
+                            <div class="bulletin-heading">
+                                <div class="bulletin-icon-pulse"><i class="fas fa-bell"></i></div>
+                                <h4>Recent Bulletins</h4>
                             </div>
+                            <span class="bulletin-badge-live"><span class="live-dot"></span> LIVE FEED</span>
                         </div>
-                        <div class="news-card-content">
-                            <h3>Admissions Open for B.Tech, Diploma &amp; MBA</h3>
-                            <p>Enroll today in cutting-edge branches including AI &amp; ML, CSE, ECE, EEE, and MBA. State counseling code: TCEK. Merit scholarship concessions available.</p>
-                            <a href="admission.php" class="news-card-action">
-                                <span>Apply for Admission</span>
-                                <i class="fas fa-arrow-right"></i>
-                            </a>
-                        </div>
-                    </article>
 
-                    <!-- News Card 4: Campus Placements -->
-                    <article class="tcek-news-card">
-                        <div class="news-card-media">
-                            <img src="assets/Gallery/infosys.jpg" alt="TCEK Campus Placements">
-                            <div class="news-media-overlay">
-                                <span class="news-category-badge badge-placement">Placements</span>
-                                <span class="news-date-badge"><i class="fas fa-briefcase"></i> Campus Drives</span>
-                            </div>
-                        </div>
-                        <div class="news-card-content">
-                            <h3>Campus Placement Drives &amp; Industry Tie-ups</h3>
-                            <p>Top national recruiters including Capgemini, TCS, Infosys, and Cognizant hire TCEK graduates with comprehensive pre-placement training and industry internship drives.</p>
-                            <a href="placement-cell.php" class="news-card-action">
-                                <span>Placement Highlights</span>
-                                <i class="fas fa-arrow-right"></i>
+                        <div class="bulletin-items-list">
+                            <!-- Bulletin 1: NAAC -->
+                            <a href="naac.php" class="bulletin-item-card">
+                                <div class="bulletin-date-badge theme-naac">
+                                    <span class="date-month">NAAC</span>
+                                    <span class="date-day">B++</span>
+                                </div>
+                                <div class="bulletin-content">
+                                    <span class="bulletin-category cat-naac">Accreditation</span>
+                                    <h5>First &amp; Only NAAC Accredited College in Peddapalli</h5>
+                                    <p>Recognized for world-class laboratory infrastructure, experienced faculty, and strong student outcomes.</p>
+                                    <span class="bulletin-link-text">View Certificate <i class="fas fa-arrow-right"></i></span>
+                                </div>
+                            </a>
+
+                            <!-- Bulletin 2: Admissions -->
+                            <a href="admission.php" class="bulletin-item-card">
+                                <div class="bulletin-date-badge theme-adms">
+                                    <span class="date-month">CODE</span>
+                                    <span class="date-day">TCEK</span>
+                                </div>
+                                <div class="bulletin-content">
+                                    <span class="bulletin-category cat-adms">Admissions 2024–25</span>
+                                    <h5>B.Tech, Diploma &amp; MBA Counseling Open</h5>
+                                    <p>Seat allotments through TS EAPCET, POLYCET &amp; ICET. Merit scholarship fee concessions available.</p>
+                                    <span class="bulletin-link-text">Admissions Details <i class="fas fa-arrow-right"></i></span>
+                                </div>
+                            </a>
+
+                            <!-- Bulletin 3: Placements -->
+                            <a href="placement-cell.php" class="bulletin-item-card">
+                                <div class="bulletin-date-badge theme-jobs">
+                                    <span class="date-month">DRIVE</span>
+                                    <span class="date-day">100%</span>
+                                </div>
+                                <div class="bulletin-content">
+                                    <span class="bulletin-category cat-jobs">Campus Placements</span>
+                                    <h5>Recruitment Drives: TCS, Capgemini, Infosys</h5>
+                                    <p>Pre-placement training, coding bootcamps, and top multinational recruitment opportunities.</p>
+                                    <span class="bulletin-link-text">Placement Reports <i class="fas fa-arrow-right"></i></span>
+                                </div>
                             </a>
                         </div>
-                    </article>
+                    </div>
+                </div>
+
+                <!-- Bottom Press & Newspaper Clippings Section -->
+                <div class="news-press-section">
+                    <div class="press-strip-header">
+                        <div class="press-title">
+                            <i class="fas fa-newspaper"></i>
+                            <span>TCEK In Regional &amp; National Press</span>
+                        </div>
+                        <a href="gallery.php" class="view-all-press-btn">
+                            <span>View All Gallery Clippings</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+
+                    <div class="press-clippings-grid">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper.jpg', 'Eenadu / Sakshi: Autonomous Status Celebration')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/paper.jpg" alt="Press Coverage of Autonomous Status">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Press Release</span>
+                                <h6 class="press-headline">Autonomous Status Conferred by UGC to TCEK</h6>
+                            </div>
+                        </div>
+
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper1.jpg', 'Andhra Jyothi: Academic Excellence & Placements')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/paper1.jpg" alt="Press Coverage of Academic Excellence">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Print Media</span>
+                                <h6 class="press-headline">Peddapalli Technocrats Bag Top Tech Placements</h6>
+                            </div>
+                        </div>
+
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper2.jpg', 'Namasthe Telangana: NAAC B++ Accreditation Recognition')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/paper2.jpg" alt="Press Coverage of NAAC Accreditation">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Accreditation</span>
+                                <h6 class="press-headline">Pioneer NAAC B++ Accredited Engineering College</h6>
+                            </div>
+                        </div>
+
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper3.jpg', 'Daily News: Campus Innovation & Technical Symposium')">
+                            <div class="press-thumb-wrap">
+                                <img src="assets/Gallery/paper3.jpg" alt="Press Coverage of Innovation Symposium">
+                                <div class="press-overlay-badge">
+                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
+                            <div class="press-info">
+                                <span class="press-source">Campus News</span>
+                                <h6 class="press-headline">State-Level Technical Symposium &amp; Project Expo</h6>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
+
+        <!-- News Lightbox Modal -->
+        <div id="news-lightbox-modal" class="news-lightbox" onclick="closeNewsLightbox(event)">
+            <div class="news-lightbox-box">
+                <button type="button" class="news-lightbox-close" onclick="closeNewsLightbox(event)" aria-label="Close modal">&times;</button>
+                <img id="news-lightbox-target" src="" alt="Zoomed Newspaper Clipping">
+            </div>
+        </div>
+        <script>
+            function openNewsLightbox(src, caption) {
+                const modal = document.getElementById('news-lightbox-modal');
+                const img = document.getElementById('news-lightbox-target');
+                if (modal && img) {
+                    img.src = src;
+                    img.alt = caption || 'News Article';
+                    modal.classList.add('active');
+                    document.body.style.overflow = 'hidden';
+                }
+            }
+            function closeNewsLightbox(e) {
+                if (e.target.id === 'news-lightbox-modal' || e.target.classList.contains('news-lightbox-close')) {
+                    const modal = document.getElementById('news-lightbox-modal');
+                    if (modal) {
+                        modal.classList.remove('active');
+                        document.body.style.overflow = '';
+                    }
+                }
+            }
+        </script>
 
         <!-- Why Us Section -->
         <section style="background: #fdfdfd;">
