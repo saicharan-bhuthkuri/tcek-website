@@ -45,6 +45,7 @@
             <li><a href="iqac.php" class="<?php echo ($page == 'iqac') ? 'active' : ''; ?>">IQAC</a></li>
             <li><a href="ugc.php" class="<?php echo ($page == 'ugc') ? 'active' : ''; ?>">UGC</a></li>
             <li><a href="aicte-documents.php" class="<?php echo ($page == 'aicte') ? 'active' : ''; ?>">AICTE DOCUMENTS</a></li>
+            <li><a href="events.php" class="<?php echo ($page == 'events') ? 'active' : ''; ?>">Events</a></li>
             <li><a href="gallery.php" class="<?php echo ($page == 'gallery') ? 'active' : ''; ?>">Gallery</a></li>
             <li><a href="contact.php" class="<?php echo ($page == 'contact') ? 'active' : ''; ?>">Contact</a></li>
         </ul>

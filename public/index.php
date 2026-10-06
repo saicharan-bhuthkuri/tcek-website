@@ -412,6 +412,12 @@
                     </div>
                     <h2>Freshers Aarambh 2K26 &amp; College Sports Week</h2>
                     <p>A week of energy, talent &amp; togetherness — Experience unforgettable celebrations, thrilling tournaments, and memories forever.</p>
+                    <div style="margin-top: 14px;">
+                        <a href="events.php" class="view-all-press-btn" style="display: inline-flex;">
+                            <span>Explore Dedicated Events Portal</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
                 </div>
 
                 <!-- Event Schedule Quick Ribbon -->
