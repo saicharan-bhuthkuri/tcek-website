@@ -66,21 +66,39 @@
     const hamburger = document.querySelector('.hamburger');
     const navLinks = document.querySelector('.nav-links');
 
-    hamburger.addEventListener('click', () => {
-        hamburger.classList.toggle('active');
-        navLinks.classList.toggle('active');
-        document.body.classList.toggle('no-scroll'); // Lock body scroll
-    });
-
-    // Close mobile menu when a link is clicked
-    const links = document.querySelectorAll('.nav-links a');
-    links.forEach(link => {
-        link.addEventListener('click', () => {
-            hamburger.classList.remove('active');
-            navLinks.classList.remove('active');
-            document.body.classList.remove('no-scroll');
+    if (hamburger && navLinks) {
+        hamburger.addEventListener('click', () => {
+            hamburger.classList.toggle('active');
+            navLinks.classList.toggle('active');
+            document.body.classList.toggle('no-scroll');
         });
-    });
+
+        // Mobile Dropdown Accordion Toggle
+        const dropdownToggles = document.querySelectorAll('.nav-dropdown-toggle');
+        dropdownToggles.forEach(toggle => {
+            toggle.addEventListener('click', (e) => {
+                if (window.innerWidth <= 968) {
+                    e.preventDefault();
+                    const parent = toggle.closest('.nav-item-dropdown');
+                    if (parent) {
+                        parent.classList.toggle('mobile-open');
+                    }
+                }
+            });
+        });
+
+        // Close mobile menu when an actual destination link is clicked
+        const destinationLinks = document.querySelectorAll('.nav-links a:not(.nav-dropdown-toggle), .dropdown-menu a');
+        destinationLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                if (window.innerWidth <= 968) {
+                    hamburger.classList.remove('active');
+                    navLinks.classList.remove('active');
+                    document.body.classList.remove('no-scroll');
+                }
+            });
+        });
+    }
 
     // Navbar Scroll Effect
     window.addEventListener('scroll', () => {

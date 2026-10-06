@@ -24,30 +24,89 @@
             <img src="assets/Top Header/logo.jpg" alt="Logo" class="mobile-logo">
             <span>TCEK</span>
         </div>
+        <?php
+        $curr_page = isset($page) ? $page : '';
+        $is_about = in_array($curr_page, ['about', 'affiliation', 'policies', 'committees']);
+        $is_academics = in_array($curr_page, ['academics', 'departments', 'examinations', 'e-content']);
+        $is_research = in_array($curr_page, ['research', 'rnd-rankings']);
+        $is_accreditations = in_array($curr_page, ['naac', 'nba', 'nirf', 'iqac', 'ugc', 'aicte']);
+        $is_campus = in_array($curr_page, ['facilities', 'events', 'gallery']);
+        ?>
         <ul class="nav-links">
-            <li><a href="index.php" class="<?php echo ($page == 'home') ? 'active' : ''; ?>">Home</a></li>
-            <li><a href="about-us.php" class="<?php echo ($page == 'about') ? 'active' : ''; ?>">About Us</a></li>
-            <li><a href="academics.php" class="<?php echo ($page == 'academics') ? 'active' : ''; ?>">Academics</a></li>
-            <li><a href="departments.php" class="<?php echo ($page == 'departments') ? 'active' : ''; ?>">Departments</a></li>
-            <li><a href="admission.php" class="<?php echo ($page == 'admission') ? 'active' : ''; ?>">Admissions</a></li>
-            <li><a href="examinations.php" class="<?php echo ($page == 'examinations') ? 'active' : ''; ?>">Examinations</a></li>
-            <li><a href="placement-cell.php" class="<?php echo ($page == 'placement') ? 'active' : ''; ?>">Placement Cell</a></li>
-            <li><a href="facilities.php" class="<?php echo ($page == 'facilities') ? 'active' : ''; ?>">Facilities</a></li>
-            <li><a href="research-publications.php" class="<?php echo ($page == 'research') ? 'active' : ''; ?>">Research Publications</a></li>
-            <li><a href="rnd-rankings.php" class="<?php echo ($page == 'rnd-rankings') ? 'active' : ''; ?>">R&amp;D Rankings</a></li>
-            <li><a href="e-content.php" class="<?php echo ($page == 'e-content') ? 'active' : ''; ?>">E-CONTENT</a></li>
-            <li><a href="committees.php" class="<?php echo ($page == 'committees') ? 'active' : ''; ?>">Committees</a></li>
-            <li><a href="policies.php" class="<?php echo ($page == 'policies') ? 'active' : ''; ?>">Policies</a></li>
-            <li><a href="affiliation.php" class="<?php echo ($page == 'affiliation') ? 'active' : ''; ?>">Affiliation</a></li>
-            <li><a href="nba.php" class="<?php echo ($page == 'nba') ? 'active' : ''; ?>">NBA</a></li>
-            <li><a href="nirf.php" class="<?php echo ($page == 'nirf') ? 'active' : ''; ?>">NIRF</a></li>
-            <li><a href="naac.php" class="<?php echo ($page == 'naac') ? 'active' : ''; ?>">NAAC</a></li>
-            <li><a href="iqac.php" class="<?php echo ($page == 'iqac') ? 'active' : ''; ?>">IQAC</a></li>
-            <li><a href="ugc.php" class="<?php echo ($page == 'ugc') ? 'active' : ''; ?>">UGC</a></li>
-            <li><a href="aicte-documents.php" class="<?php echo ($page == 'aicte') ? 'active' : ''; ?>">AICTE DOCUMENTS</a></li>
-            <li><a href="events.php" class="<?php echo ($page == 'events') ? 'active' : ''; ?>">Events</a></li>
-            <li><a href="gallery.php" class="<?php echo ($page == 'gallery') ? 'active' : ''; ?>">Gallery</a></li>
-            <li><a href="contact.php" class="<?php echo ($page == 'contact') ? 'active' : ''; ?>">Contact</a></li>
+            <li>
+                <a href="index.php" class="<?php echo ($curr_page == 'home') ? 'active' : ''; ?>">Home</a>
+            </li>
+
+            <li class="nav-item-dropdown">
+                <a href="about-us.php" class="nav-dropdown-toggle <?php echo $is_about ? 'active' : ''; ?>">
+                    About Us <i class="fas fa-chevron-down nav-arrow"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="about-us.php" class="<?php echo ($curr_page == 'about') ? 'active' : ''; ?>">About Us</a></li>
+                    <li><a href="affiliation.php" class="<?php echo ($curr_page == 'affiliation') ? 'active' : ''; ?>">Affiliation</a></li>
+                    <li><a href="policies.php" class="<?php echo ($curr_page == 'policies') ? 'active' : ''; ?>">Policies</a></li>
+                    <li><a href="committees.php" class="<?php echo ($curr_page == 'committees') ? 'active' : ''; ?>">Committees</a></li>
+                </ul>
+            </li>
+
+            <li class="nav-item-dropdown">
+                <a href="academics.php" class="nav-dropdown-toggle <?php echo $is_academics ? 'active' : ''; ?>">
+                    Academics <i class="fas fa-chevron-down nav-arrow"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="academics.php" class="<?php echo ($curr_page == 'academics') ? 'active' : ''; ?>">Academics</a></li>
+                    <li><a href="departments.php" class="<?php echo ($curr_page == 'departments') ? 'active' : ''; ?>">Departments</a></li>
+                    <li><a href="examinations.php" class="<?php echo ($curr_page == 'examinations') ? 'active' : ''; ?>">Examinations</a></li>
+                    <li><a href="e-content.php" class="<?php echo ($curr_page == 'e-content') ? 'active' : ''; ?>">E-CONTENT</a></li>
+                </ul>
+            </li>
+
+            <li>
+                <a href="admission.php" class="<?php echo ($curr_page == 'admission') ? 'active' : ''; ?>">Admissions</a>
+            </li>
+
+            <li>
+                <a href="placement-cell.php" class="<?php echo ($curr_page == 'placement') ? 'active' : ''; ?>">Placement Cell</a>
+            </li>
+
+            <li class="nav-item-dropdown">
+                <a href="rnd-rankings.php" class="nav-dropdown-toggle <?php echo $is_research ? 'active' : ''; ?>">
+                    Research &amp; R&amp;D <i class="fas fa-chevron-down nav-arrow"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="research-publications.php" class="<?php echo ($curr_page == 'research') ? 'active' : ''; ?>">Research Publications</a></li>
+                    <li><a href="rnd-rankings.php" class="<?php echo ($curr_page == 'rnd-rankings') ? 'active' : ''; ?>">R&amp;D Rankings <span class="nav-badge-pill">Q4 2026</span></a></li>
+                </ul>
+            </li>
+
+            <li class="nav-item-dropdown">
+                <a href="naac.php" class="nav-dropdown-toggle <?php echo $is_accreditations ? 'active' : ''; ?>">
+                    Accreditations <i class="fas fa-chevron-down nav-arrow"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="naac.php" class="<?php echo ($curr_page == 'naac') ? 'active' : ''; ?>">NAAC</a></li>
+                    <li><a href="nba.php" class="<?php echo ($curr_page == 'nba') ? 'active' : ''; ?>">NBA</a></li>
+                    <li><a href="nirf.php" class="<?php echo ($curr_page == 'nirf') ? 'active' : ''; ?>">NIRF</a></li>
+                    <li><a href="iqac.php" class="<?php echo ($curr_page == 'iqac') ? 'active' : ''; ?>">IQAC</a></li>
+                    <li><a href="ugc.php" class="<?php echo ($curr_page == 'ugc') ? 'active' : ''; ?>">UGC</a></li>
+                    <li><a href="aicte-documents.php" class="<?php echo ($curr_page == 'aicte') ? 'active' : ''; ?>">AICTE DOCUMENTS</a></li>
+                </ul>
+            </li>
+
+            <li class="nav-item-dropdown">
+                <a href="facilities.php" class="nav-dropdown-toggle <?php echo $is_campus ? 'active' : ''; ?>">
+                    Campus Life <i class="fas fa-chevron-down nav-arrow"></i>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="facilities.php" class="<?php echo ($curr_page == 'facilities') ? 'active' : ''; ?>">Facilities</a></li>
+                    <li><a href="events.php" class="<?php echo ($curr_page == 'events') ? 'active' : ''; ?>">Events</a></li>
+                    <li><a href="gallery.php" class="<?php echo ($curr_page == 'gallery') ? 'active' : ''; ?>">Gallery</a></li>
+                </ul>
+            </li>
+
+            <li>
+                <a href="contact.php" class="<?php echo ($curr_page == 'contact') ? 'active' : ''; ?>">Contact</a>
+            </li>
         </ul>
         <div class="hamburger">
             <span></span>
