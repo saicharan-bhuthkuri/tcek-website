@@ -1111,6 +1111,164 @@
             </div>
         </section>
 
+        <!-- R&D Department Rankings Section (Q4 Announcement) -->
+        <section id="rnd-rankings">
+            <div class="container">
+                <div class="rnd-header-wrap">
+                    <div class="rnd-pill">
+                        <span class="rnd-pill-icon"><i class="fas fa-atom"></i></span>
+                        <span>Q4 (JAN 2026 – MAR 2026) Official Announcement</span>
+                    </div>
+                    <h2>R&amp;D Department Rankings</h2>
+                    <p>Congratulations to all academic departments for outstanding achievements in research, innovation, patents, international publications, NPTEL benchmarks, IIC and R&amp;D activities.</p>
+                </div>
+
+                <!-- Criteria Pills Strip -->
+                <div class="rnd-criteria-strip">
+                    <span class="rnd-crit-tag"><i class="fas fa-microscope"></i> Research &amp; Innovation</span>
+                    <span class="rnd-crit-tag"><i class="fas fa-certificate"></i> Patents &amp; IPR</span>
+                    <span class="rnd-crit-tag"><i class="fas fa-book-open"></i> Scopus &amp; IEEE Publications</span>
+                    <span class="rnd-crit-tag"><i class="fas fa-medal"></i> NPTEL Honors</span>
+                    <span class="rnd-crit-tag"><i class="fas fa-lightbulb"></i> IIC Initiatives</span>
+                </div>
+
+                <!-- 5 Department Rankings Grid -->
+                <div class="rnd-podium-grid">
+                    <!-- 1st Rank: AIML (Gold) -->
+                    <div class="rnd-card rank-1">
+                        <div>
+                            <div class="rnd-card-top">
+                                <span class="rnd-rank-num">1<sup>st</sup></span>
+                                <span class="rnd-medal-badge">🥇 1st · Gold</span>
+                            </div>
+                            <h3 class="rnd-dept-code">AIML</h3>
+                            <div class="rnd-dept-full">Artificial Intelligence &amp; Machine Learning</div>
+                            <ul class="rnd-dept-perks">
+                                <li><i class="fas fa-check-circle"></i> High-Impact Research Papers</li>
+                                <li><i class="fas fa-check-circle"></i> Patents &amp; Innovation Leads</li>
+                                <li><i class="fas fa-check-circle"></i> NPTEL &amp; IIC Star Rating</li>
+                            </ul>
+                        </div>
+                        <div class="rnd-status-tag">
+                            <i class="fas fa-trophy"></i> Gold Champion
+                        </div>
+                    </div>
+
+                    <!-- 2nd Rank: CSE & CSM (Bronze) -->
+                    <div class="rnd-card rank-2">
+                        <div>
+                            <div class="rnd-card-top">
+                                <span class="rnd-rank-num">2<sup>nd</sup></span>
+                                <span class="rnd-medal-badge">🥈 2nd · Bronze</span>
+                            </div>
+                            <h3 class="rnd-dept-code">CSE &amp; CSM</h3>
+                            <div class="rnd-dept-full">Computer Science &amp; Engineering / CSM</div>
+                            <ul class="rnd-dept-perks">
+                                <li><i class="fas fa-check-circle"></i> Coding &amp; Hackathon Projects</li>
+                                <li><i class="fas fa-check-circle"></i> Technical Publications</li>
+                                <li><i class="fas fa-check-circle"></i> Active IIC Engagement</li>
+                            </ul>
+                        </div>
+                        <div class="rnd-status-tag">
+                            <i class="fas fa-award"></i> Bronze Honor
+                        </div>
+                    </div>
+
+                    <!-- 3rd Rank: EEE (Bronze) -->
+                    <div class="rnd-card rank-3">
+                        <div>
+                            <div class="rnd-card-top">
+                                <span class="rnd-rank-num">3<sup>rd</sup></span>
+                                <span class="rnd-medal-badge">🥉 3rd · Bronze</span>
+                            </div>
+                            <h3 class="rnd-dept-code">EEE</h3>
+                            <div class="rnd-dept-full">Electrical &amp; Electronics Engineering</div>
+                            <ul class="rnd-dept-perks">
+                                <li><i class="fas fa-check-circle"></i> Mini Hydel &amp; Power Labs</li>
+                                <li><i class="fas fa-check-circle"></i> Green Energy Innovations</li>
+                                <li><i class="fas fa-check-circle"></i> Faculty Research Papers</li>
+                            </ul>
+                        </div>
+                        <div class="rnd-status-tag">
+                            <i class="fas fa-medal"></i> Bronze Honor
+                        </div>
+                    </div>
+
+                    <!-- 4th Rank: ECE (Emerging) -->
+                    <div class="rnd-card rank-4">
+                        <div>
+                            <div class="rnd-card-top">
+                                <span class="rnd-rank-num">4<sup>th</sup></span>
+                                <span class="rnd-medal-badge">🏅 4th · Emerging</span>
+                            </div>
+                            <h3 class="rnd-dept-code">ECE</h3>
+                            <div class="rnd-dept-full">Electronics &amp; Communication Engineering</div>
+                            <ul class="rnd-dept-perks">
+                                <li><i class="fas fa-check-circle"></i> Embedded &amp; IoT Systems</li>
+                                <li><i class="fas fa-check-circle"></i> Signal Processing Projects</li>
+                                <li><i class="fas fa-check-circle"></i> Rising NPTEL Enrolments</li>
+                            </ul>
+                        </div>
+                        <div class="rnd-status-tag">
+                            🌱 Emerging
+                        </div>
+                    </div>
+
+                    <!-- 5th Rank: MBA (Emerging) -->
+                    <div class="rnd-card rank-5">
+                        <div>
+                            <div class="rnd-card-top">
+                                <span class="rnd-rank-num">5<sup>th</sup></span>
+                                <span class="rnd-medal-badge">🏅 5th · Emerging</span>
+                            </div>
+                            <h3 class="rnd-dept-code">MBA</h3>
+                            <div class="rnd-dept-full">Department of Management Studies</div>
+                            <ul class="rnd-dept-perks">
+                                <li><i class="fas fa-check-circle"></i> Business Case Studies</li>
+                                <li><i class="fas fa-check-circle"></i> Entrepreneurship Cell</li>
+                                <li><i class="fas fa-check-circle"></i> Startup Incubation Meets</li>
+                            </ul>
+                        </div>
+                        <div class="rnd-status-tag">
+                            🌱 Emerging
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Motivation & Acknowledgement Card -->
+                <div class="rnd-footer-card">
+                    <div class="rnd-motto-side">
+                        <div class="rnd-motto-quote">
+                            ✨ "Your Innovation. <span>Our Pride.</span> Keep Innovating. Keep Inspiring."
+                        </div>
+                        <div class="rnd-signature">
+                            <i class="fas fa-signature"></i> — Team Research &amp; Development (R&amp;D)
+                        </div>
+                        <a href="research-publications.php" class="btn-rnd-explore">
+                            <span>Explore Research Publications</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="rnd-ack-side">
+                        <div class="rnd-ack-box">
+                            <div class="rnd-ack-icon">👏</div>
+                            <div class="rnd-ack-text">
+                                <h5>Heartiest Congratulations</h5>
+                                <p>To all the Faculty, HoDs, Students and Department Coordinators for their dedication and continuous contribution towards building a strong research and innovation ecosystem.</p>
+                            </div>
+                        </div>
+                        <div class="rnd-ack-box">
+                            <div class="rnd-ack-icon">🙏</div>
+                            <div class="rnd-ack-text">
+                                <h5>Sincere Gratitude</h5>
+                                <p>Our sincere thanks to the Management, Staff, Stakeholders, Students, Parents &amp; Alumni for their constant encouragement and invaluable support.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <!-- Why Us, Vision & Mission Section -->
         <section id="why-us" style="background: #ffffff; padding: 90px 20px; border-top: 1px solid #f1f5f9;">
             <div class="container">

@@ -4833,4 +4833,418 @@ footer {
     }
 }
 
+/* ==========================================================================
+   R&D DEPARTMENT RANKINGS SECTION (Q4 ANNOUNCEMENT)
+   ========================================================================== */
+#rnd-rankings {
+    background: #ffffff;
+    padding: 85px 20px 95px;
+    position: relative;
+    border-top: 1px solid #f1f5f9;
+}
+
+.rnd-header-wrap {
+    text-align: center;
+    max-width: 860px;
+    margin: 0 auto 36px;
+}
+
+.rnd-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #fef3c7;
+    border: 1px solid #fde68a;
+    color: #b45309;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    padding: 6px 18px;
+    border-radius: 999px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+}
+
+.rnd-pill-icon {
+    color: #d97706;
+}
+
+.rnd-header-wrap h2 {
+    font-size: 38px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.8px;
+    margin-bottom: 12px;
+}
+
+.rnd-header-wrap p {
+    font-size: 16px;
+    color: #64748b;
+    line-height: 1.6;
+    margin: 0 auto;
+}
+
+/* Criteria Pills Strip */
+.rnd-criteria-strip {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 35px;
+}
+
+.rnd-crit-tag {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 6px 14px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #475569;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rnd-crit-tag i {
+    color: #00b894;
+}
+
+/* 5 Department Rankings Grid */
+.rnd-podium-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 18px;
+    max-width: 1200px;
+    margin: 0 auto 35px;
+}
+
+.rnd-card {
+    background: #ffffff;
+    border-radius: 18px;
+    border: 1px solid #e2e8f0;
+    padding: 24px 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.03);
+}
+
+.rnd-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 30px rgba(15, 23, 42, 0.08);
+}
+
+/* Specific Rank Themes */
+.rnd-card.rank-1 {
+    border-color: #f59e0b;
+    background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+    box-shadow: 0 10px 25px rgba(245, 158, 11, 0.12);
+    transform: scale(1.03);
+    z-index: 2;
+}
+
+.rnd-card.rank-1:hover {
+    transform: scale(1.05) translateY(-5px);
+}
+
+.rnd-card.rank-2 {
+    border-color: #94a3b8;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+}
+
+.rnd-card.rank-3 {
+    border-color: #d97706;
+    background: linear-gradient(180deg, #fffbeb 0%, #ffffff 100%);
+}
+
+.rnd-card.rank-4,
+.rnd-card.rank-5 {
+    border-color: #a7f3d0;
+    background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 100%);
+}
+
+/* Card Header */
+.rnd-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+.rnd-rank-num {
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.rank-1 .rnd-rank-num { color: #d97706; }
+.rank-2 .rnd-rank-num { color: #64748b; }
+.rank-3 .rnd-rank-num { color: #b45309; }
+.rank-4 .rnd-rank-num,
+.rank-5 .rnd-rank-num { color: #059669; }
+
+.rnd-medal-badge {
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.rank-1 .rnd-medal-badge {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.rank-2 .rnd-medal-badge {
+    background: #f1f5f9;
+    color: #334155;
+    border: 1px solid #cbd5e1;
+}
+
+.rank-3 .rnd-medal-badge {
+    background: #fff7ed;
+    color: #9a3412;
+    border: 1px solid #ffedd5;
+}
+
+.rank-4 .rnd-medal-badge,
+.rank-5 .rnd-medal-badge {
+    background: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+}
+
+/* Department Info */
+.rnd-dept-code {
+    font-size: 24px;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 4px;
+    letter-spacing: -0.5px;
+}
+
+.rnd-dept-full {
+    font-size: 13px;
+    color: #64748b;
+    font-weight: 500;
+    line-height: 1.4;
+    margin-bottom: 16px;
+    min-height: 38px;
+}
+
+/* Feature Highlights */
+.rnd-dept-perks {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rnd-dept-perks li {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.rnd-dept-perks li i {
+    font-size: 10px;
+    color: #00b894;
+}
+
+.rank-1 .rnd-dept-perks li i {
+    color: #d97706;
+}
+
+/* Card Bottom Tag */
+.rnd-status-tag {
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.rank-1 .rnd-status-tag {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.rank-2 .rnd-status-tag {
+    background: #f8fafc;
+    color: #475569;
+}
+
+.rank-3 .rnd-status-tag {
+    background: #fff7ed;
+    color: #c2410c;
+}
+
+.rank-4 .rnd-status-tag,
+.rank-5 .rnd-status-tag {
+    background: #ecfdf5;
+    color: #047857;
+}
+
+/* Motivation & Congratulations Box */
+.rnd-footer-card {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 20px;
+    padding: 32px 36px;
+    display: grid;
+    grid-template-columns: 1fr 1.2fr;
+    gap: 36px;
+    align-items: center;
+    box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.rnd-motto-side {
+    border-right: 1px solid #f1f5f9;
+    padding-right: 32px;
+}
+
+.rnd-motto-quote {
+    font-size: 21px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.45;
+    margin-bottom: 14px;
+    letter-spacing: -0.4px;
+}
+
+.rnd-motto-quote span {
+    color: #00b894;
+}
+
+.rnd-signature {
+    font-size: 13.5px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-rnd-explore {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: #00b894;
+    color: #ffffff;
+    font-size: 13.5px;
+    font-weight: 700;
+    padding: 10px 22px;
+    border-radius: 999px;
+    text-decoration: none;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.2);
+}
+
+.btn-rnd-explore:hover {
+    background: #009376;
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 184, 148, 0.3);
+}
+
+.rnd-ack-side {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.rnd-ack-box {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+}
+
+.rnd-ack-icon {
+    font-size: 22px;
+    line-height: 1;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.rnd-ack-text h5 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 4px;
+}
+
+.rnd-ack-text p {
+    font-size: 13px;
+    color: #64748b;
+    line-height: 1.55;
+    margin: 0;
+}
+
+/* Responsive Media Queries */
+@media (max-width: 1100px) {
+    .rnd-podium-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    .rnd-card.rank-1 {
+        transform: none;
+    }
+    .rnd-card.rank-1:hover {
+        transform: translateY(-5px);
+    }
+}
+
+@media (max-width: 900px) {
+    .rnd-footer-card {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    .rnd-motto-side {
+        border-right: none;
+        border-bottom: 1px solid #f1f5f9;
+        padding-right: 0;
+        padding-bottom: 24px;
+    }
+}
+
+@media (max-width: 768px) {
+    #rnd-rankings {
+        padding: 60px 15px 70px;
+    }
+    .rnd-header-wrap h2 {
+        font-size: 28px;
+    }
+    .rnd-podium-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 520px) {
+    .rnd-podium-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+
 
