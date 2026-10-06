@@ -67,6 +67,108 @@
             </div>
         </section>
 
+        <!-- TCEK News Section -->
+        <section class="tcek-news-section" id="news">
+            <div class="container">
+                <div class="section-header">
+                    <span class="news-badge-pill"><i class="fas fa-bullhorn"></i> Official Announcements</span>
+                    <h2>TCEK NEWS</h2>
+                    <p>Stay updated with our latest academic milestones, admissions notices &amp; campus achievements</p>
+                </div>
+
+                <!-- Breaking News Strip -->
+                <div class="news-breaking-strip">
+                    <div class="breaking-label"><i class="fas fa-bolt"></i> LATEST FLASH</div>
+                    <div class="breaking-ticker-text">
+                        <span>🎓 <strong>Admissions Open 2024–25:</strong> B.Tech, Diploma (Polytechnic) &amp; MBA | EAPCET / POLYCET / ICET Code: <strong>TCEK</strong> | Helpline: <strong>7396903383</strong></span>
+                    </div>
+                    <a href="admission.php" class="breaking-action-btn">
+                        <span>Admissions Portal</span>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <!-- News Cards Grid -->
+                <div class="tcek-news-grid">
+                    <!-- News Card 1: Autonomous Status -->
+                    <article class="tcek-news-card">
+                        <div class="news-card-media">
+                            <img src="assets/Gallery/autonomous.jpg" alt="UGC Autonomous Status Conferred">
+                            <div class="news-media-overlay">
+                                <span class="news-category-badge badge-academic">UGC Autonomous</span>
+                                <span class="news-date-badge"><i class="far fa-calendar-alt"></i> 2025 – 2030</span>
+                            </div>
+                        </div>
+                        <div class="news-card-content">
+                            <h3>Conferred UGC &amp; JNTUH Autonomous Status</h3>
+                            <p>Trinity College of Engineering and Technology Peddapalli has been officially granted UGC Autonomous status for 5 consecutive academic years, empowering academic innovation.</p>
+                            <a href="ugc.php" class="news-card-action">
+                                <span>Read Details</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </article>
+
+                    <!-- News Card 2: NAAC Accreditation -->
+                    <article class="tcek-news-card">
+                        <div class="news-card-media">
+                            <img src="assets/Gallery/naac2.jpg" alt="NAAC B++ Grade Accreditation">
+                            <div class="news-media-overlay">
+                                <span class="news-category-badge badge-naac">NAAC 'B++'</span>
+                                <span class="news-date-badge"><i class="far fa-check-circle"></i> District First</span>
+                            </div>
+                        </div>
+                        <div class="news-card-content">
+                            <h3>First &amp; Only NAAC Accredited College in Peddapalli</h3>
+                            <p>TCEK stands proud as the pioneer institution in Peddapalli district with NAAC 'B++' accreditation, affirming our premier academic infrastructure and research quality.</p>
+                            <a href="naac.php" class="news-card-action">
+                                <span>View Accreditation</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </article>
+
+                    <!-- News Card 3: Admissions Open -->
+                    <article class="tcek-news-card">
+                        <div class="news-card-media">
+                            <img src="assets/Gallery/pamplet1.jpg" alt="Admissions Open 2024-25">
+                            <div class="news-media-overlay">
+                                <span class="news-category-badge badge-admission">Admissions Open</span>
+                                <span class="news-date-badge"><i class="fas fa-user-graduate"></i> AY 2024–25</span>
+                            </div>
+                        </div>
+                        <div class="news-card-content">
+                            <h3>Admissions Open for B.Tech, Diploma &amp; MBA</h3>
+                            <p>Enroll today in cutting-edge branches including AI &amp; ML, CSE, ECE, EEE, and MBA. State counseling code: TCEK. Merit scholarship concessions available.</p>
+                            <a href="admission.php" class="news-card-action">
+                                <span>Apply for Admission</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </article>
+
+                    <!-- News Card 4: Campus Placements -->
+                    <article class="tcek-news-card">
+                        <div class="news-card-media">
+                            <img src="assets/Gallery/infosys.jpg" alt="TCEK Campus Placements">
+                            <div class="news-media-overlay">
+                                <span class="news-category-badge badge-placement">Placements</span>
+                                <span class="news-date-badge"><i class="fas fa-briefcase"></i> Campus Drives</span>
+                            </div>
+                        </div>
+                        <div class="news-card-content">
+                            <h3>Campus Placement Drives &amp; Industry Tie-ups</h3>
+                            <p>Top national recruiters including Capgemini, TCS, Infosys, and Cognizant hire TCEK graduates with comprehensive pre-placement training and industry internship drives.</p>
+                            <a href="placement-cell.php" class="news-card-action">
+                                <span>Placement Highlights</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </article>
+                </div>
+            </div>
+        </section>
+
         <!-- Why Us Section -->
         <section style="background: #fdfdfd;">
             <div class="container">
