@@ -4323,6 +4323,51 @@ footer {
     gap: 20px;
 }
 
+.press-empty-state,
+.gallery-empty-state {
+    grid-column: 1 / -1;
+    background: #ffffff;
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    padding: 44px 24px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+}
+
+.press-empty-icon,
+.gallery-empty-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: #e6f9f4;
+    color: #00b894;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: 14px;
+}
+
+.press-empty-state h6,
+.gallery-empty-state h4 {
+    font-size: 16px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 6px;
+}
+
+.press-empty-state p,
+.gallery-empty-state p {
+    font-size: 13px;
+    color: #64748b;
+    margin: 0;
+    max-width: 480px;
+}
+
 .press-card {
     background: #ffffff;
     border-radius: 14px;
@@ -4775,7 +4820,7 @@ footer {
 
 .gallery-card-thumb {
     position: relative;
-    height: 220px;
+    height: 250px;
     overflow: hidden;
     background: #f1f5f9;
 }
@@ -4852,11 +4897,7 @@ footer {
 }
 
 .gallery-card-info {
-    padding: 16px 18px 18px 18px;
-    display: flex;
-    flex-direction: column;
-    flex: 1;
-    background: #ffffff;
+    display: none !important;
 }
 
 .gallery-card-info h4 {

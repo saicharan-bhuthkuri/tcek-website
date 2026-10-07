@@ -210,162 +210,113 @@
                     </div>
 
                     <div class="press-clippings-grid">
-                        <!-- Row 1: Academic & Milestone Press Clippings -->
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper.jpg', 'Eenadu / Sakshi: Autonomous Status Celebration')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper1.jpg', 'Mana Telangana: Yuva Sangam - Trinity Student Selected for National Tour to IIT Guwahati')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper.jpg" alt="Press Coverage of Autonomous Status">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper1.jpg" alt="Mana Telangana: Yuva Sangam Trinity Student Selected for IIT Guwahati">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">Press Release</span>
-                                <h6 class="press-headline">Autonomous Status Conferred by UGC to TCEK</h6>
+                                <span class="press-source">Mana Telangana</span>
+                                <h6 class="press-headline">Yuva Sangam: Trinity Student Selected for National Tour to IIT Guwahati</h6>
                             </div>
                         </div>
 
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper1.jpg', 'Andhra Jyothi: Academic Excellence & Placements')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper2.jpg', 'Prajakranthi: Founder Chairman Felicitates Saniya on National Yuva Sangam Selection')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper1.jpg" alt="Press Coverage of Academic Excellence">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper2.jpg" alt="Prajakranthi: Chairman Felicitates Saniya on National Yuva Sangam Selection">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">Print Media</span>
-                                <h6 class="press-headline">Peddapalli Technocrats Bag Top Tech Placements</h6>
+                                <span class="press-source">Prajakranthi</span>
+                                <h6 class="press-headline">Chairman Manohar Reddy Felicitates Saniya on National Yuva Sangam Selection</h6>
                             </div>
                         </div>
 
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper2.jpg', 'Namasthe Telangana: NAAC B++ Accreditation Recognition')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper3.jpg', 'Andhra Prabha: Vigilance Inspection of Quality &amp; Infrastructure Across Engineering Colleges')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper2.jpg" alt="Press Coverage of NAAC Accreditation">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper3.jpg" alt="Andhra Prabha: Vigilance Inspection Across Regional Engineering Colleges">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">Accreditation</span>
-                                <h6 class="press-headline">Pioneer NAAC B++ Accredited Engineering College</h6>
+                                <span class="press-source">Andhra Prabha</span>
+                                <h6 class="press-headline">Engineering Colleges Under Vigilance Radar: Quality &amp; Compliance Inspections Begin</h6>
                             </div>
                         </div>
 
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper3.jpg', 'Daily News: Campus Innovation & Technical Symposium')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper4.jpg', 'State Daily: Quality Benchmark &amp; Lab Infrastructure Vigilance Inspection')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper3.jpg" alt="Press Coverage of Innovation Symposium">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper4.jpg" alt="State Daily: Quality Benchmark &amp; Lab Infrastructure Vigilance Inspection">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">Campus News</span>
-                                <h6 class="press-headline">State-Level Technical Symposium &amp; Project Expo</h6>
+                                <span class="press-source">State Daily</span>
+                                <h6 class="press-headline">Quality Benchmark &amp; Lab Infrastructure Vigilance Inspection Team Visit</h6>
                             </div>
                         </div>
 
-                        <!-- Row 2: Industrial Visits, Placements & Sports Press Clippings -->
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper4.jpg', 'Sakshi: Campus Placement Drive - 224 Placed Across 17 MNCs')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper5.jpg', 'Andhra Prabha: Smart India Hackathon 2026 Internal Round Inaugurated at Trinity')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper4.jpg" alt="Press Coverage of Campus Placement Drive">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper5.jpg" alt="Andhra Prabha: Smart India Hackathon 2026 at Trinity Engineering College">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">Sakshi Daily</span>
-                                <h6 class="press-headline">Campus Placement Drive: 224 Placed in 17 MNCs</h6>
+                                <span class="press-source">Andhra Prabha</span>
+                                <h6 class="press-headline">Smart India Hackathon 2026 Conducted at Trinity Engineering College</h6>
                             </div>
                         </div>
 
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper5.jpg', 'Mana Vartha: Electrical & Electronics Mini Hydel Industrial Visit')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper6.jpg', 'Mana Telangana: Smart India Hackathon 2026 - Innovation &amp; Prototype Exhibition at Trinity')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper5.jpg" alt="Press Coverage of Industrial Visit">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper6.jpg" alt="Mana Telangana: Smart India Hackathon 2026 Students Showcase Prototypes">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">Mana Vartha</span>
-                                <h6 class="press-headline">Electrical &amp; Electronics Mini Hydel Industrial Visit</h6>
+                                <span class="press-source">Mana Telangana</span>
+                                <h6 class="press-headline">Smart India Hackathon 2026: Students Showcase Real-World Technical Prototypes</h6>
                             </div>
                         </div>
 
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/infosys.jpg', 'Prabha News: Trinity Tech Students Visit Infosys SEZ with TASK')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper7.jpg', 'Namasthe Telangana: Smart India Hackathon 2026 Organized at Trinity Autonomous College')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/infosys.jpg" alt="Press Coverage of Infosys SEZ Visit">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper7.jpg" alt="Namasthe Telangana: Smart India Hackathon 2026 at Trinity Autonomous College">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">Prabha News</span>
-                                <h6 class="press-headline">Trinity Tech Students Visit Infosys SEZ with TASK</h6>
+                                <span class="press-source">Namasthe Telangana</span>
+                                <h6 class="press-headline">Smart India Hackathon 2026: Innovative Problem Solving at Trinity Autonomous</h6>
                             </div>
                         </div>
 
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/papers.jpg', 'Prabha News: National Level Martial Arts Championship Gold')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper8.jpg', 'Mana Telangana: MSME Idea Hackathon 6.0 Conducted with 168 Projects and ₹15L Funding')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/papers.jpg" alt="Press Coverage of Sports Achievement">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper8.jpg" alt="Mana Telangana: MSME Idea Hackathon 6.0 with 168 Projects and ₹15L Funding">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">Sports Honor</span>
-                                <h6 class="press-headline">National Level Martial Arts Championship Gold</h6>
+                                <span class="press-source">Mana Telangana</span>
+                                <h6 class="press-headline">MSME Hackathon 6.0: 168 Student Project Submissions with ₹15L Funding Support</h6>
                             </div>
                         </div>
 
-                        <!-- Row 3: Institutional Notifications & Graduation Press -->
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/autonomous.jpg', 'UGC Gazette: Autonomous Status Conferred for 5 Years')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper9.jpg', 'Namasthe Telangana: Nurturing Innovation at MSME Hackathon 6.0 - 168 Projects Displayed')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/autonomous.jpg" alt="Official UGC Autonomy Notification">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper9.jpg" alt="Namasthe Telangana: Nurturing Youth Innovation at MSME Hackathon 6.0">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">UGC Gazette</span>
-                                <h6 class="press-headline">Autonomous Status Conferred for 5 Academic Years</h6>
+                                <span class="press-source">Namasthe Telangana</span>
+                                <h6 class="press-headline">MSME Hackathon 6.0: Nurturing Youth Innovation Across 6 Thematic Sectors</h6>
                             </div>
                         </div>
 
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/naac2.jpg', 'NAAC Council: Accredited with National B++ Grade Benchmark')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper10.jpg', 'Andhra Prabha: Tremendous Response to MSME Idea Hackathon 6.0 with ₹15 Lakh Grant')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/naac2.jpg" alt="Official NAAC B++ Accreditation Release">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper10.jpg" alt="Andhra Prabha: Tremendous Response to MSME Hackathon 6.0 with ₹15L Grant">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">NAAC Council</span>
-                                <h6 class="press-headline">Accredited with Prestigious B++ Quality Benchmark</h6>
+                                <span class="press-source">Andhra Prabha</span>
+                                <h6 class="press-headline">Tremendous Response to MSME Hackathon 6.0 with Up to ₹15 Lakhs Grant</h6>
                             </div>
                         </div>
 
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/pamplet1.jpg', 'Academic Bulletin: 17 Years of Engineering Academic Excellence')">
+                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper11.jpg', 'Eenadu Daily: MSME Internal Hackathon 6.0 Successfully Organized at Trinity College')">
                             <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/pamplet1.jpg" alt="Official 17 Years Excellence Release">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
+                                <img src="assets/Gallery/paper11.jpg" alt="Eenadu Daily: MSME Internal Hackathon 6.0 at Trinity College">
                             </div>
                             <div class="press-info">
-                                <span class="press-source">Campus Bulletin</span>
-                                <h6 class="press-headline">17 Years of Engineering Academic Excellence</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/College Event/feli2.jpg', 'Special Feature: Annual Convocation & Graduation Ceremony')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/College Event/feli2.jpg" alt="Graduation Day and Convocation Ceremony">
-                                <div class="press-overlay-badge">
-                                    <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                </div>
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Special Feature</span>
-                                <h6 class="press-headline">Annual Convocation &amp; Graduation Honors Ceremony</h6>
+                                <span class="press-source">Eenadu Daily</span>
+                                <h6 class="press-headline">MSME Idea Hackathon 6.0 Successfully Conducted at Trinity Campus</h6>
                             </div>
                         </div>
                     </div>
@@ -378,15 +329,18 @@
             <div class="news-lightbox-box">
                 <button type="button" class="news-lightbox-close" onclick="closeNewsLightbox(event)" aria-label="Close modal">&times;</button>
                 <img id="news-lightbox-target" src="" alt="Zoomed Newspaper Clipping">
+                <div id="news-lightbox-caption" style="padding: 12px 20px; background: #ffffff; border-top: 1px solid #f1f5f9; font-size: 14px; font-weight: 600; color: #1e293b; text-align: center;"></div>
             </div>
         </div>
         <script>
             function openNewsLightbox(src, caption) {
                 const modal = document.getElementById('news-lightbox-modal');
                 const img = document.getElementById('news-lightbox-target');
+                const captionEl = document.getElementById('news-lightbox-caption');
                 if (modal && img) {
                     img.src = src;
                     img.alt = caption || 'News Article';
+                    if (captionEl) captionEl.textContent = caption || '';
                     modal.classList.add('active');
                     document.body.style.overflow = 'hidden';
                 }

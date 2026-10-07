@@ -92,10 +92,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Grand Academic Felicitation Ceremony</h4>
-                        <p>Distinguished guests, faculty, and academic rank holders honored at TCEK auditorium.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="events" onclick="openGalleryModal(this)">
@@ -105,10 +101,6 @@
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Faculty &amp; Student Honors Presentation</h4>
-                        <p>Celebrating research contributions, teaching excellence, and university toppers.</p>
                     </div>
                 </div>
 
@@ -120,10 +112,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>College Assembly &amp; Annual Gathering</h4>
-                        <p>Faculty members, management, and staff at the college ceremonial assembly.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="events" onclick="openGalleryModal(this)">
@@ -133,10 +121,6 @@
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Cultural Fest &amp; Youth Celebrations</h4>
-                        <p>Vibrant youth festival featuring dance, music, drama, and artistic performances.</p>
                     </div>
                 </div>
 
@@ -148,10 +132,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Traditional Day &amp; Heritage Gala</h4>
-                        <p>Celebrating Indian cultural diversity and state heritage with traditional attire.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="events" onclick="openGalleryModal(this)">
@@ -162,10 +142,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Annual Sports Meet &amp; Athletics</h4>
-                        <p>Inter-departmental cricket, volleyball, track events, and championship matches.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="events" onclick="openGalleryModal(this)">
@@ -175,10 +151,6 @@
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Campus Day Festival Celebrations</h4>
-                        <p>Student clubs, cultural societies, and technical forums showcase their creativity.</p>
                     </div>
                 </div>
 
@@ -191,10 +163,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>UGC Autonomous Status Conferred</h4>
-                        <p>Official celebration of UGC &amp; JNTUH Autonomous status for 5 academic years.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="milestones" onclick="openGalleryModal(this)">
@@ -205,10 +173,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>NAAC 'B++' Grade Accreditation</h4>
-                        <p>First &amp; only accredited engineering college in Peddapalli district.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="milestones" onclick="openGalleryModal(this)">
@@ -218,10 +182,6 @@
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Campus Recruitment Drives &amp; Offers</h4>
-                        <p>Corporate recruitment teams visiting TCEK for campus selection and internships.</p>
                     </div>
                 </div>
 
@@ -234,10 +194,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Advanced Computer Science Lab</h4>
-                        <p>High-performance computing workstations with high-speed fiber internet for AI &amp; Full Stack development.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="campus" onclick="openGalleryModal(this)">
@@ -247,10 +203,6 @@
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Electronics &amp; VLSI Workstation</h4>
-                        <p>Equipped with digital oscilloscopes, microcontrollers, FPGA boards, and signal generators.</p>
                     </div>
                 </div>
 
@@ -262,10 +214,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Central Knowledge Resource Center</h4>
-                        <p>Spacious central library with digital e-journals, DELNET access, and thousands of volumes.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="campus" onclick="openGalleryModal(this)">
@@ -275,10 +223,6 @@
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Main Campus Greens &amp; Academic Quad</h4>
-                        <p>Sprawling lush green serene campus creating an inspiring environment for higher technical learning.</p>
                     </div>
                 </div>
 
@@ -290,10 +234,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Engineering Innovation Workshops</h4>
-                        <p>Hands-on engineering laboratories for electrical wiring, machines, and mechanics.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="campus" onclick="openGalleryModal(this)">
@@ -303,10 +243,6 @@
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Air-Conditioned Seminar Hall</h4>
-                        <p>Acoustically treated auditorium for expert guest lectures, workshops, and placement talks.</p>
                     </div>
                 </div>
 
@@ -318,10 +254,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Smart Interactive Classrooms</h4>
-                        <p>Modern interactive lecture halls equipped with AV technology for modern hybrid pedagogy.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="campus" onclick="openGalleryModal(this)">
@@ -331,10 +263,6 @@
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Outdoor Sports &amp; Recreation Grounds</h4>
-                        <p>Dedicated courts for cricket, volleyball, kabaddi, and athletic fitness activities.</p>
                     </div>
                 </div>
 
@@ -346,10 +274,6 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Student Innovation &amp; Project Expo</h4>
-                        <p>Annual engineering exhibition featuring IoT prototypes, smart robotics, and software models.</p>
-                    </div>
                 </div>
 
                 <div class="gallery-modern-card" data-category="campus" onclick="openGalleryModal(this)">
@@ -359,10 +283,6 @@
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Central Auditorium &amp; Stage</h4>
-                        <p>Main events venue hosting orientation programs, convocation ceremonies, and fests.</p>
                     </div>
                 </div>
 
@@ -374,109 +294,123 @@
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Administrative Headquarters Block</h4>
-                        <p>Principal, Directors, Examination Cell, and Student Affairs central offices.</p>
-                    </div>
                 </div>
 
                 <!-- ================= PRESS & MEDIA CLIPPINGS ================= -->
                 <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
                     <div class="gallery-card-thumb">
                         <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper.jpg" alt="Eenadu Press: Autonomous Status Announcement">
+                        <img src="assets/Gallery/paper1.jpg" alt="Mana Telangana: Yuva Sangam - Trinity Student Selected for National Tour to IIT Guwahati">
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>UGC Autonomous Status in Major Media</h4>
-                        <p>Regional media reports highlighting Trinity's landmark milestone granted by UGC.</p>
                     </div>
                 </div>
 
                 <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
                     <div class="gallery-card-thumb">
                         <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper1.jpg" alt="Sakshi Press: Campus Placement Record">
+                        <img src="assets/Gallery/paper2.jpg" alt="Prajakranthi: Founder Chairman Felicitates Saniya on National Yuva Sangam Selection">
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Placement Success &amp; Corporate Offers</h4>
-                        <p>Prominent newspaper feature on Peddapalli students securing lucrative software packages.</p>
                     </div>
                 </div>
 
                 <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
                     <div class="gallery-card-thumb">
                         <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper2.jpg" alt="Andhra Jyothi: NAAC Accreditation Recognition">
+                        <img src="assets/Gallery/paper3.jpg" alt="Andhra Prabha: Vigilance Inspection of Quality &amp; Infrastructure Across Engineering Colleges">
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Pioneer NAAC Accredited Institution</h4>
-                        <p>Coverage on NAAC Peer Team assessment and quality education benchmarks.</p>
                     </div>
                 </div>
 
                 <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
                     <div class="gallery-card-thumb">
                         <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper3.jpg" alt="Namasthe Telangana: Technical Symposium">
+                        <img src="assets/Gallery/paper4.jpg" alt="State Daily: Quality Benchmark &amp; Lab Infrastructure Vigilance Inspection">
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Technical Symposium &amp; Research Expo</h4>
-                        <p>Press reporting on national technical paper presentations and hackathons.</p>
                     </div>
                 </div>
 
                 <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
                     <div class="gallery-card-thumb">
                         <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper4.jpg" alt="State Daily: Academic Honors & Awards">
+                        <img src="assets/Gallery/paper5.jpg" alt="Andhra Prabha: Smart India Hackathon 2026 Internal Round Inaugurated at Trinity">
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>Academic Honors &amp; Merit Awards</h4>
-                        <p>State news reports applauding TCEK students' top ranks in university examinations.</p>
                     </div>
                 </div>
 
                 <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
                     <div class="gallery-card-thumb">
                         <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper5.jpg" alt="District News: Educational Leadership">
+                        <img src="assets/Gallery/paper6.jpg" alt="Mana Telangana: Smart India Hackathon 2026 - Innovation &amp; Prototype Exhibition at Trinity">
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
                         </div>
-                    </div>
-                    <div class="gallery-card-info">
-                        <h4>District Educational Leadership</h4>
-                        <p>Print media spotlight on Trinity's contribution to engineering education in rural Telangana.</p>
                     </div>
                 </div>
 
                 <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
                     <div class="gallery-card-thumb">
                         <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/papers.jpg" alt="Comprehensive Media Clippings Feature">
+                        <img src="assets/Gallery/paper7.jpg" alt="Namasthe Telangana: Smart India Hackathon 2026 Organized at Trinity Autonomous College">
                         <div class="gallery-card-overlay">
                             <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
                         </div>
                     </div>
-                    <div class="gallery-card-info">
-                        <h4>Comprehensive Press Coverage Roundup</h4>
-                        <p>Full-page collection of newspaper reviews and academic recognitions across years.</p>
+                </div>
+
+                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
+                    <div class="gallery-card-thumb">
+                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
+                        <img src="assets/Gallery/paper8.jpg" alt="Mana Telangana: MSME Idea Hackathon 6.0 Conducted with 168 Projects and ₹15L Funding">
+                        <div class="gallery-card-overlay">
+                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                        </div>
                     </div>
+                </div>
+
+                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
+                    <div class="gallery-card-thumb">
+                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
+                        <img src="assets/Gallery/paper9.jpg" alt="Namasthe Telangana: Nurturing Innovation at MSME Hackathon 6.0 - 168 Projects Displayed">
+                        <div class="gallery-card-overlay">
+                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
+                    <div class="gallery-card-thumb">
+                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
+                        <img src="assets/Gallery/paper10.jpg" alt="Andhra Prabha: Tremendous Response to MSME Idea Hackathon 6.0 with ₹15 Lakh Grant">
+                        <div class="gallery-card-overlay">
+                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
+                    <div class="gallery-card-thumb">
+                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
+                        <img src="assets/Gallery/paper11.jpg" alt="Eenadu Daily: MSME Internal Hackathon 6.0 Successfully Organized at Trinity College">
+                        <div class="gallery-card-overlay">
+                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="gallery-empty-state" class="gallery-empty-state" style="display: none;">
+                    <div class="gallery-empty-icon"><i class="fas fa-newspaper"></i></div>
+                    <h4>No Photos Currently Listed</h4>
+                    <p>No photos found for this category.</p>
                 </div>
             </div>
         </section>
@@ -529,14 +463,20 @@
             if (btnElement) btnElement.classList.add('active');
 
             const cards = document.querySelectorAll('.gallery-modern-card');
+            let visibleCount = 0;
             cards.forEach(card => {
                 const cardCat = card.getAttribute('data-category');
                 if (category === 'all' || cardCat === category) {
                     card.style.display = 'flex';
+                    visibleCount++;
                 } else {
                     card.style.display = 'none';
                 }
             });
+            const emptyMsg = document.getElementById('gallery-empty-state');
+            if (emptyMsg) {
+                emptyMsg.style.display = (visibleCount === 0) ? 'flex' : 'none';
+            }
             refreshActiveGalleryList();
         }
 
@@ -547,7 +487,7 @@
                 const title = card.querySelector('.gallery-card-info h4');
                 return {
                     src: img ? img.src : '',
-                    caption: title ? title.textContent : ''
+                    caption: title ? title.textContent : (img && img.alt ? img.alt : '')
                 };
             });
         }
