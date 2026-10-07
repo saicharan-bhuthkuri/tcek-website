@@ -3371,10 +3371,27 @@ footer {
     background: radial-gradient(circle at center, rgba(244, 63, 94, 0.07) 0%, #fff1f2 100%);
 }
 
+/* H&S (Teal / Ocean) */
+.theme-hs {
+    --course-accent: linear-gradient(90deg, #0284c7, #0369a1);
+    --course-border: rgba(2, 132, 199, 0.3);
+    --icon-bg: rgba(2, 132, 199, 0.12);
+    --icon-color: #0284c7;
+    --icon-shadow: rgba(2, 132, 199, 0.2);
+    --icon-hover-bg: linear-gradient(135deg, #0ea5e9, #0284c7);
+    --btn-hover-bg: linear-gradient(135deg, #0ea5e9, #0284c7);
+    --btn-shadow: rgba(2, 132, 199, 0.3);
+}
+
+.theme-hs .course-card-banner {
+    background: radial-gradient(circle at center, rgba(2, 132, 199, 0.07) 0%, #f0f9ff 100%);
+}
+
 .flagship-card {
     max-width: 500px;
     width: 100%;
 }
+
 
 /* --- Mission Section Redesign (Split Layout) --- */
 .mission-wrapper {

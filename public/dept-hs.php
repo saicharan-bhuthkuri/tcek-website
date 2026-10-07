@@ -1,408 +1,495 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>H&S Department - TCEK</title>
+    <title>Department of Humanities &amp; Sciences - TCEK</title>
     <?php include 'head.php'; ?>
-    <style>
-        /* --- Global & Desktop Styles --- */
-        
-        .dept-header {
-            background: linear-gradient(rgba(0, 184, 148, 0.8), rgba(0, 184, 148, 0.8)), url('assets/top-header/banner.jpg');
-            background-size: cover;
-            background-position: center;
-            padding: 100px 0;
-            text-align: center;
-            color: #fff;
-        }
-
-        .page-header {
-            padding: 60px 15px 30px;
-            text-align: center;
-        }
-
-        .page-header h1 {
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            color: #2d3436;
-        }
-
-        .page-header p {
-            color: #636e72;
-            font-size: 1.1rem;
-        }
-
-        .section-title {
-            font-size: 2rem;
-            color: #00b894;
-            margin-bottom: 30px;
-            font-weight: 700;
-            text-align: center;
-        }
-
-        .content-box {
-            background: #fff;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
-            margin-bottom: 40px;
-        }
-
-        .dept-desc-text {
-            line-height: 1.8;
-            color: #636e72;
-            font-size: 1.05rem;
-        }
-        
-        .mission-list {
-            list-style-type: none;
-            padding: 0;
-        }
-        
-        .mission-list li {
-            margin-bottom: 15px;
-            padding-left: 20px;
-            position: relative;
-            color: #636e72;
-             line-height: 1.8;
-        }
-        
-        .mission-list li::before {
-            content: "•";
-            color: #00b894;
-            font-weight: bold;
-            display: inline-block;
-            width: 1em;
-            margin-left: -1em;
-        }
-
-        /* HOD Section */
-        .hod-card {
-            display: flex;
-            gap: 30px;
-            align-items: flex-start;
-        }
-        
-        .hod-img {
-            width: 250px;
-            height: 300px;
-            object-fit: cover;
-            border-radius: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            flex-shrink: 0;
-        }
-
-        .hod-info h3 {
-            color: #2d3436;
-            margin-bottom: 5px;
-            font-size: 1.8rem;
-        }
-        
-        .hod-info h4 {
-            color: #00b894;
-            margin-bottom: 20px;
-            font-size: 1.2rem;
-            font-weight: 600;
-        }
-
-        /* Faculty Table */
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-        }
-
-        .faculty-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            background: #fff;
-        }
-
-        .faculty-table th, .faculty-table td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid #eee;
-        }
-
-        .faculty-table th {
-            background: #00b894;
-            color: white;
-            font-weight: 600;
-        }
-
-        .faculty-table tr:hover {
-            background-color: #f9f9f9;
-        }
-
-        /* Info Grid (Syllabus & PEOs) */
-        .info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 30px;
-            margin-bottom: 40px;
-        }
-
-        .download-btn {
-            display: inline-block; 
-            background: #00b894; 
-            color: white; 
-            padding: 15px 30px; 
-            border-radius: 50px; 
-            text-decoration: none; 
-            font-weight: 600; 
-            margin-top: 15px;
-            transition: transform 0.2s;
-        }
-
-        .download-btn:hover {
-            transform: translateY(-2px);
-        }
-
-        /* Gallery */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
-        }
-
-        .gallery-item {
-            border-radius: 8px;
-            overflow: hidden;
-            height: 200px;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-        }
-
-        .gallery-item:hover {
-            transform: scale(1.02);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        }
-
-        .gallery-item img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        /* --- Mobile Responsive Overrides --- */
-        @media only screen and (max-width: 900px) {
-            
-            /* Header adjustments */
-            .dept-header {
-                padding: 50px 0;
-            }
-
-            .page-header h1 {
-                font-size: 1.8rem;
-            }
-            
-            .content-box {
-                padding: 25px 20px;
-            }
-
-            .section-title {
-                font-size: 1.6rem;
-            }
-
-            /* HOD Section Stack */
-            .hod-card {
-                flex-direction: column;
-                align-items: center;
-                text-align: center;
-            }
-
-            .hod-img {
-                width: 100%;
-                max-width: 280px;
-                height: auto;
-                aspect-ratio: 3/4;
-                margin-bottom: 20px;
-            }
-
-            /* Info Grid Stack */
-            .info-grid {
-                grid-template-columns: 1fr;
-                gap: 25px;
-            }
-
-            /* Gallery Adjustment */
-            .gallery-grid {
-                grid-template-columns: repeat(2, 1fr); /* 2 columns on mobile */
-                gap: 10px;
-            }
-
-            /* Faculty Table Card View Transformation */
-            .faculty-table thead {
-                display: none; /* Hide header */
-            }
-
-            .faculty-table, 
-            .faculty-table tbody, 
-            .faculty-table tr, 
-            .faculty-table td {
-                display: block;
-                width: 100%;
-            }
-
-            .faculty-table tr {
-                margin-bottom: 20px;
-                border: 1px solid #e0e0e0;
-                border-radius: 10px;
-                box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-                background: #fff;
-                padding: 10px;
-            }
-
-            .faculty-table td {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                text-align: right;
-                padding: 10px 0;
-                border-bottom: 1px solid #f0f0f0;
-                font-size: 0.95rem;
-            }
-
-            .faculty-table td:last-child {
-                border-bottom: none;
-            }
-
-            .faculty-table td::before {
-                content: attr(data-label);
-                float: left;
-                font-weight: 700;
-                color: #00b894;
-                text-transform: uppercase;
-                font-size: 0.85rem;
-                margin-right: 15px;
-                text-align: left;
-            }
-        }
-
-        /* Ultra-small screens */
-        @media only screen and (max-width: 480px) {
-            .gallery-grid {
-                grid-template-columns: 1fr; /* 1 column on very small screens */
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="css/department.css">
 </head>
 <body>
     <?php $page = 'departments'; include 'header.php'; ?>
 
-    <section class="dept-header">
-        <h1>Department of Humanities and Sciences</h1>
-        <p>Foundation for Engineering Excellence</p>
-        <p><a href="departments.php" style="color: #fff; text-decoration: underline;">Departments</a> / H&S</p>
-    </section>
-
-    <div class="container" style="padding: 30px 20px;">
-        
-        <!-- About Department -->
-        <div class="content-box">
-            <h2 class="section-title">About Department</h2>
-            <p class="dept-desc-text" style="margin-bottom: 15px;">
-                The department of Humanities and Sciences (H & S) comprises the disciplines of English, Mathematics, Physics and Chemistry. A blend of experience and enthusiasm, the department plays an instrumental role in moulding students from the first year itself.
-            </p>
-            <p class="dept-desc-text">
-                The objective of the department is to prepare students to face challenges in a globalised world by imparting intensive training in English Language and Communication Skills, Mathematics, Physics and Chemistry that will help them apply their core knowledge to related fields. The department caters to the placement related needs of the students by training them in areas like Verbal Ability, Group Discussions, Interview Techniques, Quantitative Aptitude, etc.
-            </p>
-        </div>
-
-        <!-- HOD Section -->
-        <div class="content-box">
-            <h2 class="section-title">Head of the Department</h2>
-            <div class="hod-card">
-                <img src="assets/Dept/hod-h&s.jpeg" alt="PADMINI PACHWA" class="hod-img" onerror="this.src='assets/Dept/hod-eee.jpeg'"> <!-- Fallback to EEE HOD if H&S not found temp -->
-                <div class="hod-info">
-                    <h3>Mrs. Padmini Pachwa</h3>
-                    <h4>HOD & Assistant Professor</h4>
-                    <p class="dept-desc-text" style="margin-bottom: 15px;">
-                        PADMINI PACHWA, Head, Department of Humanities & Sciences has a total experience of more than 15 years. Out of which, she also has an industry exposure in marketing and sales. Apart from that, she has comprehensive teaching experience, which also includes training and development experience.
-                    </p>
-                    <p class="dept-desc-text">
-                        She completed her Msc in 2001. She is skilled primarily in the training of students and making them ready for industry. She also publishes a number of research papers both national and international.
-                    </p>
+    <!-- Department Hero Header -->
+    <header class="dept-portal-hero">
+        <div class="container">
+            <div class="dept-hero-breadcrumbs">
+                <a href="index.php"><i class="fas fa-home"></i> Home</a>
+                <span class="sep"><i class="fas fa-chevron-right"></i></span>
+                <a href="departments.php">Departments</a>
+                <span class="sep"><i class="fas fa-chevron-right"></i></span>
+                <span>Humanities &amp; Sciences</span>
+            </div>
+            <span class="dept-hero-badge">
+                <i class="fas fa-atom"></i> First Year Foundation &bull; UGC Autonomous
+            </span>
+            <h1 class="dept-hero-title">Department of Humanities &amp; Sciences</h1>
+            <p class="dept-hero-tagline">Building the core scientific, mathematical, and communicative foundation for engineering excellence since 2008</p>
+            
+            <div class="dept-hero-stats-grid">
+                <div class="dept-hero-stat-card">
+                    <div class="dept-hero-stat-icon"><i class="fas fa-calendar-check"></i></div>
+                    <div class="dept-hero-stat-text">
+                        <span class="stat-num">2008</span>
+                        <span class="stat-lbl">Established</span>
+                    </div>
+                </div>
+                <div class="dept-hero-stat-card">
+                    <div class="dept-hero-stat-icon"><i class="fas fa-users-cog"></i></div>
+                    <div class="dept-hero-stat-text">
+                        <span class="stat-num">21+ Faculty</span>
+                        <span class="stat-lbl">Expert Mentors</span>
+                    </div>
+                </div>
+                <div class="dept-hero-stat-card">
+                    <div class="dept-hero-stat-icon"><i class="fas fa-flask"></i></div>
+                    <div class="dept-hero-stat-text">
+                        <span class="stat-num">4 Science Labs</span>
+                        <span class="stat-lbl">Physics &amp; Chemistry</span>
+                    </div>
+                </div>
+                <div class="dept-hero-stat-card">
+                    <div class="dept-hero-stat-icon"><i class="fas fa-award"></i></div>
+                    <div class="dept-hero-stat-text">
+                        <span class="stat-num">TCEK</span>
+                        <span class="stat-lbl">Counselling Code</span>
+                    </div>
                 </div>
             </div>
         </div>
+    </header>
 
-        <!-- Faculty Section -->
-        <div class="content-box">
-            <h2 class="section-title">Faculty</h2>
-            <div class="table-responsive">
-                <table class="faculty-table">
-                    <thead>
-                        <tr>
-                            <th>S.No</th>
-                            <th>Name of the Faculty</th>
-                            <th>Designation</th>
-                            <th>Department</th>
-                            <th>Qualification</th>
-                            <th>Experience</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr><td data-label="S.No">1</td><td data-label="Name">Dr. Ashok Kumar Vootla</td><td data-label="Designation">Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">Ph.D</td><td data-label="Exp">17 Years</td></tr>
-                        <tr><td data-label="S.No">2</td><td data-label="Name">P.PADMIINI</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.SC (MATHEMATICS)</td><td data-label="Exp">10 Years</td></tr>
-                        <tr><td data-label="S.No">3</td><td data-label="Name">N.MAHENDAR</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.A (ENGLISH)</td><td data-label="Exp">7 Years</td></tr>
-                        <tr><td data-label="S.No">4</td><td data-label="Name">G.SRINIVAS</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.A (ENGLISH)</td><td data-label="Exp">3 Years</td></tr>
-                        <tr><td data-label="S.No">5</td><td data-label="Name">ASIA BEGUM</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.A (ENGLISH)</td><td data-label="Exp">3 Years</td></tr>
-                        <tr><td data-label="S.No">6</td><td data-label="Name">V.SRINIVAS</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.SC(CHEMISTRY)</td><td data-label="Exp">6 Years</td></tr>
-                        <tr><td data-label="S.No">7</td><td data-label="Name">HUMERA AMREEN</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.SC(CHEMISTRY)</td><td data-label="Exp">3 Years</td></tr>
-                        <tr><td data-label="S.No">8</td><td data-label="Name">M.SUSHMA RANI</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.SC(CHEMISTRY)</td><td data-label="Exp">1 Year</td></tr>
-                        <tr><td data-label="S.No">9</td><td data-label="Name">B.JHASI RANI</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.SC(PHYSICS)</td><td data-label="Exp">3 Years</td></tr>
-                        <tr><td data-label="S.No">10</td><td data-label="Name">T.NANDITHA</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.SC(PHYSICS)</td><td data-label="Exp">2 Years</td></tr>
-                        <tr><td data-label="S.No">11</td><td data-label="Name">SD.KALIMUNISSA</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.SC(PHYSICS)</td><td data-label="Exp">3 Years</td></tr>
-                        <tr><td data-label="S.No">12</td><td data-label="Name">B.RAMAMURTHY</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.TECH (MECHANICAL)</td><td data-label="Exp">5 Years</td></tr>
-                        <tr><td data-label="S.No">13</td><td data-label="Name">S.VINAY KUMAR</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.TECH (MECHANICAL)</td><td data-label="Exp">4 Years</td></tr>
-                        <tr><td data-label="S.No">14</td><td data-label="Name">A.VIKAS</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.TECH (MECHANICAL)</td><td data-label="Exp">1 Year</td></tr>
-                        <tr><td data-label="S.No">15</td><td data-label="Name">V.MAMATHA</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.TECH(ECE)</td><td data-label="Exp">3 Years</td></tr>
-                        <tr><td data-label="S.No">16</td><td data-label="Name">T.SAMPATH KUMAR</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.TECH(ECE)</td><td data-label="Exp">2 Years</td></tr>
-                        <tr><td data-label="S.No">17</td><td data-label="Name">J.SURESH</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.TECH(EEE)</td><td data-label="Exp">3 Years</td></tr>
-                        <tr><td data-label="S.No">18</td><td data-label="Name">A.SRILATHA</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.B.A</td><td data-label="Exp">3 Years</td></tr>
-                        <tr><td data-label="S.No">19</td><td data-label="Name">N.ARUNA JYOTHI</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.B.A</td><td data-label="Exp">3 Year</td></tr>
-                        <tr><td data-label="S.No">20</td><td data-label="Name">K.SRINIVAS</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">M.B.A</td><td data-label="Exp">3 Year</td></tr>
-                        <tr><td data-label="S.No">21</td><td data-label="Name">A.VIJAYA</td><td data-label="Designation">Assistant Professor</td><td data-label="Dept">H&S</td><td data-label="Qual">MLIC (LIBRARIAN)</td><td data-label="Exp">11 Year</td></tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    <!-- Main Portal Area with Sticky Sidebar -->
+    <main class="dept-portal-wrapper">
+        <div class="container">
 
-        <!-- Syllabus & PEOs Grid -->
-        <div class="info-grid">
-            <div class="content-box" style="margin-bottom: 0; text-align: center;">
-                <h2 class="section-title">Syllabus</h2>
-                <a href="assets/Dept/HS_Syllabus.pdf" target="_blank" class="download-btn">
-                    <i class="fas fa-download" style="margin-right: 10px;"></i> Download Syllabus
-                </a>
-            </div>
+            <!-- Mobile Quick Navigation Bar -->
+            <nav class="dept-mobile-nav-bar" aria-label="Department Mobile Navigation">
+                <a href="#overview" class="dept-mobile-nav-pill active"><i class="fas fa-info-circle"></i> About</a>
+                <a href="#vision" class="dept-mobile-nav-pill"><i class="fas fa-bullseye"></i> Vision</a>
+                <a href="#hod" class="dept-mobile-nav-pill"><i class="fas fa-user-tie"></i> HOD</a>
+                <a href="#faculty" class="dept-mobile-nav-pill"><i class="fas fa-chalkboard-teacher"></i> Faculty</a>
+                <a href="#curriculum" class="dept-mobile-nav-pill"><i class="fas fa-file-pdf"></i> Syllabus</a>
+                <a href="#peos" class="dept-mobile-nav-pill"><i class="fas fa-award"></i> PEOs</a>
+                <a href="#gallery" class="dept-mobile-nav-pill"><i class="fas fa-images"></i> Gallery</a>
+            </nav>
 
-            <div class="content-box" style="margin-bottom: 0; text-align: center;">
-                <h2 class="section-title">PEOs & PSOs</h2>
-                <p style="margin-bottom: 20px; color: #636e72;">PEOs & PSOs of B.Tech (UG Program)</p>
-                <a href="assets/Dept/peos_psos.docx" class="download-btn" style="background: #0984e3;">
-                    Click Here to View
-                </a>
-            </div>
-        </div>
-
-        <!-- Gallery Section -->
-        <div class="content-box">
-            <h2 class="section-title">Gallery</h2>
-            <div class="gallery-grid">
+            <div class="dept-portal-grid">
+                
+                <!-- Left Sticky Sidebar -->
                 <?php 
-                $images = ['1.jpeg', '2.jpeg', '3.jpeg', '4.jpeg', '5.jpeg', '6.jpeg', '7.jpeg', '8.jpeg', '9.jpeg', '10.jpeg'];
-                foreach($images as $img): 
+                $active_dept = 'hs';
+                $dept_syllabus_link = 'assets/Dept/HS_Syllabus.pdf';
+                $dept_syllabus_name = 'H&S Foundation Syllabus';
+                $dept_peos_link = 'assets/Dept/peos_psos.docx';
+                include 'dept-sidebar.php'; 
                 ?>
-                <div class="gallery-item">
-                    <img src="assets/Dept/<?php echo $img; ?>" alt="Department Event">
+
+                <!-- Right Main Content -->
+                <div class="dept-main-content">
+
+                    <!-- Section 1: Overview / About -->
+                    <section class="dept-section-card" id="overview">
+                        <div class="dept-section-head">
+                            <div class="dept-section-icon-badge"><i class="fas fa-info-circle"></i></div>
+                            <h2>About the Department</h2>
+                        </div>
+                        <p class="dept-section-p">
+                            The Department of Humanities and Sciences (H&amp;S) comprises the foundational disciplines of English, Mathematics, Physics, Chemistry, and Environmental Studies. Serving as the academic launchpad for all engineering branches, the department plays an indispensable role in molding first-year students into confident, scientifically rigorous technocrats.
+                        </p>
+                        <p class="dept-section-p">
+                            Our primary objective is to equip students with strong analytical thinking, mathematical modeling capabilities, physical intuition, and fluent communication skills. The department operates specialized English Language Communication Skills (ELCS) &amp; Advanced Communication Skills (AECS) multimedia labs, along with state-of-the-art Engineering Physics and Engineering Chemistry laboratories.
+                        </p>
+                        <p class="dept-section-p">
+                            In addition to academic curricula, H&amp;S faculty drive intensive placement preparation, training undergraduates early in verbal ability, quantitative aptitude, group discussions, and personal interview etiquette.
+                        </p>
+
+                        <!-- Highlights 4-Grid -->
+                        <div class="dept-highlights-grid">
+                            <div class="dept-highlight-item">
+                                <i class="fas fa-language"></i>
+                                <div>
+                                    <h5>Language &amp; Communication Labs</h5>
+                                    <p>Multimedia software for phonetics, interactive group discussions, and presentation skills.</p>
+                                </div>
+                            </div>
+                            <div class="dept-highlight-item">
+                                <i class="fas fa-square-root-alt"></i>
+                                <div>
+                                    <h5>Applied Engineering Mathematics</h5>
+                                    <p>Matrices, calculus, differential equations, and numerical analysis for engineers.</p>
+                                </div>
+                            </div>
+                            <div class="dept-highlight-item">
+                                <i class="fas fa-flask"></i>
+                                <div>
+                                    <h5>Physics &amp; Chemistry Labs</h5>
+                                    <p>Optics, laser spectrometers, semiconductor bandgap kits, and water analysis benches.</p>
+                                </div>
+                            </div>
+                            <div class="dept-highlight-item">
+                                <i class="fas fa-user-check"></i>
+                                <div>
+                                    <h5>Personality &amp; Aptitude Grooming</h5>
+                                    <p>Foundational aptitude and soft-skills bootcamps preparing students for campus hiring.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 2: Vision & Mission -->
+                    <section class="dept-section-card" id="vision">
+                        <div class="dept-section-head">
+                            <div class="dept-section-icon-badge"><i class="fas fa-bullseye"></i></div>
+                            <h2>Vision &amp; Mission</h2>
+                        </div>
+                        <div class="dept-vision-mission-grid">
+                            <div class="dept-vm-card">
+                                <div class="dept-vm-title">
+                                    <i class="fas fa-eye"></i>
+                                    <span>Department Vision</span>
+                                </div>
+                                <p>
+                                    To establish a strong scientific, analytical, and communicative foundation for engineering students, fostering critical thinking, ethical integrity, and lifelong learning attitudes essential for global leadership.
+                                </p>
+                            </div>
+                            <div class="dept-vm-card theme-mission">
+                                <div class="dept-vm-title">
+                                    <i class="fas fa-bullseye"></i>
+                                    <span>Department Mission</span>
+                                </div>
+                                <ul class="dept-mission-list">
+                                    <li>Impart in-depth knowledge in basic sciences, mathematics, and humanities to build solid engineering foundations.</li>
+                                    <li>Develop students' communication prowess, soft skills, and professional conduct for global workplaces.</li>
+                                    <li>Provide experiential laboratory learning in physics, chemistry, and language computer modules.</li>
+                                    <li>Cultivate curiosity, moral ethics, and environmental stewardship across the college community.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 3: Head of the Department (HOD) -->
+                    <section class="dept-section-card" id="hod">
+                        <div class="dept-section-head">
+                            <div class="dept-section-icon-badge"><i class="fas fa-user-tie"></i></div>
+                            <h2>Head of the Department</h2>
+                        </div>
+                        <div class="dept-hod-showcase">
+                            <div class="dept-hod-photo-wrap">
+                                <img src="assets/Dept/hod-h&s.jpeg" alt="Mrs. Padmini Pachwa - HOD H&amp;S" class="dept-hod-photo">
+                                <span class="dept-hod-badge-ribbon"><i class="fas fa-check-circle"></i> Department Head</span>
+                            </div>
+                            <div class="dept-hod-details">
+                                <h3>Mrs. Padmini Pachwa</h3>
+                                <span class="dept-hod-desig">Head of Department &amp; Assistant Professor</span>
+                                
+                                <div class="dept-hod-credentials-row">
+                                    <span class="dept-cred-chip"><i class="fas fa-graduation-cap"></i> M.Sc (Mathematics)</span>
+                                    <span class="dept-cred-chip"><i class="fas fa-briefcase"></i> Industry &amp; Academic Background</span>
+                                    <span class="dept-cred-chip"><i class="fas fa-clock"></i> 15+ Years Experience</span>
+                                </div>
+
+                                <p class="dept-hod-bio">
+                                    Mrs. Padmini Pachwa, Head of the Department of Humanities &amp; Sciences, brings over 15 years of multifaceted academic, training, and institutional experience. She completed her M.Sc in Mathematics in 2001 and has guided thousands of first-year engineering students through their crucial academic transition.
+                                </p>
+                                <p class="dept-hod-bio">
+                                    With specialized expertise in student mentoring, personality enhancement, and mathematical pedagogy, she has published several papers in reputed national and international journals. Under her guidance, the department focuses on disciplined study habits, communicative self-confidence, and foundational scientific competence.
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 4: Faculty Directory -->
+                    <section class="dept-section-card" id="faculty">
+                        <div class="dept-section-head">
+                            <div class="dept-section-icon-badge"><i class="fas fa-chalkboard-teacher"></i></div>
+                            <h2>Faculty Directory</h2>
+                        </div>
+                        <p class="dept-section-p" style="margin-bottom: 20px;">
+                            Our diverse faculty team includes subject matter specialists in Mathematics, Physics, Chemistry, English, and Management.
+                        </p>
+                        <div class="dept-table-container">
+                            <table class="dept-faculty-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 60px;">S.No</th>
+                                        <th>Name of the Faculty</th>
+                                        <th>Designation</th>
+                                        <th>Discipline / Dept</th>
+                                        <th>Qualification</th>
+                                        <th>Experience</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td data-label="S.No">1</td>
+                                        <td data-label="Faculty Name"><strong class="dept-faculty-name">Dr. Ashok Kumar Vootla</strong></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Professor &amp; Director</span></td>
+                                        <td data-label="Discipline">H&amp;S</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">Ph.D</span></td>
+                                        <td data-label="Experience">17 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">2</td>
+                                        <td data-label="Faculty Name"><strong class="dept-faculty-name">P. PADMINI</strong></td>
+                                        <td data-label="Designation"><span class="dept-role-pill hod">HOD &amp; Asst. Prof</span></td>
+                                        <td data-label="Discipline">Mathematics</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Sc (Mathematics)</span></td>
+                                        <td data-label="Experience">15 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">3</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">N. MAHENDAR</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">English</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.A (English)</span></td>
+                                        <td data-label="Experience">7 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">4</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">G. SRINIVAS</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">English</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.A (English)</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">5</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">ASIA BEGUM</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">English</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.A (English)</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">6</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">V. SRINIVAS</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Chemistry</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Sc (Chemistry)</span></td>
+                                        <td data-label="Experience">6 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">7</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">HUMERA AMREEN</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Chemistry</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Sc (Chemistry)</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">8</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">M. SUSHMA RANI</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Chemistry</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Sc (Chemistry)</span></td>
+                                        <td data-label="Experience">1 Year</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">9</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">B. JHANSI RANI</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Physics</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Sc (Physics)</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">10</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">T. NANDITHA</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Physics</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Sc (Physics)</span></td>
+                                        <td data-label="Experience">2 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">11</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">SD. KALIMUNISSA</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Physics</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Sc (Physics)</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">12</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">B. RAMAMURTHY</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Mechanical</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Tech</span></td>
+                                        <td data-label="Experience">5 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">13</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">S. VINAY KUMAR</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Mechanical</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Tech</span></td>
+                                        <td data-label="Experience">4 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">14</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">A. VIKAS</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Mechanical</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Tech</span></td>
+                                        <td data-label="Experience">1 Year</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">15</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">V. MAMATHA</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">ECE / H&amp;S</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Tech</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">16</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">T. SAMPATH KUMAR</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">ECE / H&amp;S</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Tech</span></td>
+                                        <td data-label="Experience">2 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">17</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">J. SURESH</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">EEE / H&amp;S</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.Tech</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">18</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">A. SRILATHA</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Management</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.B.A</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">19</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">N. ARUNA JYOTHI</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Management</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.B.A</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">20</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">K. SRINIVAS</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Assistant Professor</span></td>
+                                        <td data-label="Discipline">Management</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.B.A</span></td>
+                                        <td data-label="Experience">3 Years</td>
+                                    </tr>
+                                    <tr>
+                                        <td data-label="S.No">21</td>
+                                        <td data-label="Faculty Name"><span class="dept-faculty-name">A. VIJAYA</span></td>
+                                        <td data-label="Designation"><span class="dept-role-pill">Librarian</span></td>
+                                        <td data-label="Discipline">Library Science</td>
+                                        <td data-label="Qualification"><span class="dept-qual-pill">M.L.I.Sc</span></td>
+                                        <td data-label="Experience">11 Years</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </section>
+
+                    <!-- Section 5: Syllabus & Curriculum -->
+                    <section class="dept-section-card" id="curriculum">
+                        <div class="dept-section-head">
+                            <div class="dept-section-icon-badge"><i class="fas fa-file-pdf"></i></div>
+                            <h2>Curriculum &amp; Syllabus</h2>
+                        </div>
+                        <p class="dept-section-p" style="margin-bottom: 22px;">
+                            B.Tech 1st Year common foundational syllabus including Engineering Physics, Chemistry, Matrices, Calculus, and English Communication.
+                        </p>
+                        <div class="dept-docs-grid">
+                            <div class="dept-doc-card">
+                                <div class="dept-doc-card-top">
+                                    <div class="dept-doc-icon"><i class="fas fa-file-pdf"></i></div>
+                                    <div class="dept-doc-meta">
+                                        <h4>H&amp;S Foundation Syllabus</h4>
+                                        <p>Comprehensive subject breakdown and lab experiments for B.Tech First Year.</p>
+                                    </div>
+                                </div>
+                                <a href="assets/Dept/HS_Syllabus.pdf" target="_blank" class="dept-btn-download">
+                                    <i class="fas fa-download"></i> Download Official PDF
+                                </a>
+                            </div>
+
+                            <div class="dept-doc-card theme-word">
+                                <div class="dept-doc-card-top">
+                                    <div class="dept-doc-icon"><i class="fas fa-file-word"></i></div>
+                                    <div class="dept-doc-meta">
+                                        <h4>PEOs &amp; PSOs Document</h4>
+                                        <p>Program outcomes and educational objectives document.</p>
+                                    </div>
+                                </div>
+                                <a href="assets/Dept/peos_psos.docx" target="_blank" class="dept-btn-download theme-blue">
+                                    <i class="fas fa-eye"></i> View PEOs Document
+                                </a>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 6: PEOs & PSOs -->
+                    <section class="dept-section-card" id="peos">
+                        <div class="dept-section-head">
+                            <div class="dept-section-icon-badge"><i class="fas fa-award"></i></div>
+                            <h2>Program Educational Objectives (PEOs &amp; PSOs)</h2>
+                        </div>
+                        <div class="dept-vision-mission-grid">
+                            <div class="dept-vm-card">
+                                <div class="dept-vm-title">
+                                    <i class="fas fa-crosshairs"></i>
+                                    <span>Program Educational Objectives</span>
+                                </div>
+                                <ul class="dept-mission-list">
+                                    <li><strong>PEO 1:</strong> Impart fundamental scientific concepts enabling students to analyze real engineering challenges.</li>
+                                    <li><strong>PEO 2:</strong> Foster exceptional verbal and written communication skills for international technical discourse.</li>
+                                    <li><strong>PEO 3:</strong> Inculcate ethical principles, environmental values, and human values in every student.</li>
+                                </ul>
+                            </div>
+                            <div class="dept-vm-card theme-mission">
+                                <div class="dept-vm-title">
+                                    <i class="fas fa-check-double"></i>
+                                    <span>Program Specific Outcomes</span>
+                                </div>
+                                <ul class="dept-mission-list">
+                                    <li><strong>PSO 1:</strong> Proficiency in applied calculus, differential equations, and scientific computing methods.</li>
+                                    <li><strong>PSO 2:</strong> Practical competence in conducting physics experiments, chemical analysis, and lab reporting.</li>
+                                    <li><strong>PSO 3:</strong> Fluency in English presentations, interviews, group discussions, and technical documentation.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Section 7: Laboratories & Gallery -->
+                    <section class="dept-section-card" id="gallery">
+                        <div class="dept-section-head">
+                            <div class="dept-section-icon-badge"><i class="fas fa-images"></i></div>
+                            <h2>Department Labs &amp; Gallery</h2>
+                        </div>
+                        <p class="dept-section-p" style="margin-bottom: 20px;">
+                            Language communication laboratories, physics optics benches, chemistry labs, and student orientation sessions.
+                        </p>
+                        <div class="dept-gallery-grid">
+                            <?php 
+                            $images = ['1.jpeg', '2.jpeg', '3.jpeg', '4.jpeg', '5.jpeg', '6.jpeg', '7.jpeg', '8.jpeg', '9.jpeg', '10.jpeg'];
+                            foreach($images as $img): 
+                            ?>
+                            <div class="dept-gallery-card">
+                                <img src="assets/Dept/<?php echo $img; ?>" alt="Humanities &amp; Sciences Laboratories &amp; Events" loading="lazy">
+                                <div class="dept-gallery-overlay">
+                                    <i class="fas fa-search-plus"></i>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </section>
+
                 </div>
-                <?php endforeach; ?>
             </div>
         </div>
-
-    </div>
+    </main>
 
     <?php include 'footer.php'; ?>
 </body>
