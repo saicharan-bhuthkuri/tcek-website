@@ -15,6 +15,8 @@
                 <li><a href="admission.php">Admissions</a></li>
                 <li><a href="courses.php">Courses</a></li>
                 <li><a href="events.php">Events &amp; Fest</a></li>
+                <li><a href="news.php">News &amp; Media</a></li>
+                <li><a href="circulars.php">Circulars &amp; Notifications</a></li>
                 <li><a href="rnd-rankings.php">R&amp;D Rankings</a></li>
                 <li><a href="contact.php">Contact</a></li>
             </ul>
@@ -57,7 +59,7 @@
         </div>
     </div>
     <div class="footer-bottom">
-        <p>&copy; 2026 Trinity College of Engineering & Technology. All Rights Reserved.</p>
+        <p>&copy; 2026 Trinity College of Engineering & Technology. All Rights Reserved. &bull; <a href="admin/login.php" style="color: #94a3b8; text-decoration: none; font-size: 0.85em; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'"><i class="fas fa-lock"></i> Staff Login</a></p>
     </div>
 </footer>
 

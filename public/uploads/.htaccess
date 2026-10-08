@@ -1,0 +1,14 @@
+# Security: Disable script execution in uploads directory
+Options -Indexes -ExecCGI
+
+<FilesMatch "(?i)\.(php|phtml|php3|php4|php5|php7|phps|pht|phar|inc|cgi|pl|py|sh|bash)$">
+    Order Deny,Allow
+    Deny from all
+</FilesMatch>
+
+# Prevent script execution for Apache 2.4+
+<IfModule mod_authz_core.c>
+    <FilesMatch "(?i)\.(php|phtml|php3|php4|php5|php7|phps|pht|phar|inc|cgi|pl|py|sh|bash)$">
+        Require all denied
+    </FilesMatch>
+</IfModule>

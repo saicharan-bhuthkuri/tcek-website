@@ -8,8 +8,17 @@
 
 <body>
 
-    <?php $page = 'home';
-    include 'header.php'; ?>
+    <?php 
+    $page = 'home';
+    include 'header.php'; 
+    // Dynamic notifications & marquee ticker from GoDaddy MySQL backend
+    @include_once __DIR__ . '/backend/config/database.php';
+    @include_once __DIR__ . '/backend/crud.php';
+    $live_notices    = function_exists('get_notifications') ? get_notifications(5, false) : [];
+    $marquee_notices = function_exists('get_notifications') ? get_notifications(3, true) : [];
+    $live_events     = function_exists('get_events') ? get_events(10, false) : [];
+    $live_news       = function_exists('get_news') ? get_news(30) : [];
+    ?>
     <!-- Main Content -->
     <main>
         <!-- Hero Section -->
@@ -76,122 +85,149 @@
                         <span class="pulse-indicator"></span> Official Announcements
                     </span>
                     <h2>TCEK NEWS &amp; ANNOUNCEMENTS</h2>
-                    <p>Stay informed with our latest university milestones, academic circulars, campus drives &amp; press coverage</p>
+                    <p>Stay informed with our latest university milestones, academic circulars, campus drives &amp;
+                        press coverage</p>
                 </div>
 
                 <!-- Modern Breaking Ticker Bar -->
                 <div class="news-ticker-modern">
                     <div class="ticker-badge"><i class="fas fa-bullhorn"></i> LATEST NOTICE</div>
                     <div class="ticker-marquee">
-                        <span>⚡ <strong>Admissions Open 2024–25:</strong> B.Tech, Diploma (Polytechnic) &amp; MBA | EAPCET / POLYCET / ICET Code: <strong>TCEK</strong> | Helpline: <strong>7396903383</strong>, <strong>8522954369</strong></span>
+                        <?php if (!empty($marquee_notices)): ?>
+                            <span>
+                                <?php foreach ($marquee_notices as $mn): ?>
+                                    ⚡ <strong><?php echo htmlspecialchars($mn['title']); ?>:</strong> <?php echo htmlspecialchars($mn['description'] ?: 'Notice from Trinity College of Engineering & Technology.'); ?> &nbsp;&nbsp;&bull;&nbsp;&nbsp;
+                                <?php endforeach; ?>
+                            </span>
+                        <?php elseif (!empty($live_notices)): ?>
+                            <span>⚡ <strong><?php echo htmlspecialchars($live_notices[0]['title']); ?>:</strong> <?php echo htmlspecialchars($live_notices[0]['description'] ?: 'Official notice published by Trinity College of Engineering & Technology.'); ?></span>
+                        <?php else: ?>
+                            <span>⚡ <strong>Admissions Open 2024–25:</strong> B.Tech, Diploma (Polytechnic) &amp; MBA |
+                                EAPCET / POLYCET / ICET Code: <strong>TCEK</strong> | Helpline: <strong>7396903383</strong>,
+                                <strong>8522954369</strong></span>
+                        <?php endif; ?>
                     </div>
-                    <a href="admission.php" class="ticker-link-pill">
-                        <span>Admissions Portal</span>
-                        <i class="fas fa-arrow-right"></i>
-                    </a>
+                    <?php if (!empty($live_notices) && !empty($live_notices[0]['file_path'])): ?>
+                        <a href="<?php echo htmlspecialchars($live_notices[0]['file_path']); ?>" target="_blank" class="ticker-link-pill">
+                            <span>Download PDF</span>
+                            <i class="fas fa-file-pdf"></i>
+                        </a>
+                    <?php else: ?>
+                        <a href="admission.php" class="ticker-link-pill">
+                            <span>Admissions Portal</span>
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    <?php endif; ?>
                 </div>
 
-                <!-- 2-Column Asymmetric Main News Hub -->
-                <div class="news-main-hub">
-                    <!-- Left: Featured Spotlight Card -->
-                    <div class="news-spotlight-card">
-                        <div class="spotlight-media-wrap">
-                            <img src="assets/College Event/caps.jpg" alt="Trinity College Autonomous Milestone Celebration" class="spotlight-img">
-                            <div class="spotlight-media-overlay">
-                                <span class="spotlight-badge"><i class="fas fa-award"></i> Major Milestone</span>
-                                <span class="spotlight-date-chip"><i class="far fa-calendar-alt"></i> AY 2025–2026 to 2029–2030</span>
-                            </div>
-                        </div>
-                        <div class="spotlight-body">
-                            <div class="spotlight-meta">
-                                <span class="meta-tag"><i class="fas fa-university"></i> UGC &amp; JNTUH Autonomous</span>
-                                <span class="meta-tag"><i class="fas fa-check-circle"></i> 5 Years Validity</span>
-                            </div>
-                            <h3>Trinity College Conferred UGC &amp; JNTUH Autonomous Status for 5 Academic Years</h3>
-                            <p>We are immensely proud to announce that Trinity College of Engineering &amp; Technology has been officially conferred Autonomous status by UGC and JNTUH. This prestigious milestone grants academic independence to formulate advanced, industry-aligned curricula, introduce cutting-edge electives in AI, Data Science &amp; VLSI, and provide enhanced research and placement avenues for our students.</p>
-                            
-                            <div class="spotlight-highlights-grid">
-                                <div class="highlight-pill">
-                                    <i class="fas fa-graduation-cap"></i>
-                                    <div>
-                                        <strong>Curriculum Autonomy</strong>
-                                        <span>Industry 4.0 Syllabus</span>
-                                    </div>
-                                </div>
-                                <div class="highlight-pill">
-                                    <i class="fas fa-medal"></i>
-                                    <div>
-                                        <strong>Degree Prestige</strong>
-                                        <span>Recognized by UGC &amp; JNTUH</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="spotlight-footer">
-                                <a href="ugc.php" class="btn-spotlight-action">
-                                    <span>Read UGC Notification</span>
-                                    <i class="fas fa-arrow-right"></i>
-                                </a>
-                                <a href="academics.php" class="btn-spotlight-link">
-                                    <span>Explore Academics</span>
-                                    <i class="fas fa-chevron-right"></i>
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Right: Digital Bulletin Board -->
+                <!-- Main Circulars & Notifications Hub -->
+                <div class="news-main-hub full-width-board">
+                    <!-- Digital Bulletin Board -->
                     <div class="news-bulletin-board">
                         <div class="bulletin-header">
                             <div class="bulletin-heading">
                                 <div class="bulletin-icon-pulse"><i class="fas fa-bell"></i></div>
-                                <h4>Recent Bulletins</h4>
+                                <h4>Circulars &amp; Notifications</h4>
                             </div>
-                            <span class="bulletin-badge-live"><span class="live-dot"></span> LIVE FEED</span>
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <a href="circulars.php" style="font-size:12px; font-weight:700; color:#00b894; text-decoration:none; padding:4px 12px; background:#e6f9f4; border-radius:15px; border:1px solid #a3e9d7; transition:all 0.2s;" onmouseover="this.style.background='#00b894';this.style.color='#fff';" onmouseout="this.style.background='#e6f9f4';this.style.color='#00b894';">View All <i class="fas fa-arrow-right"></i></a>
+                                <span class="bulletin-badge-live"><span class="live-dot"></span> LIVE FEED</span>
+                            </div>
                         </div>
 
                         <div class="bulletin-items-list">
-                            <!-- Bulletin 1: NAAC -->
-                            <a href="naac.php" class="bulletin-item-card">
-                                <div class="bulletin-date-badge theme-naac">
-                                    <span class="date-month">NAAC</span>
-                                    <span class="date-day">B++</span>
-                                </div>
-                                <div class="bulletin-content">
-                                    <span class="bulletin-category cat-naac">Accreditation</span>
-                                    <h5>First &amp; Only NAAC Accredited College in Peddapalli</h5>
-                                    <p>Recognized for world-class laboratory infrastructure, experienced faculty, and strong student outcomes.</p>
-                                    <span class="bulletin-link-text">View Certificate <i class="fas fa-arrow-right"></i></span>
-                                </div>
-                            </a>
+                            <?php if (!empty($live_notices)): ?>
+                                <?php foreach ($live_notices as $notice): 
+                                    $filePath = !empty($notice['attachment_path']) ? $notice['attachment_path'] : (!empty($notice['file_path']) ? $notice['file_path'] : '');
+                                    $link = !empty($filePath) ? htmlspecialchars($filePath) : (!empty($notice['link_url']) ? htmlspecialchars($notice['link_url']) : '#');
+                                    $target = (!empty($filePath) || !empty($notice['link_url'])) ? 'target="_blank"' : '';
+                                    
+                                    $fileType = strtolower($notice['attachment_type'] ?? '');
+                                    if (empty($fileType) || $fileType === 'none') {
+                                        if (!empty($filePath)) {
+                                            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+                                            if ($ext === 'pdf') $fileType = 'pdf';
+                                            elseif (in_array($ext, ['doc', 'docx'])) $fileType = 'docx';
+                                            elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) $fileType = 'image';
+                                            else $fileType = 'doc';
+                                        }
+                                    }
+                                    
+                                    $badge = !empty($fileType) && $fileType !== 'none' ? strtoupper($fileType) : ($notice['badge'] ?? 'NOTICE');
+                                ?>
+                                    <a href="<?php echo $link; ?>" <?php echo $target; ?> class="bulletin-item-card">
+                                        <div class="bulletin-date-badge theme-<?php echo strtolower($badge); ?>">
+                                            <span class="date-month"><?php echo $badge; ?></span>
+                                            <span class="date-day"><?php echo date('d M', strtotime($notice['publish_date'] ?? date('Y-m-d'))); ?></span>
+                                        </div>
+                                        <div class="bulletin-content">
+                                            <span class="bulletin-category cat-<?php echo strtolower($notice['category'] ?? 'circular'); ?>"><?php echo htmlspecialchars($notice['category'] ?? 'Circular'); ?></span>
+                                            <h5><?php echo htmlspecialchars($notice['title']); ?></h5>
+                                            <?php if (!empty($notice['description'])): ?>
+                                                <p><?php echo htmlspecialchars($notice['description']); ?></p>
+                                            <?php endif; ?>
+                                            <span class="bulletin-link-text">
+                                                <?php 
+                                                if (!empty($filePath)) {
+                                                    if ($fileType === 'pdf') echo 'View PDF Document <i class="fas fa-file-pdf"></i>';
+                                                    elseif ($fileType === 'docx') echo 'Download DOCX Circular <i class="fas fa-file-word"></i>';
+                                                    elseif ($fileType === 'image') echo 'View Attached Image <i class="fas fa-file-image"></i>';
+                                                    else echo 'View Attached File <i class="fas fa-paperclip"></i>';
+                                                } else {
+                                                    echo 'Read Circular Notice <i class="fas fa-arrow-right"></i>';
+                                                }
+                                                ?>
+                                            </span>
+                                        </div>
+                                    </a>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <!-- Static Fallback Bulletins -->
+                                <a href="naac.php" class="bulletin-item-card">
+                                    <div class="bulletin-date-badge theme-naac">
+                                        <span class="date-month">NAAC</span>
+                                        <span class="date-day">B++</span>
+                                    </div>
+                                    <div class="bulletin-content">
+                                        <span class="bulletin-category cat-naac">Accreditation</span>
+                                        <h5>First &amp; Only NAAC Accredited College in Peddapalli</h5>
+                                        <p>Recognized for world-class laboratory infrastructure, experienced faculty, and
+                                            strong student outcomes.</p>
+                                        <span class="bulletin-link-text">View Certificate <i
+                                                class="fas fa-arrow-right"></i></span>
+                                    </div>
+                                </a>
 
-                            <!-- Bulletin 2: Admissions -->
-                            <a href="admission.php" class="bulletin-item-card">
-                                <div class="bulletin-date-badge theme-adms">
-                                    <span class="date-month">CODE</span>
-                                    <span class="date-day">TCEK</span>
-                                </div>
-                                <div class="bulletin-content">
-                                    <span class="bulletin-category cat-adms">Admissions 2024–25</span>
-                                    <h5>B.Tech, Diploma &amp; MBA Counseling Open</h5>
-                                    <p>Seat allotments through TS EAPCET, POLYCET &amp; ICET. Merit scholarship fee concessions available.</p>
-                                    <span class="bulletin-link-text">Admissions Details <i class="fas fa-arrow-right"></i></span>
-                                </div>
-                            </a>
+                                <a href="admission.php" class="bulletin-item-card">
+                                    <div class="bulletin-date-badge theme-adms">
+                                        <span class="date-month">CODE</span>
+                                        <span class="date-day">TCEK</span>
+                                    </div>
+                                    <div class="bulletin-content">
+                                        <span class="bulletin-category cat-adms">Admissions 2024–25</span>
+                                        <h5>B.Tech, Diploma &amp; MBA Counseling Open</h5>
+                                        <p>Seat allotments through TS EAPCET, POLYCET &amp; ICET. Merit scholarship fee
+                                            concessions available.</p>
+                                        <span class="bulletin-link-text">Admissions Details <i
+                                                class="fas fa-arrow-right"></i></span>
+                                    </div>
+                                </a>
 
-                            <!-- Bulletin 3: Placements -->
-                            <a href="placement-cell.php" class="bulletin-item-card">
-                                <div class="bulletin-date-badge theme-jobs">
-                                    <span class="date-month">DRIVE</span>
-                                    <span class="date-day">100%</span>
-                                </div>
-                                <div class="bulletin-content">
-                                    <span class="bulletin-category cat-jobs">Campus Placements</span>
-                                    <h5>Recruitment Drives: TCS, Capgemini, Infosys</h5>
-                                    <p>Pre-placement training, coding bootcamps, and top multinational recruitment opportunities.</p>
-                                    <span class="bulletin-link-text">Placement Reports <i class="fas fa-arrow-right"></i></span>
-                                </div>
-                            </a>
+                                <a href="placement-cell.php" class="bulletin-item-card">
+                                    <div class="bulletin-date-badge theme-jobs">
+                                        <span class="date-month">DRIVE</span>
+                                        <span class="date-day">100%</span>
+                                    </div>
+                                    <div class="bulletin-content">
+                                        <span class="bulletin-category cat-jobs">Campus Placements</span>
+                                        <h5>Recruitment Drives: TCS, Capgemini, Infosys</h5>
+                                        <p>Pre-placement training, coding bootcamps, and top multinational recruitment
+                                            opportunities.</p>
+                                        <span class="bulletin-link-text">Placement Reports <i
+                                                class="fas fa-arrow-right"></i></span>
+                                    </div>
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -203,122 +239,54 @@
                             <i class="fas fa-newspaper"></i>
                             <span>TCEK In Regional &amp; National Press</span>
                         </div>
-                        <a href="gallery.php" class="view-all-press-btn">
-                            <span>View All Gallery Clippings</span>
-                            <i class="fas fa-arrow-right"></i>
-                        </a>
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <a href="news.php" class="view-all-press-btn">
+                                <span>View All Press News</span>
+                                <i class="fas fa-arrow-right"></i>
+                            </a>
+                        </div>
                     </div>
 
                     <div class="press-clippings-grid">
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper1.jpg', 'Mana Telangana: Yuva Sangam - Trinity Student Selected for National Tour to IIT Guwahati')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper1.jpg" alt="Mana Telangana: Yuva Sangam Trinity Student Selected for IIT Guwahati">
+                        <?php if (!empty($live_news)): ?>
+                            <?php foreach ($live_news as $nws_item): 
+                                $raw_path   = !empty($nws_item['image_path']) ? $nws_item['image_path'] : 'assets/Gallery/paper1.jpg';
+                                $img_url    = htmlspecialchars($raw_path);
+                                $nws_title  = htmlspecialchars($nws_item['title']);
+                                $nws_source = !empty($nws_item['source']) ? htmlspecialchars($nws_item['source']) : 'Press Coverage';
+                                $nws_date   = !empty($nws_item['publish_date']) ? date('d M Y', strtotime($nws_item['publish_date'])) : '';
+                                $nws_desc   = !empty($nws_item['description']) ? $nws_item['description'] : ($nws_item['summary'] ?? '');
+                                $caption    = $nws_source . ': ' . $nws_title . ($nws_date ? ' (' . $nws_date . ')' : '');
+                            ?>
+                                <div class="press-card" onclick="openNewsLightbox('<?php echo $img_url; ?>', '<?php echo addslashes($caption); ?>', '<?php echo addslashes($nws_desc); ?>')">
+                                    <div class="press-thumb-wrap">
+                                        <img src="<?php echo $img_url; ?>" alt="<?php echo $nws_title; ?>" loading="lazy" onerror="this.src='assets/Gallery/paper1.jpg'">
+                                        <div class="press-overlay-badge">
+                                            <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                        </div>
+                                    </div>
+                                    <div class="press-info">
+                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                                            <span class="press-source"><?php echo $nws_source; ?></span>
+                                            <?php if (!empty($nws_date)): ?>
+                                                <span style="font-size:11px; color:#64748b;"><i class="far fa-calendar-alt"></i> <?php echo $nws_date; ?></span>
+                                            <?php endif; ?>
+                                        </div>
+                                        <h6 class="press-headline"><?php echo $nws_title; ?></h6>
+                                        <?php if (!empty($nws_desc)): ?>
+                                            <p style="font-size:12px; color:#64748b; margin:6px 0 0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
+                                                <?php echo htmlspecialchars($nws_desc); ?>
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #64748b;">
+                                <i class="fas fa-newspaper" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px; display: block;"></i>
+                                No newspaper clippings published yet.
                             </div>
-                            <div class="press-info">
-                                <span class="press-source">Mana Telangana</span>
-                                <h6 class="press-headline">Yuva Sangam: Trinity Student Selected for National Tour to IIT Guwahati</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper2.jpg', 'Prajakranthi: Founder Chairman Felicitates Saniya on National Yuva Sangam Selection')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper2.jpg" alt="Prajakranthi: Chairman Felicitates Saniya on National Yuva Sangam Selection">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Prajakranthi</span>
-                                <h6 class="press-headline">Chairman Manohar Reddy Felicitates Saniya on National Yuva Sangam Selection</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper3.jpg', 'Andhra Prabha: Vigilance Inspection of Quality &amp; Infrastructure Across Engineering Colleges')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper3.jpg" alt="Andhra Prabha: Vigilance Inspection Across Regional Engineering Colleges">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Andhra Prabha</span>
-                                <h6 class="press-headline">Engineering Colleges Under Vigilance Radar: Quality &amp; Compliance Inspections Begin</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper4.jpg', 'State Daily: Quality Benchmark &amp; Lab Infrastructure Vigilance Inspection')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper4.jpg" alt="State Daily: Quality Benchmark &amp; Lab Infrastructure Vigilance Inspection">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">State Daily</span>
-                                <h6 class="press-headline">Quality Benchmark &amp; Lab Infrastructure Vigilance Inspection Team Visit</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper5.jpg', 'Andhra Prabha: Smart India Hackathon 2026 Internal Round Inaugurated at Trinity')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper5.jpg" alt="Andhra Prabha: Smart India Hackathon 2026 at Trinity Engineering College">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Andhra Prabha</span>
-                                <h6 class="press-headline">Smart India Hackathon 2026 Conducted at Trinity Engineering College</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper6.jpg', 'Mana Telangana: Smart India Hackathon 2026 - Innovation &amp; Prototype Exhibition at Trinity')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper6.jpg" alt="Mana Telangana: Smart India Hackathon 2026 Students Showcase Prototypes">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Mana Telangana</span>
-                                <h6 class="press-headline">Smart India Hackathon 2026: Students Showcase Real-World Technical Prototypes</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper7.jpg', 'Namasthe Telangana: Smart India Hackathon 2026 Organized at Trinity Autonomous College')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper7.jpg" alt="Namasthe Telangana: Smart India Hackathon 2026 at Trinity Autonomous College">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Namasthe Telangana</span>
-                                <h6 class="press-headline">Smart India Hackathon 2026: Innovative Problem Solving at Trinity Autonomous</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper8.jpg', 'Mana Telangana: MSME Idea Hackathon 6.0 Conducted with 168 Projects and ₹15L Funding')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper8.jpg" alt="Mana Telangana: MSME Idea Hackathon 6.0 with 168 Projects and ₹15L Funding">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Mana Telangana</span>
-                                <h6 class="press-headline">MSME Hackathon 6.0: 168 Student Project Submissions with ₹15L Funding Support</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper9.jpg', 'Namasthe Telangana: Nurturing Innovation at MSME Hackathon 6.0 - 168 Projects Displayed')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper9.jpg" alt="Namasthe Telangana: Nurturing Youth Innovation at MSME Hackathon 6.0">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Namasthe Telangana</span>
-                                <h6 class="press-headline">MSME Hackathon 6.0: Nurturing Youth Innovation Across 6 Thematic Sectors</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper10.jpg', 'Andhra Prabha: Tremendous Response to MSME Idea Hackathon 6.0 with ₹15 Lakh Grant')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper10.jpg" alt="Andhra Prabha: Tremendous Response to MSME Hackathon 6.0 with ₹15L Grant">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Andhra Prabha</span>
-                                <h6 class="press-headline">Tremendous Response to MSME Hackathon 6.0 with Up to ₹15 Lakhs Grant</h6>
-                            </div>
-                        </div>
-
-                        <div class="press-card" onclick="openNewsLightbox('assets/Gallery/paper11.jpg', 'Eenadu Daily: MSME Internal Hackathon 6.0 Successfully Organized at Trinity College')">
-                            <div class="press-thumb-wrap">
-                                <img src="assets/Gallery/paper11.jpg" alt="Eenadu Daily: MSME Internal Hackathon 6.0 at Trinity College">
-                            </div>
-                            <div class="press-info">
-                                <span class="press-source">Eenadu Daily</span>
-                                <h6 class="press-headline">MSME Idea Hackathon 6.0 Successfully Conducted at Trinity Campus</h6>
-                            </div>
-                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
             </div>
@@ -327,20 +295,31 @@
         <!-- News Lightbox Modal -->
         <div id="news-lightbox-modal" class="news-lightbox" onclick="closeNewsLightbox(event)">
             <div class="news-lightbox-box">
-                <button type="button" class="news-lightbox-close" onclick="closeNewsLightbox(event)" aria-label="Close modal">&times;</button>
+                <button type="button" class="news-lightbox-close" onclick="closeNewsLightbox(event)"
+                    aria-label="Close modal">&times;</button>
                 <img id="news-lightbox-target" src="" alt="Zoomed Newspaper Clipping">
-                <div id="news-lightbox-caption" style="padding: 12px 20px; background: #ffffff; border-top: 1px solid #f1f5f9; font-size: 14px; font-weight: 600; color: #1e293b; text-align: center;"></div>
+                <div id="news-lightbox-caption"
+                    style="padding: 14px 20px 4px; background: #ffffff; border-top: 1px solid #f1f5f9; font-size: 15px; font-weight: 700; color: #1e293b; text-align: center;">
+                </div>
+                <div id="news-lightbox-description"
+                    style="padding: 4px 20px 14px; background: #ffffff; font-size: 13px; color: #475569; text-align: center; line-height: 1.5; display: none;">
+                </div>
             </div>
         </div>
         <script>
-            function openNewsLightbox(src, caption) {
+            function openNewsLightbox(src, caption, description) {
                 const modal = document.getElementById('news-lightbox-modal');
                 const img = document.getElementById('news-lightbox-target');
                 const captionEl = document.getElementById('news-lightbox-caption');
+                const descEl = document.getElementById('news-lightbox-description');
                 if (modal && img) {
                     img.src = src;
                     img.alt = caption || 'News Article';
                     if (captionEl) captionEl.textContent = caption || '';
+                    if (descEl) {
+                        descEl.textContent = description || '';
+                        descEl.style.display = description ? 'block' : 'none';
+                    }
                     modal.classList.add('active');
                     document.body.style.overflow = 'hidden';
                 }
@@ -365,7 +344,8 @@
                         <i class="fas fa-star"></i> Campus Mega Events 2026
                     </div>
                     <h2>Freshers Aarambh 2K26 &amp; College Sports Week</h2>
-                    <p>A week of energy, talent &amp; togetherness — Experience unforgettable celebrations, thrilling tournaments, and memories forever.</p>
+                    <p>A week of energy, talent &amp; togetherness — Experience unforgettable celebrations, thrilling
+                        tournaments, and memories forever.</p>
                     <div style="margin-top: 14px;">
                         <a href="events.php" class="view-all-press-btn" style="display: inline-flex;">
                             <span>Explore Dedicated Events Portal</span>
@@ -374,90 +354,175 @@
                     </div>
                 </div>
 
+<?php
+// Compute spotlight and highlights from $live_events
+$spotlightEvent = null;
+foreach ($live_events as $ev) {
+    if (!empty($ev['is_featured'])) {
+        $spotlightEvent = $ev;
+        break;
+    }
+}
+if (!$spotlightEvent && !empty($live_events)) {
+    $spotlightEvent = $live_events[0];
+}
+
+$spotlightVideo = null;
+$spotlightImage = 'assets/events/tcek-fresher.jpg';
+$spotlightVideoTitle = $spotlightEvent ? $spotlightEvent['title'] : 'Freshers Aarambh 2K26 Celebration';
+$spotlightVideoDesc  = $spotlightEvent ? $spotlightEvent['description'] : 'Official campus celebration video.';
+
+if ($spotlightEvent) {
+    if (!empty($spotlightEvent['media_items'])) {
+        foreach ($spotlightEvent['media_items'] as $m) {
+            if ($m['media_type'] === 'video' && !$spotlightVideo) {
+                $spotlightVideo = $m['file_path'];
+                $spotlightVideoTitle = $m['media_title'];
+                $spotlightVideoDesc = $m['media_description'];
+            }
+            if ($m['media_type'] === 'image' && $spotlightImage === 'assets/events/tcek-fresher.jpg') {
+                $spotlightImage = $m['file_path'];
+            }
+        }
+    }
+    if (!$spotlightVideo && !empty($spotlightEvent['video_path'])) {
+        $spotlightVideo = $spotlightEvent['video_path'];
+    }
+    if ($spotlightImage === 'assets/events/tcek-fresher.jpg' && !empty($spotlightEvent['image_path'])) {
+        $spotlightImage = $spotlightEvent['image_path'];
+    }
+}
+if (!$spotlightVideo) {
+    $spotlightVideo = 'assets/events/freshers.mp4';
+}
+
+// 4 Top Media Cards
+$media_cards = [];
+foreach ($live_events as $ev) {
+    if (!empty($ev['media_items'])) {
+        foreach ($ev['media_items'] as $m) {
+            $media_cards[] = [
+                'type'        => $m['media_type'],
+                'file_path'   => $m['file_path'],
+                'title'       => $m['media_title'],
+                'desc'        => $m['media_description'] ?: $ev['description'],
+                'event_title' => $ev['title']
+            ];
+            if (count($media_cards) >= 4) break 2;
+        }
+    } else {
+        if (!empty($ev['video_path'])) {
+            $media_cards[] = [
+                'type' => 'video',
+                'file_path' => $ev['video_path'],
+                'title' => $ev['title'] . ' Video',
+                'desc' => $ev['description'],
+                'event_title' => $ev['title']
+            ];
+            if (count($media_cards) >= 4) break;
+        }
+        if (!empty($ev['image_path'])) {
+            $media_cards[] = [
+                'type' => 'image',
+                'file_path' => $ev['image_path'],
+                'title' => $ev['title'] . ' Poster',
+                'desc' => $ev['description'],
+                'event_title' => $ev['title']
+            ];
+            if (count($media_cards) >= 4) break;
+        }
+    }
+}
+?>
                 <!-- Event Schedule Quick Ribbon -->
                 <div class="event-schedule-ribbon">
-                    <div class="event-ribbon-item">
-                        <span class="ribbon-date">1 – 8 OCT</span>
-                        <div class="ribbon-info">
-                            <strong>College Sports Week</strong>
-                            <span>Cricket, Kabaddi, Badminton &amp; Athletics</span>
-                        </div>
-                    </div>
-                    <div class="event-ribbon-item">
-                        <span class="ribbon-date">9 OCT</span>
-                        <div class="ribbon-info">
-                            <strong>Flash Mob</strong>
-                            <span>High-Voltage Dance Showcase</span>
-                        </div>
-                    </div>
-                    <div class="event-ribbon-item active-event">
-                        <span class="ribbon-date">12 OCT</span>
-                        <div class="ribbon-info">
-                            <strong>Freshers Aarambh 2K26</strong>
-                            <span>Music, Dance, Celebrations &amp; Welcoming 1st Years</span>
-                        </div>
-                    </div>
-                    <div class="event-ribbon-item">
-                        <span class="ribbon-date">13 OCT</span>
-                        <div class="ribbon-info">
-                            <strong>Traditional &amp; Bathukamma</strong>
-                            <span>Heritage, Flowers &amp; Cultural Fest</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Featured Hero Spotlight Card: Freshers Aarambh 2K26 -->
-                <div class="event-spotlight-card">
-                    <!-- Left: Featured Video with Audio & Fullscreen Prompt -->
-                    <div class="spotlight-media" onclick="openEventVideoModal('assets/events/freshers.mp4', 'Freshers Aarambh 2K26 Celebration', 'Official highlight video of Freshers Aarambh 2K26 at Trinity College of Engineering &amp; Technology. A new beginning, a brighter tomorrow!')">
-                        <div class="spotlight-video-preview">
-                            <video class="bg-preview-vid" muted autoplay loop playsinline poster="assets/events/tcek-fresher.jpg">
-                                <source src="assets/events/freshers.mp4" type="video/mp4">
-                            </video>
-                            <div class="spotlight-overlay">
-                                <div class="pulse-play-btn" title="Click to Play with Audio">
-                                    <i class="fas fa-play"></i>
-                                </div>
-                                <div class="spotlight-action-text">
-                                    <span class="audio-pill"><i class="fas fa-volume-up"></i> CLICK FOR FULL SCREEN WITH AUDIO</span>
+                    <?php if (!empty($live_events)): ?>
+                        <?php foreach (array_slice($live_events, 0, 4) as $idx => $ev): ?>
+                            <?php 
+                                $dTime = strtotime($ev['event_date']);
+                                $dateLabel = $dTime ? date('j M', $dTime) : $ev['event_date'];
+                                $isActive = ($idx === 0) ? 'active-event' : '';
+                            ?>
+                            <div class="event-ribbon-item <?php echo $isActive; ?>">
+                                <span class="ribbon-date"><?php echo strtoupper($dateLabel); ?></span>
+                                <div class="ribbon-info">
+                                    <strong><?php echo htmlspecialchars($ev['title']); ?></strong>
+                                    <span><?php echo htmlspecialchars($ev['event_time'] ?: ($ev['venue'] ?? 'Campus Event')); ?></span>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- Right: Event Overview & Highlights -->
-                    <div class="spotlight-info">
-                        <div>
-                            <div class="spotlight-meta">
-                                <span class="spotlight-tag"><i class="fas fa-fire"></i> Mega Event</span>
-                                <span class="spotlight-date"><i class="far fa-calendar-alt"></i> 12 October 2026 · Monday</span>
-                            </div>
-                            <h3>Freshers Aarambh 2K26</h3>
-                            <p class="spotlight-tagline">"A New Beginning • A Brighter Tomorrow • Let the Journey Begin..."</p>
-                            <p class="spotlight-desc">
-                                Welcoming the incoming batch of engineers and technocrats to the Trinity family with electrifying music, dazzling dance performances, interactive fun games, and unforgettable memories!
-                            </p>
-
-                            <div class="spotlight-perks-grid">
-                                <div class="perk-chip"><i class="fas fa-music"></i> Live Music</div>
-                                <div class="perk-chip"><i class="fas fa-shoe-prints"></i> Dance &amp; Flash Mob</div>
-                                <div class="perk-chip"><i class="fas fa-theater-masks"></i> Fun Games</div>
-                                <div class="perk-chip"><i class="fas fa-users"></i> Meet New Friends</div>
-                                <div class="perk-chip"><i class="fas fa-trophy"></i> Exciting Awards</div>
-                                <div class="perk-chip"><i class="fas fa-camera"></i> Memories Forever</div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <div class="event-ribbon-item active-event">
+                            <span class="ribbon-date">UPCOMING</span>
+                            <div class="ribbon-info">
+                                <strong>Campus Events 2026</strong>
+                                <span>Trinity College of Engineering &amp; Technology</span>
                             </div>
                         </div>
-
-                        <div class="spotlight-cta-row">
-                            <button type="button" class="btn-event-play" onclick="openEventVideoModal('assets/events/freshers.mp4', 'Freshers Aarambh 2K26 Celebration', 'Official highlight video of Freshers Aarambh 2K26 at Trinity College of Engineering &amp; Technology. A new beginning, a brighter tomorrow!')">
-                                <i class="fas fa-expand"></i> <span>Click Full Screen with Audio</span>
-                            </button>
-                            <button type="button" class="btn-event-poster" onclick="openEventImageModal('assets/events/tcek-fresher.jpg', 'Freshers Aarambh 2K26 Official Event Poster')">
-                                <i class="fas fa-image"></i> <span>View Official Poster</span>
-                            </button>
-                        </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
+
+                <!-- Featured Hero Spotlight Card -->
+                <?php if ($spotlightEvent): ?>
+                    <div class="event-spotlight-card">
+                        <!-- Left: Featured Video with Audio & Fullscreen Prompt -->
+                        <div class="spotlight-media"
+                            onclick="openEventVideoModal('<?php echo htmlspecialchars($spotlightVideo); ?>', '<?php echo addslashes(htmlspecialchars($spotlightVideoTitle)); ?>', '<?php echo addslashes(htmlspecialchars($spotlightVideoDesc)); ?>')">
+                            <div class="spotlight-video-preview">
+                                <video class="bg-preview-vid" muted autoplay loop playsinline
+                                    poster="<?php echo htmlspecialchars($spotlightImage); ?>">
+                                    <source src="<?php echo htmlspecialchars($spotlightVideo); ?>" type="video/mp4">
+                                </video>
+                                <div class="spotlight-overlay">
+                                    <div class="pulse-play-btn" title="Click to Play with Audio">
+                                        <i class="fas fa-play"></i>
+                                    </div>
+                                    <div class="spotlight-action-text">
+                                        <span class="audio-pill"><i class="fas fa-volume-up"></i> CLICK FOR FULL SCREEN WITH
+                                            AUDIO</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Event Overview & Highlights -->
+                        <div class="spotlight-info">
+                            <div>
+                                <div class="spotlight-meta">
+                                    <span class="spotlight-tag"><i class="fas fa-fire"></i> <?php echo !empty($spotlightEvent['is_featured']) ? 'Mega Event' : 'Featured Event'; ?></span>
+                                    <span class="spotlight-date"><i class="far fa-calendar-alt"></i> <?php echo htmlspecialchars($spotlightEvent['event_date']); ?><?php echo !empty($spotlightEvent['event_time']) ? ' · ' . htmlspecialchars($spotlightEvent['event_time']) : ''; ?></span>
+                                </div>
+                                <h3><?php echo htmlspecialchars($spotlightEvent['title']); ?></h3>
+                                <p class="spotlight-tagline"><i class="fas fa-map-marker-alt" style="color:#00b894;"></i> Venue: <?php echo htmlspecialchars($spotlightEvent['venue'] ?? 'Trinity Campus Auditorium'); ?></p>
+                                <p class="spotlight-desc">
+                                    <?php echo htmlspecialchars($spotlightEvent['description'] ?: 'Annual event and celebrations at Trinity College of Engineering & Technology.'); ?>
+                                </p>
+
+                                <div class="spotlight-perks-grid">
+                                    <div class="perk-chip"><i class="fas fa-music"></i> Live Music</div>
+                                    <div class="perk-chip"><i class="fas fa-shoe-prints"></i> Celebrations</div>
+                                    <div class="perk-chip"><i class="fas fa-theater-masks"></i> Competitions</div>
+                                    <div class="perk-chip"><i class="fas fa-users"></i> Meet Friends</div>
+                                    <div class="perk-chip"><i class="fas fa-trophy"></i> Exciting Awards</div>
+                                    <div class="perk-chip"><i class="fas fa-camera"></i> Memories Forever</div>
+                                </div>
+                            </div>
+
+                            <div class="spotlight-cta-row">
+                                <button type="button" class="btn-event-play"
+                                    onclick="openEventVideoModal('<?php echo htmlspecialchars($spotlightVideo); ?>', '<?php echo addslashes(htmlspecialchars($spotlightVideoTitle)); ?>', '<?php echo addslashes(htmlspecialchars($spotlightVideoDesc)); ?>')">
+                                    <i class="fas fa-expand"></i> <span>Click Full Screen with Audio</span>
+                                </button>
+                                <?php if ($spotlightImage): ?>
+                                    <button type="button" class="btn-event-poster"
+                                        onclick="openEventImageModal('<?php echo htmlspecialchars($spotlightImage); ?>', '<?php echo addslashes(htmlspecialchars($spotlightEvent['title'])); ?> Poster')">
+                                        <i class="fas fa-image"></i> <span>View Official Poster</span>
+                                    </button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <!-- Event Highlights Subhead -->
                 <div class="event-gallery-subhead">
@@ -467,89 +532,53 @@
 
                 <!-- 4-Card Media Grid (Videos & Posters) -->
                 <div class="event-cards-grid">
-                    <!-- Card 1: Cricket Campaign Video -->
-                    <div class="event-card video-card" onclick="openEventVideoModal('assets/events/cricket-campaigns.mp4', 'AIML &amp; CSE Cricket Campaigns', 'College Sports Week 2026 cricket championship clashes between Department of AIML and Department of CSE.')">
-                        <div class="event-card-thumb">
-                            <video muted loop playsinline class="card-video-loop">
-                                <source src="assets/events/cricket-campaigns.mp4" type="video/mp4">
-                            </video>
-                            <div class="card-video-overlay">
-                                <span class="card-play-icon"><i class="fas fa-play"></i></span>
-                                <span class="audio-badge"><i class="fas fa-volume-up"></i> Full Screen &amp; Audio</span>
-                            </div>
-                            <span class="media-type-badge video"><i class="fas fa-video"></i> Video</span>
-                        </div>
-                        <div class="event-card-content">
-                            <div>
-                                <span class="event-category-tag sports">College Sports Week</span>
-                                <h4>AIML &amp; CSE Cricket Campaigns</h4>
-                                <p>High-stakes inter-departmental cricket showdowns, thrilling match boundaries, and celebratory cheers.</p>
-                            </div>
-                            <span class="click-hint"><i class="fas fa-expand"></i> Click full screen with audio</span>
-                        </div>
-                    </div>
-
-                    <!-- Card 2: Kabaddi Wins Video -->
-                    <div class="event-card video-card" onclick="openEventVideoModal('assets/events/kabaddi-wins.mp4', 'Kabaddi Championship Wins', 'Sensational raid points, tackles, and trophy celebration in the annual college Kabaddi tournament.')">
-                        <div class="event-card-thumb">
-                            <video muted loop playsinline class="card-video-loop">
-                                <source src="assets/events/kabaddi-wins.mp4" type="video/mp4">
-                            </video>
-                            <div class="card-video-overlay">
-                                <span class="card-play-icon"><i class="fas fa-play"></i></span>
-                                <span class="audio-badge"><i class="fas fa-volume-up"></i> Full Screen &amp; Audio</span>
-                            </div>
-                            <span class="media-type-badge video"><i class="fas fa-video"></i> Video</span>
-                        </div>
-                        <div class="event-card-content">
-                            <div>
-                                <span class="event-category-tag sports">College Sports Week</span>
-                                <h4>Kabaddi Championship Wins</h4>
-                                <p>Super-tackles, lightning raids, and championship victory celebrations by Trinity athletes.</p>
-                            </div>
-                            <span class="click-hint"><i class="fas fa-expand"></i> Click full screen with audio</span>
-                        </div>
-                    </div>
-
-                    <!-- Card 3: Freshers Aarambh 2K26 Poster -->
-                    <div class="event-card poster-card" onclick="openEventImageModal('assets/events/tcek-fresher.jpg', 'Freshers Aarambh 2K26 Official Event Poster')">
-                        <div class="event-card-thumb">
-                            <img src="assets/events/tcek-fresher.jpg" alt="Freshers Aarambh 2K26 Poster" loading="lazy">
-                            <div class="card-image-overlay">
-                                <span class="card-zoom-icon"><i class="fas fa-search-plus"></i></span>
-                                <span class="zoom-badge">View Full Poster</span>
-                            </div>
-                            <span class="media-type-badge image"><i class="fas fa-image"></i> Poster</span>
-                        </div>
-                        <div class="event-card-content">
-                            <div>
-                                <span class="event-category-tag cultural">Aarambh 2K26</span>
-                                <h4>Freshers Aarambh 2K26 Poster</h4>
-                                <p>Official creative poster announcing Freshers Day on 12th October 2026 with full event highlights.</p>
-                            </div>
-                            <span class="click-hint"><i class="fas fa-search-plus"></i> Click to view high-res poster</span>
-                        </div>
-                    </div>
-
-                    <!-- Card 4: Sports & Cultural Week Schedule Poster -->
-                    <div class="event-card poster-card" onclick="openEventImageModal('assets/events/tcek-poster.jpg', 'College Sports &amp; Cultural Week 2026 Schedule &amp; Poster')">
-                        <div class="event-card-thumb">
-                            <img src="assets/events/tcek-poster.jpg" alt="Sports & Cultural Week 2026 Poster" loading="lazy">
-                            <div class="card-image-overlay">
-                                <span class="card-zoom-icon"><i class="fas fa-search-plus"></i></span>
-                                <span class="zoom-badge">View Full Schedule</span>
-                            </div>
-                            <span class="media-type-badge image"><i class="fas fa-image"></i> Schedule</span>
-                        </div>
-                        <div class="event-card-content">
-                            <div>
-                                <span class="event-category-tag fest">Mega Fest 2026</span>
-                                <h4>Sports &amp; Cultural Week 2026</h4>
-                                <p>Full 2-week schedule: Sports Week, Flash Mob, Freshers Aarambh 2K26, and Bathukamma celebrations.</p>
-                            </div>
-                            <span class="click-hint"><i class="fas fa-search-plus"></i> Click to view high-res schedule</span>
-                        </div>
-                    </div>
+                    <?php if (!empty($media_cards)): ?>
+                        <?php foreach ($media_cards as $c): ?>
+                            <?php if ($c['type'] === 'video'): ?>
+                                <div class="event-card video-card"
+                                    onclick="openEventVideoModal('<?php echo htmlspecialchars($c['file_path']); ?>', '<?php echo addslashes(htmlspecialchars($c['title'])); ?>', '<?php echo addslashes(htmlspecialchars($c['desc'])); ?>')">
+                                    <div class="event-card-thumb">
+                                        <video muted loop playsinline class="card-video-loop">
+                                            <source src="<?php echo htmlspecialchars($c['file_path']); ?>" type="video/mp4">
+                                        </video>
+                                        <div class="card-video-overlay">
+                                            <span class="card-play-icon"><i class="fas fa-play"></i></span>
+                                            <span class="audio-badge"><i class="fas fa-volume-up"></i> Full Screen &amp; Audio</span>
+                                        </div>
+                                        <span class="media-type-badge video"><i class="fas fa-video"></i> Video</span>
+                                    </div>
+                                    <div class="event-card-content">
+                                        <div>
+                                            <span class="event-category-tag sports"><?php echo htmlspecialchars($c['event_title']); ?></span>
+                                            <h4><?php echo htmlspecialchars($c['title']); ?></h4>
+                                            <p><?php echo htmlspecialchars($c['desc'] ?: 'Event highlight video.'); ?></p>
+                                        </div>
+                                        <span class="click-hint"><i class="fas fa-expand"></i> Click full screen with audio</span>
+                                    </div>
+                                </div>
+                            <?php else: ?>
+                                <div class="event-card poster-card"
+                                    onclick="openEventImageModal('<?php echo htmlspecialchars($c['file_path']); ?>', '<?php echo addslashes(htmlspecialchars($c['title'])); ?>')">
+                                    <div class="event-card-thumb">
+                                        <img src="<?php echo htmlspecialchars($c['file_path']); ?>" alt="<?php echo htmlspecialchars($c['title']); ?>" loading="lazy" onerror="this.src='assets/events/tcek-fresher.jpg'">
+                                        <div class="card-image-overlay">
+                                            <span class="card-zoom-icon"><i class="fas fa-search-plus"></i></span>
+                                            <span class="zoom-badge">View Full Image</span>
+                                        </div>
+                                        <span class="media-type-badge image"><i class="fas fa-image"></i> Photo</span>
+                                    </div>
+                                    <div class="event-card-content">
+                                        <div>
+                                            <span class="event-category-tag cultural"><?php echo htmlspecialchars($c['event_title']); ?></span>
+                                            <h4><?php echo htmlspecialchars($c['title']); ?></h4>
+                                            <p><?php echo htmlspecialchars($c['desc'] ?: 'Event poster/photo.'); ?></p>
+                                        </div>
+                                        <span class="click-hint"><i class="fas fa-search-plus"></i> Click to view high-res</span>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
             </div>
         </section>
@@ -563,10 +592,12 @@
                         <h4 id="event-modal-title">Event Video</h4>
                     </div>
                     <div class="event-modal-actions">
-                        <button type="button" class="btn-modal-fullscreen" onclick="toggleNativeFullscreen()" title="Toggle Fullscreen (F)">
+                        <button type="button" class="btn-modal-fullscreen" onclick="toggleNativeFullscreen()"
+                            title="Toggle Fullscreen (F)">
                             <i class="fas fa-expand"></i> <span>Full Screen</span>
                         </button>
-                        <button type="button" class="btn-modal-close" onclick="closeEventVideoModal(null)" aria-label="Close modal">&times;</button>
+                        <button type="button" class="btn-modal-close" onclick="closeEventVideoModal(null)"
+                            aria-label="Close modal">&times;</button>
                     </div>
                 </div>
 
@@ -590,7 +621,8 @@
         <!-- High-Res Image Lightbox Modal for Posters -->
         <div id="event-image-modal" class="event-image-modal" onclick="closeEventImageModal(event)">
             <div class="event-image-box" onclick="event.stopPropagation()">
-                <button type="button" class="event-image-close" onclick="closeEventImageModal(null)" aria-label="Close">&times;</button>
+                <button type="button" class="event-image-close" onclick="closeEventImageModal(null)"
+                    aria-label="Close">&times;</button>
                 <img id="event-modal-img" src="" alt="Event Poster">
                 <div class="event-image-caption" id="event-image-caption"></div>
             </div>
@@ -616,7 +648,7 @@
                     // Play with audio (user gesture initiated)
                     const playPromise = video.play();
                     if (playPromise !== undefined) {
-                        playPromise.catch(function(err) {
+                        playPromise.catch(function (err) {
                             console.log('Autoplay audio fallback:', err);
                             // If browser blocks unmuted autoplay, unmute on next click
                             video.muted = false;
@@ -637,7 +669,7 @@
 
                         // Exit native fullscreen if active
                         if (document.fullscreenElement) {
-                            document.exitFullscreen().catch(function() {});
+                            document.exitFullscreen().catch(function () { });
                         }
                     }
                 }
@@ -650,7 +682,7 @@
 
                 if (!document.fullscreenElement) {
                     if (target.requestFullscreen) {
-                        target.requestFullscreen().catch(function() {});
+                        target.requestFullscreen().catch(function () { });
                     } else if (target.webkitRequestFullscreen) {
                         target.webkitRequestFullscreen();
                     } else if (video && video.webkitEnterFullscreen) {
@@ -658,7 +690,7 @@
                     }
                 } else {
                     if (document.exitFullscreen) {
-                        document.exitFullscreen().catch(function() {});
+                        document.exitFullscreen().catch(function () { });
                     }
                 }
             }
@@ -687,7 +719,7 @@
             }
 
             // Keyboard navigation for video and image modals
-            document.addEventListener('keydown', function(e) {
+            document.addEventListener('keydown', function (e) {
                 const videoModal = document.getElementById('event-video-modal');
                 const imgModal = document.getElementById('event-image-modal');
                 const video = document.getElementById('event-modal-video');
@@ -1112,7 +1144,8 @@
                         <span>Campus Placement Success • Class of 2022-2024</span>
                     </div>
                     <h2>Our Achievements & Placements</h2>
-                    <p>Celebrating the remarkable success stories of our students advancing into global IT leaders and multinational technology corporations</p>
+                    <p>Celebrating the remarkable success stories of our students advancing into global IT leaders and
+                        multinational technology corporations</p>
                 </div>
 
                 <!-- Placement Highlights Stats Bar -->
@@ -1159,11 +1192,14 @@
                                             <i class="fas fa-certificate"></i> Verified Campus Placement
                                         </div>
                                         <div class="ach-poster-frame">
-                                            <img src="assets/Achievements/bhavitha_capgemini.png" alt="G. Bhavitha - Placed in Capgemini (4 LPA)" class="ach-poster-img">
+                                            <img src="assets/Achievements/bhavitha_capgemini.png"
+                                                alt="G. Bhavitha - Placed in Capgemini (4 LPA)" class="ach-poster-img">
                                         </div>
                                         <div class="ach-poster-footer">
-                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK Peddapalli</span>
-                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of 2022</span>
+                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK
+                                                Peddapalli</span>
+                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of
+                                                2022</span>
                                         </div>
                                     </div>
                                     <div class="ach-story-side">
@@ -1176,7 +1212,14 @@
                                             </div>
                                         </div>
                                         <p class="ach-story-text">
-                                            "As a CSE student at our institution, I, Bhavitha, can confidently say that our campus placement services are <span class="ach-text-bold">exceptional</span>. The training and support we receive are tailored to ensure we are <span class="ach-text-bold">well-prepared for the job market</span>. From enhancing our technical skills to providing interview preparation, the focus on our future careers is evident. Thanks to these efforts, I was successfully placed in <span class="ach-text-bold">Capgemini</span>."
+                                            "As a CSE student at our institution, I, Bhavitha, can confidently say that
+                                            our campus placement services are <span
+                                                class="ach-text-bold">exceptional</span>. The training and support we
+                                            receive are tailored to ensure we are <span
+                                                class="ach-text-bold">well-prepared for the job market</span>. From
+                                            enhancing our technical skills to providing interview preparation, the focus
+                                            on our future careers is evident. Thanks to these efforts, I was
+                                            successfully placed in <span class="ach-text-bold">Capgemini</span>."
                                         </p>
                                         <div class="ach-student-profile">
                                             <div class="ach-avatar">
@@ -1206,11 +1249,14 @@
                                             <i class="fas fa-certificate"></i> Verified Campus Placement
                                         </div>
                                         <div class="ach-poster-frame">
-                                            <img src="assets/Achievements/zainab_tcs.png" alt="Zainab Khatoon - Placed in TCS (3.6 LPA)" class="ach-poster-img">
+                                            <img src="assets/Achievements/zainab_tcs.png"
+                                                alt="Zainab Khatoon - Placed in TCS (3.6 LPA)" class="ach-poster-img">
                                         </div>
                                         <div class="ach-poster-footer">
-                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK Peddapalli</span>
-                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of 2022</span>
+                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK
+                                                Peddapalli</span>
+                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of
+                                                2022</span>
                                         </div>
                                     </div>
                                     <div class="ach-story-side">
@@ -1223,7 +1269,13 @@
                                             </div>
                                         </div>
                                         <p class="ach-story-text">
-                                            "The dedicated training and comprehensive support provided by our institution have been instrumental in <span class="ach-text-bold">shaping my engineering career</span>. The focus on practical skills, mock interviews, and industry-specific knowledge thoroughly prepared me for the job market. Thanks to these efforts, I secured a placement with <span class="ach-text-bold">Tata Consultancy Services</span> as Assistant System Engineer."
+                                            "The dedicated training and comprehensive support provided by our
+                                            institution have been instrumental in <span class="ach-text-bold">shaping my
+                                                engineering career</span>. The focus on practical skills, mock
+                                            interviews, and industry-specific knowledge thoroughly prepared me for the
+                                            job market. Thanks to these efforts, I secured a placement with <span
+                                                class="ach-text-bold">Tata Consultancy Services</span> as Assistant
+                                            System Engineer."
                                         </p>
                                         <div class="ach-student-profile">
                                             <div class="ach-avatar">
@@ -1253,11 +1305,14 @@
                                             <i class="fas fa-certificate"></i> Verified Campus Placement
                                         </div>
                                         <div class="ach-poster-frame">
-                                            <img src="assets/placements/student1.jpeg" alt="J. Pooja - Placed in Infosys (3.6 LPA)" class="ach-poster-img">
+                                            <img src="assets/placements/student1.jpeg"
+                                                alt="J. Pooja - Placed in Infosys (3.6 LPA)" class="ach-poster-img">
                                         </div>
                                         <div class="ach-poster-footer">
-                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK Peddapalli</span>
-                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of 2022</span>
+                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK
+                                                Peddapalli</span>
+                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of
+                                                2022</span>
                                         </div>
                                     </div>
                                     <div class="ach-story-side">
@@ -1270,7 +1325,12 @@
                                             </div>
                                         </div>
                                         <p class="ach-story-text">
-                                            "Trinity College provided an enriching academic ecosystem with active guidance from experienced mentors and the <span class="ach-text-bold">Training & Placement Cell</span>. Continuous aptitude assessments, soft-skill workshops, and coding challenges gave me the edge required to crack the <span class="ach-text-bold">Infosys</span> national assessment and interview rounds."
+                                            "Trinity College provided an enriching academic ecosystem with active
+                                            guidance from experienced mentors and the <span
+                                                class="ach-text-bold">Training & Placement Cell</span>. Continuous
+                                            aptitude assessments, soft-skill workshops, and coding challenges gave me
+                                            the edge required to crack the <span class="ach-text-bold">Infosys</span>
+                                            national assessment and interview rounds."
                                         </p>
                                         <div class="ach-student-profile">
                                             <div class="ach-avatar">
@@ -1300,11 +1360,14 @@
                                             <i class="fas fa-certificate"></i> Verified Campus Placement
                                         </div>
                                         <div class="ach-poster-frame">
-                                            <img src="assets/placements/student5.jpeg" alt="Ananth Kumar - Placed in Wipro (3.5 LPA)" class="ach-poster-img">
+                                            <img src="assets/placements/student5.jpeg"
+                                                alt="Ananth Kumar - Placed in Wipro (3.5 LPA)" class="ach-poster-img">
                                         </div>
                                         <div class="ach-poster-footer">
-                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK Peddapalli</span>
-                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of 2022</span>
+                                            <span class="poster-univ-code"><i class="fas fa-university"></i> TCEK
+                                                Peddapalli</span>
+                                            <span class="poster-verified"><i class="fas fa-check-circle"></i> Batch of
+                                                2022</span>
                                         </div>
                                     </div>
                                     <div class="ach-story-side">
@@ -1317,7 +1380,11 @@
                                             </div>
                                         </div>
                                         <p class="ach-story-text">
-                                            "The hands-on laboratory experience and guidance from our faculty at TCEK helped me build strong engineering fundamentals. The college's industry partnerships, <span class="ach-text-bold">TASK skill bootcamps</span>, and placement training gave us real-world corporate readiness, helping me secure an offer at <span class="ach-text-bold">Wipro</span>."
+                                            "The hands-on laboratory experience and guidance from our faculty at TCEK
+                                            helped me build strong engineering fundamentals. The college's industry
+                                            partnerships, <span class="ach-text-bold">TASK skill bootcamps</span>, and
+                                            placement training gave us real-world corporate readiness, helping me secure
+                                            an offer at <span class="ach-text-bold">Wipro</span>."
                                         </p>
                                         <div class="ach-student-profile">
                                             <div class="ach-avatar">
@@ -1348,14 +1415,17 @@
                                 <span class="ach-total-num">04</span>
                             </div>
                             <div class="ach-dots" id="achDots">
-                                <button class="ach-dot active" data-index="0" aria-label="Slide 1: G. Bhavitha"></button>
+                                <button class="ach-dot active" data-index="0"
+                                    aria-label="Slide 1: G. Bhavitha"></button>
                                 <button class="ach-dot" data-index="1" aria-label="Slide 2: Zainab Khatoon"></button>
                                 <button class="ach-dot" data-index="2" aria-label="Slide 3: J. Pooja"></button>
                                 <button class="ach-dot" data-index="3" aria-label="Slide 4: Ananth Kumar"></button>
                             </div>
                             <div class="ach-nav-btns">
-                                <button class="ach-ctrl-btn ach-prev" aria-label="Previous Student"><i class="fas fa-arrow-left"></i></button>
-                                <button class="ach-ctrl-btn ach-next" aria-label="Next Student"><i class="fas fa-arrow-right"></i></button>
+                                <button class="ach-ctrl-btn ach-prev" aria-label="Previous Student"><i
+                                        class="fas fa-arrow-left"></i></button>
+                                <button class="ach-ctrl-btn ach-next" aria-label="Next Student"><i
+                                        class="fas fa-arrow-right"></i></button>
                             </div>
                         </div>
                     </div>
@@ -1430,7 +1500,8 @@
                         <span>Q4 (JAN 2026 – MAR 2026) Official Announcement</span>
                     </div>
                     <h2>R&amp;D Department Rankings</h2>
-                    <p>Congratulations to all academic departments for outstanding achievements in research, innovation, patents, international publications, NPTEL benchmarks, IIC and R&amp;D activities.</p>
+                    <p>Congratulations to all academic departments for outstanding achievements in research, innovation,
+                        patents, international publications, NPTEL benchmarks, IIC and R&amp;D activities.</p>
                 </div>
 
                 <!-- Criteria Pills Strip -->
@@ -1555,11 +1626,13 @@
                             <i class="fas fa-signature"></i> — Team Research &amp; Development (R&amp;D)
                         </div>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <a href="rnd-rankings.php" class="btn-rnd-explore" style="background: #00b894; color: #ffffff;">
+                            <a href="rnd-rankings.php" class="btn-rnd-explore"
+                                style="background: #00b894; color: #ffffff;">
                                 <span>View Full R&amp;D Rankings &amp; Scorecard</span>
                                 <i class="fas fa-arrow-right"></i>
                             </a>
-                            <a href="research-publications.php" class="btn-rnd-explore" style="background: #f1f5f9; color: #334155;">
+                            <a href="research-publications.php" class="btn-rnd-explore"
+                                style="background: #f1f5f9; color: #334155;">
                                 <span>Research Publications</span>
                                 <i class="fas fa-external-link-alt"></i>
                             </a>
@@ -1570,14 +1643,17 @@
                             <div class="rnd-ack-icon">👏</div>
                             <div class="rnd-ack-text">
                                 <h5>Heartiest Congratulations</h5>
-                                <p>To all the Faculty, HoDs, Students and Department Coordinators for their dedication and continuous contribution towards building a strong research and innovation ecosystem.</p>
+                                <p>To all the Faculty, HoDs, Students and Department Coordinators for their dedication
+                                    and continuous contribution towards building a strong research and innovation
+                                    ecosystem.</p>
                             </div>
                         </div>
                         <div class="rnd-ack-box">
                             <div class="rnd-ack-icon">🙏</div>
                             <div class="rnd-ack-text">
                                 <h5>Sincere Gratitude</h5>
-                                <p>Our sincere thanks to the Management, Staff, Stakeholders, Students, Parents &amp; Alumni for their constant encouragement and invaluable support.</p>
+                                <p>Our sincere thanks to the Management, Staff, Stakeholders, Students, Parents &amp;
+                                    Alumni for their constant encouragement and invaluable support.</p>
                             </div>
                         </div>
                     </div>

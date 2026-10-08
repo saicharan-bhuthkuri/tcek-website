@@ -3866,6 +3866,17 @@ footer {
     margin-bottom: 45px;
 }
 
+.news-main-hub.full-width-board {
+    display: block;
+    margin-bottom: 45px;
+}
+
+.news-main-hub.full-width-board .bulletin-items-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 16px;
+}
+
 /* Spotlight News Card (Left Column) */
 .news-spotlight-card {
     background: #ffffff;
@@ -4302,19 +4313,36 @@ footer {
 }
 
 .view-all-press-btn {
-    font-size: 13px;
-    font-weight: 700;
-    color: #00b894;
-    text-decoration: none;
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    transition: all 0.2s ease;
+    gap: 8px;
+    padding: 8px 20px;
+    background: linear-gradient(135deg, #00b894 0%, #009375 100%);
+    color: #ffffff !important;
+    font-size: 13.5px;
+    font-weight: 700;
+    text-decoration: none;
+    border-radius: 999px;
+    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.25);
+    border: 1px solid rgba(0, 184, 148, 0.3);
+    transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+    letter-spacing: 0.2px;
 }
 
 .view-all-press-btn:hover {
-    color: #009375;
-    transform: translateX(3px);
+    background: linear-gradient(135deg, #009375 0%, #007a61 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 184, 148, 0.38);
+    color: #ffffff !important;
+}
+
+.view-all-press-btn i {
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.view-all-press-btn:hover i {
+    transform: translateX(4px);
 }
 
 .press-clippings-grid {

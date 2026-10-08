@@ -1,0 +1,112 @@
+[
+    {
+        "id": 1,
+        "title": "Yuva Sangam: Trinity Student Selected for National Tour to IIT Guwahati",
+        "image_path": "assets/Gallery/paper1.jpg",
+        "publish_date": "2026-10-01",
+        "description": "Mana Telangana: Trinity College student Saniya selected for the prestigious Yuva Sangam national youth exposure tour to IIT Guwahati under the Ek Bharat Shreshtha Bharat initiative.",
+        "source": "Mana Telangana",
+        "status": "PUBLISHED",
+        "created_at": "2026-10-01 10:00:00"
+    },
+    {
+        "id": 2,
+        "title": "Chairman Manohar Reddy Felicitates Saniya on National Yuva Sangam Selection",
+        "image_path": "assets/Gallery/paper2.jpg",
+        "publish_date": "2026-09-28",
+        "description": "Prajakranthi: Founder Chairman Sri Manohar Reddy and administrative management felicitate B.Tech student Saniya for selection in the national delegation.",
+        "source": "Prajakranthi",
+        "status": "PUBLISHED",
+        "created_at": "2026-09-28 11:30:00"
+    },
+    {
+        "id": 3,
+        "title": "Engineering Colleges Under Vigilance Radar: Quality & Compliance Inspections Begin",
+        "image_path": "assets/Gallery/paper3.jpg",
+        "publish_date": "2026-09-22",
+        "description": "Andhra Prabha: Vigilance and accreditation inspection teams evaluate engineering colleges across the state on faculty standards, research facilities, and lab infrastructure.",
+        "source": "Andhra Prabha",
+        "status": "PUBLISHED",
+        "created_at": "2026-09-22 09:15:00"
+    },
+    {
+        "id": 4,
+        "title": "Quality Benchmark & Lab Infrastructure Vigilance Inspection Team Visit",
+        "image_path": "assets/Gallery/paper4.jpg",
+        "publish_date": "2026-09-18",
+        "description": "State Daily: Inspection team praises Trinity College for state-of-the-art laboratory infrastructure, AI & Robotics center of excellence, and qualified faculty.",
+        "source": "State Daily",
+        "status": "PUBLISHED",
+        "created_at": "2026-09-18 14:00:00"
+    },
+    {
+        "id": 5,
+        "title": "Smart India Hackathon 2026 Conducted at Trinity Engineering College",
+        "image_path": "assets/Gallery/paper5.jpg",
+        "publish_date": "2026-09-10",
+        "description": "Andhra Prabha: Grand launch of Smart India Hackathon internal round at Trinity campus with over 200 enthusiastic engineering students competing across hardware and software domains.",
+        "source": "Andhra Prabha",
+        "status": "PUBLISHED",
+        "created_at": "2026-09-10 10:30:00"
+    },
+    {
+        "id": 6,
+        "title": "Smart India Hackathon 2026: Students Showcase Real-World Technical Prototypes",
+        "image_path": "assets/Gallery/paper6.jpg",
+        "publish_date": "2026-09-08",
+        "description": "Mana Telangana: Student innovators exhibited functional IoT and machine learning prototypes solving real-world agricultural and municipal problems.",
+        "source": "Mana Telangana",
+        "status": "PUBLISHED",
+        "created_at": "2026-09-08 12:00:00"
+    },
+    {
+        "id": 7,
+        "title": "Smart India Hackathon 2026: Innovative Problem Solving at Trinity Autonomous",
+        "image_path": "assets/Gallery/paper7.jpg",
+        "publish_date": "2026-09-05",
+        "description": "Namasthe Telangana: Jury members appreciate the high technical caliber of projects developed during 36-hour hackathon coding sprint.",
+        "source": "Namasthe Telangana",
+        "status": "PUBLISHED",
+        "created_at": "2026-09-05 16:45:00"
+    },
+    {
+        "id": 8,
+        "title": "MSME Hackathon 6.0: 168 Student Project Submissions with \u20b915L Funding Support",
+        "image_path": "assets/Gallery/paper8.jpg",
+        "publish_date": "2026-08-25",
+        "description": "Mana Telangana: Under the Ministry of MSME Idea Hackathon 6.0, Trinity Host Institute shortlisted outstanding startup ideas eligible for up to \u20b915 Lakhs central government grant funding.",
+        "source": "Mana Telangana",
+        "status": "PUBLISHED",
+        "created_at": "2026-08-25 11:00:00"
+    },
+    {
+        "id": 9,
+        "title": "MSME Hackathon 6.0: Nurturing Youth Innovation Across 6 Thematic Sectors",
+        "image_path": "assets/Gallery/paper9.jpg",
+        "publish_date": "2026-08-22",
+        "description": "Namasthe Telangana: Engineering innovators pitched scalable business and technical models in healthcare, defense, and green technology.",
+        "source": "Namasthe Telangana",
+        "status": "PUBLISHED",
+        "created_at": "2026-08-22 15:30:00"
+    },
+    {
+        "id": 10,
+        "title": "Tremendous Response to MSME Hackathon 6.0 with Up to \u20b915 Lakhs Grant",
+        "image_path": "assets/Gallery/paper10.jpg",
+        "publish_date": "2026-08-18",
+        "description": "Andhra Prabha: Record number of participants submitted technological business solutions for government incubation funding.",
+        "source": "Andhra Prabha",
+        "status": "PUBLISHED",
+        "created_at": "2026-08-18 10:15:00"
+    },
+    {
+        "id": 11,
+        "title": "MSME Idea Hackathon 6.0 Successfully Conducted at Trinity Campus",
+        "image_path": "assets/Gallery/paper11.jpg",
+        "publish_date": "2026-08-15",
+        "description": "Eenadu Daily: College leadership and industry experts evaluated student pitches during the nationwide entrepreneurship program.",
+        "source": "Eenadu Daily",
+        "status": "PUBLISHED",
+        "created_at": "2026-08-15 17:00:00"
+    }
+]

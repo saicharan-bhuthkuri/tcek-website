@@ -27,10 +27,10 @@
         <?php
         $curr_page = isset($page) ? $page : '';
         $is_about = in_array($curr_page, ['about', 'affiliation', 'policies', 'committees']);
-        $is_academics = in_array($curr_page, ['academics', 'departments', 'examinations', 'e-content']);
+        $is_academics = in_array($curr_page, ['academics', 'departments', 'circulars', 'e-content']);
         $is_research = in_array($curr_page, ['research', 'rnd-rankings']);
         $is_accreditations = in_array($curr_page, ['naac', 'nba', 'nirf', 'iqac', 'ugc', 'aicte']);
-        $is_campus = in_array($curr_page, ['facilities', 'events', 'gallery']);
+        $is_campus = in_array($curr_page, ['facilities', 'events', 'news', 'gallery']);
         ?>
         <ul class="nav-links">
             <li>
@@ -56,7 +56,7 @@
                 <ul class="dropdown-menu">
                     <li><a href="academics.php" class="<?php echo ($curr_page == 'academics') ? 'active' : ''; ?>">Academics</a></li>
                     <li><a href="departments.php" class="<?php echo ($curr_page == 'departments') ? 'active' : ''; ?>">Departments</a></li>
-                    <li><a href="examinations.php" class="<?php echo ($curr_page == 'examinations') ? 'active' : ''; ?>">Examinations</a></li>
+                    <li><a href="circulars.php" class="<?php echo ($curr_page == 'circulars') ? 'active' : ''; ?>">Circulars &amp; Notifications</a></li>
                     <li><a href="e-content.php" class="<?php echo ($curr_page == 'e-content') ? 'active' : ''; ?>">E-CONTENT</a></li>
                 </ul>
             </li>
@@ -100,6 +100,7 @@
                 <ul class="dropdown-menu">
                     <li><a href="facilities.php" class="<?php echo ($curr_page == 'facilities') ? 'active' : ''; ?>">Facilities</a></li>
                     <li><a href="events.php" class="<?php echo ($curr_page == 'events') ? 'active' : ''; ?>">Events</a></li>
+                    <li><a href="news.php" class="<?php echo ($curr_page == 'news') ? 'active' : ''; ?>">News &amp; Media</a></li>
                     <li><a href="gallery.php" class="<?php echo ($curr_page == 'gallery') ? 'active' : ''; ?>">Gallery</a></li>
                 </ul>
             </li>

@@ -1,5 +1,8 @@
 <?php
 $page = 'events';
+@include_once __DIR__ . '/backend/config/database.php';
+@include_once __DIR__ . '/backend/crud.php';
+$db_events = function_exists('get_events') ? get_events(10, false) : [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -41,252 +44,309 @@ $page = 'events';
                 <p>A week of energy, talent &amp; togetherness — Experience unforgettable celebrations, thrilling tournaments, and memories forever.</p>
             </div>
 
+<?php
+// Prepare dynamic event media
+$spotlightEvent = null;
+foreach ($db_events as $ev) {
+    if (!empty($ev['is_featured'])) {
+        $spotlightEvent = $ev;
+        break;
+    }
+}
+if (!$spotlightEvent && !empty($db_events)) {
+    $spotlightEvent = $db_events[0];
+}
+
+// Find spotlight media (video preferred, else image)
+$spotlightVideo = null;
+$spotlightImage = 'assets/events/tcek-fresher.jpg';
+$spotlightVideoTitle = $spotlightEvent ? $spotlightEvent['title'] : 'Freshers Aarambh 2K26 Celebration';
+$spotlightVideoDesc  = $spotlightEvent ? $spotlightEvent['description'] : 'Official campus celebration video.';
+
+if ($spotlightEvent) {
+    if (!empty($spotlightEvent['media_items'])) {
+        foreach ($spotlightEvent['media_items'] as $m) {
+            if ($m['media_type'] === 'video' && !$spotlightVideo) {
+                $spotlightVideo = $m['file_path'];
+                $spotlightVideoTitle = $m['media_title'];
+                $spotlightVideoDesc = $m['media_description'];
+            }
+            if ($m['media_type'] === 'image' && $spotlightImage === 'assets/events/tcek-fresher.jpg') {
+                $spotlightImage = $m['file_path'];
+            }
+        }
+    }
+    if (!$spotlightVideo && !empty($spotlightEvent['video_path'])) {
+        $spotlightVideo = $spotlightEvent['video_path'];
+    }
+    if ($spotlightImage === 'assets/events/tcek-fresher.jpg' && !empty($spotlightEvent['image_path'])) {
+        $spotlightImage = $spotlightEvent['image_path'];
+    }
+}
+if (!$spotlightVideo) {
+    $spotlightVideo = 'assets/events/freshers.mp4';
+}
+
+// Extract all attached videos and photos across all events
+$all_videos = [];
+$all_photos = [];
+
+foreach ($db_events as $ev) {
+    if (!empty($ev['media_items'])) {
+        foreach ($ev['media_items'] as $m) {
+            if ($m['media_type'] === 'video') {
+                $all_videos[] = [
+                    'event_id'    => $ev['id'],
+                    'event_title' => $ev['title'],
+                    'file_path'   => $m['file_path'],
+                    'title'       => $m['media_title'],
+                    'desc'        => $m['media_description'] ?: $ev['description'],
+                    'venue'       => $ev['venue'] ?? 'Trinity Campus'
+                ];
+            } else {
+                $all_photos[] = [
+                    'event_id'    => $ev['id'],
+                    'event_title' => $ev['title'],
+                    'file_path'   => $m['file_path'],
+                    'title'       => $m['media_title'],
+                    'desc'        => $m['media_description'] ?: $ev['description'],
+                    'venue'       => $ev['venue'] ?? 'Trinity Campus'
+                ];
+            }
+        }
+    } else {
+        if (!empty($ev['video_path'])) {
+            $all_videos[] = [
+                'event_id'    => $ev['id'],
+                'event_title' => $ev['title'],
+                'file_path'   => $ev['video_path'],
+                'title'       => $ev['title'] . ' Highlights',
+                'desc'        => $ev['description'],
+                'venue'       => $ev['venue'] ?? 'Trinity Campus'
+            ];
+        }
+        if (!empty($ev['image_path'])) {
+            $all_photos[] = [
+                'event_id'    => $ev['id'],
+                'event_title' => $ev['title'],
+                'file_path'   => $ev['image_path'],
+                'title'       => $ev['title'] . ' Official Poster',
+                'desc'        => $ev['description'],
+                'venue'       => $ev['venue'] ?? 'Trinity Campus'
+            ];
+        }
+    }
+}
+?>
+
             <!-- Event Schedule Quick Ribbon -->
             <div class="event-schedule-ribbon">
-                <div class="event-ribbon-item">
-                    <span class="ribbon-date">1 – 8 OCT</span>
-                    <div class="ribbon-info">
-                        <strong>College Sports Week</strong>
-                        <span>Cricket, Kabaddi, Badminton &amp; Athletics</span>
+                <?php if (!empty($db_events)): ?>
+                    <?php foreach (array_slice($db_events, 0, 5) as $idx => $ev): ?>
+                        <?php 
+                            $dTime = strtotime($ev['event_date']);
+                            $dateLabel = $dTime ? date('j M', $dTime) : $ev['event_date'];
+                            $isActive = ($idx === 0) ? 'active-event' : '';
+                        ?>
+                        <div class="event-ribbon-item <?php echo $isActive; ?>">
+                            <span class="ribbon-date"><?php echo strtoupper($dateLabel); ?></span>
+                            <div class="ribbon-info">
+                                <strong><?php echo htmlspecialchars($ev['title']); ?></strong>
+                                <span><?php echo htmlspecialchars($ev['event_time'] ?: ($ev['venue'] ?? 'Campus Event')); ?></span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="event-ribbon-item active-event">
+                        <span class="ribbon-date">UPCOMING</span>
+                        <div class="ribbon-info">
+                            <strong>College Events 2026</strong>
+                            <span>Trinity College of Engineering &amp; Technology</span>
+                        </div>
                     </div>
-                </div>
-                <div class="event-ribbon-item">
-                    <span class="ribbon-date">9 OCT</span>
-                    <div class="ribbon-info">
-                        <strong>Flash Mob</strong>
-                        <span>High-Voltage Dance Showcase</span>
-                    </div>
-                </div>
-                <div class="event-ribbon-item active-event">
-                    <span class="ribbon-date">12 OCT</span>
-                    <div class="ribbon-info">
-                        <strong>Freshers Aarambh 2K26</strong>
-                        <span>Music, Dance, Celebrations &amp; Welcoming 1st Years</span>
-                    </div>
-                </div>
-                <div class="event-ribbon-item">
-                    <span class="ribbon-date">13 OCT</span>
-                    <div class="ribbon-info">
-                        <strong>Traditional &amp; Bathukamma</strong>
-                        <span>Heritage, Flowers &amp; Cultural Fest</span>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
 
-            <!-- Featured Hero Spotlight Card: Freshers Aarambh 2K26 -->
-            <div class="event-spotlight-card">
-                <!-- Left: Featured Video with Audio & Fullscreen Prompt -->
-                <div class="spotlight-media" onclick="openEventVideoModal('assets/events/freshers.mp4', 'Freshers Aarambh 2K26 Celebration', 'Official highlight video of Freshers Aarambh 2K26 at Trinity College of Engineering &amp; Technology. A new beginning, a brighter tomorrow!')">
-                    <div class="spotlight-video-preview">
-                        <video class="bg-preview-vid" muted autoplay loop playsinline poster="assets/events/tcek-fresher.jpg">
-                            <source src="assets/events/freshers.mp4" type="video/mp4">
-                        </video>
-                        <div class="spotlight-overlay">
-                            <div class="pulse-play-btn" title="Click to Play with Audio">
-                                <i class="fas fa-play"></i>
-                            </div>
-                            <div class="spotlight-action-text">
-                                <span class="audio-pill"><i class="fas fa-volume-up"></i> CLICK FOR FULL SCREEN WITH AUDIO</span>
+            <!-- Featured Hero Spotlight Card -->
+            <?php if ($spotlightEvent): ?>
+                <div class="event-spotlight-card">
+                    <!-- Left: Featured Video with Audio & Fullscreen Prompt -->
+                    <div class="spotlight-media" onclick="openEventVideoModal('<?php echo htmlspecialchars($spotlightVideo); ?>', '<?php echo addslashes(htmlspecialchars($spotlightVideoTitle)); ?>', '<?php echo addslashes(htmlspecialchars($spotlightVideoDesc)); ?>')">
+                        <div class="spotlight-video-preview">
+                            <video class="bg-preview-vid" muted autoplay loop playsinline poster="<?php echo htmlspecialchars($spotlightImage); ?>">
+                                <source src="<?php echo htmlspecialchars($spotlightVideo); ?>" type="video/mp4">
+                            </video>
+                            <div class="spotlight-overlay">
+                                <div class="pulse-play-btn" title="Click to Play with Audio">
+                                    <i class="fas fa-play"></i>
+                                </div>
+                                <div class="spotlight-action-text">
+                                    <span class="audio-pill"><i class="fas fa-volume-up"></i> CLICK FOR FULL SCREEN WITH AUDIO</span>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <!-- Right: Event Overview & Highlights -->
-                <div class="spotlight-info">
-                    <div>
-                        <div class="spotlight-meta">
-                            <span class="spotlight-tag"><i class="fas fa-fire"></i> Mega Event</span>
-                            <span class="spotlight-date"><i class="far fa-calendar-alt"></i> 12 October 2026 · Monday</span>
+                    <!-- Right: Event Overview & Highlights -->
+                    <div class="spotlight-info">
+                        <div>
+                            <div class="spotlight-meta">
+                                <span class="spotlight-tag"><i class="fas fa-fire"></i> <?php echo !empty($spotlightEvent['is_featured']) ? 'Mega Spotlight' : 'Campus Event'; ?></span>
+                                <span class="spotlight-date"><i class="far fa-calendar-alt"></i> <?php echo htmlspecialchars($spotlightEvent['event_date']); ?><?php echo !empty($spotlightEvent['event_time']) ? ' · ' . htmlspecialchars($spotlightEvent['event_time']) : ''; ?></span>
+                            </div>
+                            <h3><?php echo htmlspecialchars($spotlightEvent['title']); ?></h3>
+                            <p class="spotlight-tagline"><i class="fas fa-map-marker-alt" style="color:#00b894;"></i> Venue: <?php echo htmlspecialchars($spotlightEvent['venue'] ?? 'Trinity Campus Auditorium'); ?></p>
+                            <p class="spotlight-desc">
+                                <?php echo htmlspecialchars($spotlightEvent['description'] ?: 'Annual event and festival celebrations at Trinity College of Engineering & Technology.'); ?>
+                            </p>
+
+                            <div class="spotlight-perks-grid">
+                                <div class="perk-chip"><i class="fas fa-music"></i> Live Music</div>
+                                <div class="perk-chip"><i class="fas fa-shoe-prints"></i> Celebrations</div>
+                                <div class="perk-chip"><i class="fas fa-theater-masks"></i> Competitions</div>
+                                <div class="perk-chip"><i class="fas fa-users"></i> Meet Friends</div>
+                                <div class="perk-chip"><i class="fas fa-trophy"></i> Awards &amp; Honors</div>
+                                <div class="perk-chip"><i class="fas fa-camera"></i> Memories Forever</div>
+                            </div>
                         </div>
-                        <h3>Freshers Aarambh 2K26</h3>
-                        <p class="spotlight-tagline">"A New Beginning • A Brighter Tomorrow • Let the Journey Begin..."</p>
-                        <p class="spotlight-desc">
-                            Welcoming the incoming batch of engineers and technocrats to the Trinity family with electrifying music, dazzling dance performances, interactive fun games, and unforgettable memories!
-                        </p>
 
-                        <div class="spotlight-perks-grid">
-                            <div class="perk-chip"><i class="fas fa-music"></i> Live Music</div>
-                            <div class="perk-chip"><i class="fas fa-shoe-prints"></i> Dance &amp; Flash Mob</div>
-                            <div class="perk-chip"><i class="fas fa-theater-masks"></i> Fun Games</div>
-                            <div class="perk-chip"><i class="fas fa-users"></i> Meet New Friends</div>
-                            <div class="perk-chip"><i class="fas fa-trophy"></i> Exciting Awards</div>
-                            <div class="perk-chip"><i class="fas fa-camera"></i> Memories Forever</div>
+                        <div class="spotlight-cta-row">
+                            <button type="button" class="btn-event-play" onclick="openEventVideoModal('<?php echo htmlspecialchars($spotlightVideo); ?>', '<?php echo addslashes(htmlspecialchars($spotlightVideoTitle)); ?>', '<?php echo addslashes(htmlspecialchars($spotlightVideoDesc)); ?>')">
+                                <i class="fas fa-expand"></i> <span>Play Video with Audio</span>
+                            </button>
+                            <?php if ($spotlightImage): ?>
+                                <button type="button" class="btn-event-poster" onclick="openEventImageModal('<?php echo htmlspecialchars($spotlightImage); ?>', '<?php echo addslashes(htmlspecialchars($spotlightEvent['title'])); ?> Poster')">
+                                    <i class="fas fa-image"></i> <span>View Official Poster</span>
+                                </button>
+                            <?php endif; ?>
                         </div>
                     </div>
-
-                    <div class="spotlight-cta-row">
-                        <button type="button" class="btn-event-play" onclick="openEventVideoModal('assets/events/freshers.mp4', 'Freshers Aarambh 2K26 Celebration', 'Official highlight video of Freshers Aarambh 2K26 at Trinity College of Engineering &amp; Technology. A new beginning, a brighter tomorrow!')">
-                            <i class="fas fa-expand"></i> <span>Click Full Screen with Audio</span>
-                        </button>
-                        <button type="button" class="btn-event-poster" onclick="openEventImageModal('assets/events/tcek-fresher.jpg', 'Freshers Aarambh 2K26 Official Event Poster')">
-                            <i class="fas fa-image"></i> <span>View Official Poster</span>
-                        </button>
-                    </div>
                 </div>
-            </div>
+            <?php endif; ?>
 
             <!-- Video Highlights Section -->
+            <?php if (!empty($all_videos)): ?>
+                <div class="event-gallery-subhead">
+                    <h3>Event &amp; Tournament Highlights (HD Video with Audio)</h3>
+                    <p>Click any video card to launch the player in full screen with high definition sound</p>
+                </div>
+
+                <div class="event-cards-grid" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); margin-bottom: 50px;">
+                    <?php foreach ($all_videos as $vid): ?>
+                        <div class="event-card video-card" onclick="openEventVideoModal('<?php echo htmlspecialchars($vid['file_path']); ?>', '<?php echo addslashes(htmlspecialchars($vid['title'])); ?>', '<?php echo addslashes(htmlspecialchars($vid['desc'])); ?>')">
+                            <div class="event-card-thumb">
+                                <video muted loop playsinline class="card-video-loop">
+                                    <source src="<?php echo htmlspecialchars($vid['file_path']); ?>" type="video/mp4">
+                                </video>
+                                <div class="card-video-overlay">
+                                    <span class="card-play-icon"><i class="fas fa-play"></i></span>
+                                    <span class="audio-badge"><i class="fas fa-volume-up"></i> Full Screen &amp; Audio</span>
+                                </div>
+                                <span class="media-type-badge video"><i class="fas fa-video"></i> Video</span>
+                            </div>
+                            <div class="event-card-content">
+                                <div>
+                                    <span class="event-category-tag sports"><?php echo htmlspecialchars($vid['event_title']); ?></span>
+                                    <h4><?php echo htmlspecialchars($vid['title']); ?></h4>
+                                    <p><?php echo htmlspecialchars($vid['desc'] ?: 'College event highlight video.'); ?></p>
+                                </div>
+                                <span class="click-hint"><i class="fas fa-expand"></i> Click full screen with audio</span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Official Posters & Photo Gallery Section -->
+            <?php if (!empty($all_photos)): ?>
+                <div class="event-gallery-subhead">
+                    <h3>Official Posters &amp; Event Photos</h3>
+                    <p>Click any poster or photo to inspect in high-resolution detail</p>
+                </div>
+
+                <div class="event-cards-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); margin-bottom: 50px;">
+                    <?php foreach ($all_photos as $pic): ?>
+                        <div class="event-card poster-card" onclick="openEventImageModal('<?php echo htmlspecialchars($pic['file_path']); ?>', '<?php echo addslashes(htmlspecialchars($pic['title'])); ?>')">
+                            <div class="event-card-thumb" style="height: 240px;">
+                                <img src="<?php echo htmlspecialchars($pic['file_path']); ?>" alt="<?php echo htmlspecialchars($pic['title']); ?>" loading="lazy" onerror="this.src='assets/events/tcek-fresher.jpg'">
+                                <div class="card-image-overlay">
+                                    <span class="card-zoom-icon"><i class="fas fa-search-plus"></i></span>
+                                    <span class="zoom-badge">View Full Image</span>
+                                </div>
+                                <span class="media-type-badge image"><i class="fas fa-image"></i> Photo</span>
+                            </div>
+                            <div class="event-card-content">
+                                <div>
+                                    <span class="event-category-tag cultural"><?php echo htmlspecialchars($pic['event_title']); ?></span>
+                                    <h4><?php echo htmlspecialchars($pic['title']); ?></h4>
+                                    <p><?php echo htmlspecialchars($pic['desc'] ?: 'Event photo/poster.'); ?></p>
+                                </div>
+                                <span class="click-hint"><i class="fas fa-search-plus"></i> View High-Res Image</span>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+
+            <!-- Complete Events Schedule & Details Section -->
             <div class="event-gallery-subhead">
-                <h3>Event &amp; Tournament Highlights (HD Video with Audio)</h3>
-                <p>Click any video card to launch the player in full screen with high definition sound</p>
+                <h3>Campus Events Schedule &amp; Activity Details</h3>
+                <p>Complete official schedule with dedicated photo &amp; video records</p>
             </div>
 
-            <!-- 3-Column Video Cards Grid -->
-            <div class="event-cards-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 50px;">
-                <!-- Card 1: Cricket Campaign Video -->
-                <div class="event-card video-card" onclick="openEventVideoModal('assets/events/cricket-campaigns.mp4', 'AIML &amp; CSE Cricket Campaigns', 'College Sports Week 2026 cricket championship clashes between Department of AIML and Department of CSE.')">
-                    <div class="event-card-thumb">
-                        <video muted loop playsinline class="card-video-loop">
-                            <source src="assets/events/cricket-campaigns.mp4" type="video/mp4">
-                        </video>
-                        <div class="card-video-overlay">
-                            <span class="card-play-icon"><i class="fas fa-play"></i></span>
-                            <span class="audio-badge"><i class="fas fa-volume-up"></i> Full Screen &amp; Audio</span>
+            <div style="display: flex; flex-direction: column; gap: 20px; margin-bottom: 50px;">
+                <?php foreach ($db_events as $ev): ?>
+                    <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 24px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04); display: flex; flex-direction: column; gap: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 10px;">
+                            <div>
+                                <span style="display: inline-block; background: rgba(0, 184, 148, 0.1); color: #009473; font-weight: 700; font-size: 11px; padding: 4px 10px; border-radius: 999px; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <i class="far fa-calendar-check"></i> <?php echo htmlspecialchars($ev['event_date']); ?>
+                                </span>
+                                <h3 style="font-size: 20px; font-weight: 800; color: #0f172a; margin: 0 0 6px;"><?php echo htmlspecialchars($ev['title']); ?></h3>
+                                <div style="display: flex; gap: 16px; font-size: 13px; color: #64748b; font-weight: 500; flex-wrap: wrap;">
+                                    <span><i class="far fa-clock" style="color: #00b894;"></i> <?php echo htmlspecialchars($ev['event_time'] ?: '10:00 AM'); ?></span>
+                                    <span><i class="fas fa-map-marker-alt" style="color: #00b894;"></i> <?php echo htmlspecialchars($ev['venue'] ?? 'Trinity Campus'); ?></span>
+                                </div>
+                            </div>
+                            <span style="background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 600; padding: 6px 12px; border-radius: 999px;">
+                                <i class="fas fa-photo-video"></i> <?php echo count($ev['media_items'] ?? []); ?> Attached Media
+                            </span>
                         </div>
-                        <span class="media-type-badge video"><i class="fas fa-video"></i> Video</span>
-                    </div>
-                    <div class="event-card-content">
-                        <div>
-                            <span class="event-category-tag sports">College Sports Week</span>
-                            <h4>AIML &amp; CSE Cricket Campaigns</h4>
-                            <p>High-stakes inter-departmental cricket showdowns, thrilling match boundaries, and celebratory cheers.</p>
-                        </div>
-                        <span class="click-hint"><i class="fas fa-expand"></i> Click full screen with audio</span>
-                    </div>
-                </div>
 
-                <!-- Card 2: Kabaddi Wins Video -->
-                <div class="event-card video-card" onclick="openEventVideoModal('assets/events/kabaddi-wins.mp4', 'Kabaddi Championship Wins', 'Sensational raid points, tackles, and trophy celebration in the annual college Kabaddi tournament.')">
-                    <div class="event-card-thumb">
-                        <video muted loop playsinline class="card-video-loop">
-                            <source src="assets/events/kabaddi-wins.mp4" type="video/mp4">
-                        </video>
-                        <div class="card-video-overlay">
-                            <span class="card-play-icon"><i class="fas fa-play"></i></span>
-                            <span class="audio-badge"><i class="fas fa-volume-up"></i> Full Screen &amp; Audio</span>
-                        </div>
-                        <span class="media-type-badge video"><i class="fas fa-video"></i> Video</span>
-                    </div>
-                    <div class="event-card-content">
-                        <div>
-                            <span class="event-category-tag sports">College Sports Week</span>
-                            <h4>Kabaddi Championship Wins</h4>
-                            <p>Super-tackles, lightning raids, and championship victory celebrations by Trinity athletes.</p>
-                        </div>
-                        <span class="click-hint"><i class="fas fa-expand"></i> Click full screen with audio</span>
-                    </div>
-                </div>
+                        <p style="color: #475569; font-size: 14px; line-height: 1.6; margin: 0;">
+                            <?php echo htmlspecialchars($ev['description'] ?: 'Join Trinity students and faculty for this vibrant campus gathering.'); ?>
+                        </p>
 
-                <!-- Card 3: Autonomous Status Celebration Video -->
-                <div class="event-card video-card" onclick="openEventVideoModal('assets/College Event/autonomus.mp4', 'UGC Autonomous Status Felicitation Ceremony', 'Grand celebration on UGC granting Autonomous Status to Trinity College of Engineering and Technology.')">
-                    <div class="event-card-thumb">
-                        <video muted loop playsinline class="card-video-loop">
-                            <source src="assets/College Event/autonomus.mp4" type="video/mp4">
-                        </video>
-                        <div class="card-video-overlay">
-                            <span class="card-play-icon"><i class="fas fa-play"></i></span>
-                            <span class="audio-badge"><i class="fas fa-volume-up"></i> Full Screen &amp; Audio</span>
-                        </div>
-                        <span class="media-type-badge video"><i class="fas fa-video"></i> Video</span>
+                        <!-- Attached Media Row for this specific Event -->
+                        <?php if (!empty($ev['media_items'])): ?>
+                            <div style="border-top: 1px solid #f1f5f9; padding-top: 14px; margin-top: 4px;">
+                                <div style="font-size: 12px; font-weight: 700; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+                                    Event Media &amp; Details:
+                                </div>
+                                <div style="display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px;">
+                                    <?php foreach ($ev['media_items'] as $item): ?>
+                                        <?php if ($item['media_type'] === 'video'): ?>
+                                            <div style="flex: 0 0 160px; height: 105px; border-radius: 10px; overflow: hidden; position: relative; cursor: pointer; background: #000; box-shadow: 0 2px 6px rgba(0,0,0,0.1);" onclick="openEventVideoModal('<?php echo htmlspecialchars($item['file_path']); ?>', '<?php echo addslashes(htmlspecialchars($item['media_title'])); ?>', '<?php echo addslashes(htmlspecialchars($item['media_description'])); ?>')">
+                                                <video src="<?php echo htmlspecialchars($item['file_path']); ?>" muted style="width: 100%; height: 100%; object-fit: cover;"></video>
+                                                <div style="position: absolute; inset: 0; background: rgba(0,0,0,0.35); display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff;">
+                                                    <i class="fas fa-play-circle" style="font-size: 24px; color: #00b894;"></i>
+                                                    <span style="font-size: 10.5px; font-weight: 600; margin-top: 4px; padding: 0 6px; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px;"><?php echo htmlspecialchars($item['media_title']); ?></span>
+                                                </div>
+                                            </div>
+                                        <?php else: ?>
+                                            <div style="flex: 0 0 160px; height: 105px; border-radius: 10px; overflow: hidden; position: relative; cursor: pointer; background: #f8fafc; border: 1px solid #e2e8f0; box-shadow: 0 2px 6px rgba(0,0,0,0.05);" onclick="openEventImageModal('<?php echo htmlspecialchars($item['file_path']); ?>', '<?php echo addslashes(htmlspecialchars($item['media_title'])); ?>')">
+                                                <img src="<?php echo htmlspecialchars($item['file_path']); ?>" alt="<?php echo htmlspecialchars($item['media_title']); ?>" style="width: 100%; height: 100%; object-fit: cover;" onerror="this.src='assets/events/tcek-fresher.jpg'">
+                                                <div style="position: absolute; bottom: 0; inset-inline: 0; background: linear-gradient(transparent, rgba(0,0,0,0.7)); padding: 4px 6px; color: #fff; font-size: 10.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                                    <?php echo htmlspecialchars($item['media_title']); ?>
+                                                </div>
+                                            </div>
+                                        <?php endif; ?>
+                                    <?php endforeach; ?>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
-                    <div class="event-card-content">
-                        <div>
-                            <span class="event-category-tag fest">Milestone Event</span>
-                            <h4>Autonomous Status Felicitation</h4>
-                            <p>Special institutional felicitation ceremonies celebrating UGC Autonomous conferment with faculty and guests.</p>
-                        </div>
-                        <span class="click-hint"><i class="fas fa-expand"></i> Click full screen with audio</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Official Posters & Schedule Section -->
-            <div class="event-gallery-subhead">
-                <h3>Official Posters &amp; Event Schedules</h3>
-                <p>Click any poster to inspect in high-resolution detail</p>
-            </div>
-
-            <div class="event-cards-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 50px;">
-                <!-- Poster 1: Freshers Aarambh 2K26 Poster -->
-                <div class="event-card poster-card" onclick="openEventImageModal('assets/events/tcek-fresher.jpg', 'Freshers Aarambh 2K26 Official Event Poster')">
-                    <div class="event-card-thumb" style="height: 240px;">
-                        <img src="assets/events/tcek-fresher.jpg" alt="Freshers Aarambh 2K26 Poster" loading="lazy">
-                        <div class="card-image-overlay">
-                            <span class="card-zoom-icon"><i class="fas fa-search-plus"></i></span>
-                            <span class="zoom-badge">View Full Poster</span>
-                        </div>
-                        <span class="media-type-badge image"><i class="fas fa-image"></i> Poster</span>
-                    </div>
-                    <div class="event-card-content">
-                        <div>
-                            <span class="event-category-tag cultural">Aarambh 2K26</span>
-                            <h4>Freshers Aarambh 2K26</h4>
-                            <p>Official banner and schedule for 12 October 2026 Monday.</p>
-                        </div>
-                        <span class="click-hint"><i class="fas fa-search-plus"></i> View High-Res Poster</span>
-                    </div>
-                </div>
-
-                <!-- Poster 2: Sports & Cultural Week Schedule Poster -->
-                <div class="event-card poster-card" onclick="openEventImageModal('assets/events/tcek-poster.jpg', 'College Sports &amp; Cultural Week 2026 Schedule &amp; Poster')">
-                    <div class="event-card-thumb" style="height: 240px;">
-                        <img src="assets/events/tcek-poster.jpg" alt="Sports & Cultural Week 2026 Poster" loading="lazy">
-                        <div class="card-image-overlay">
-                            <span class="card-zoom-icon"><i class="fas fa-search-plus"></i></span>
-                            <span class="zoom-badge">View Full Schedule</span>
-                        </div>
-                        <span class="media-type-badge image"><i class="fas fa-image"></i> Schedule</span>
-                    </div>
-                    <div class="event-card-content">
-                        <div>
-                            <span class="event-category-tag fest">Mega Fest 2026</span>
-                            <h4>Sports &amp; Cultural Week</h4>
-                            <p>Complete 2-week schedule across sports, flash mob and traditional days.</p>
-                        </div>
-                        <span class="click-hint"><i class="fas fa-search-plus"></i> View High-Res Schedule</span>
-                    </div>
-                </div>
-
-                <!-- Poster 3: Graduation & Convocation Caps -->
-                <div class="event-card poster-card" onclick="openEventImageModal('assets/College Event/caps.jpg', 'Annual Convocation &amp; Graduation Day Ceremony')">
-                    <div class="event-card-thumb" style="height: 240px;">
-                        <img src="assets/College Event/caps.jpg" alt="Graduation Day Ceremony" loading="lazy">
-                        <div class="card-image-overlay">
-                            <span class="card-zoom-icon"><i class="fas fa-search-plus"></i></span>
-                            <span class="zoom-badge">View Photo</span>
-                        </div>
-                        <span class="media-type-badge image"><i class="fas fa-camera"></i> Graduation</span>
-                    </div>
-                    <div class="event-card-content">
-                        <div>
-                            <span class="event-category-tag cultural">Convocation</span>
-                            <h4>Graduation Ceremony</h4>
-                            <p>Graduating engineers celebrating academic degrees and milestones.</p>
-                        </div>
-                        <span class="click-hint"><i class="fas fa-search-plus"></i> View Full Photo</span>
-                    </div>
-                </div>
-
-                <!-- Poster 4: Felicitation Honors -->
-                <div class="event-card poster-card" onclick="openEventImageModal('assets/College Event/feli1.jpg', 'Merit Felicitation &amp; Award Ceremony')">
-                    <div class="event-card-thumb" style="height: 240px;">
-                        <img src="assets/College Event/feli1.jpg" alt="Merit Felicitation Ceremony" loading="lazy">
-                        <div class="card-image-overlay">
-                            <span class="card-zoom-icon"><i class="fas fa-search-plus"></i></span>
-                            <span class="zoom-badge">View Photo</span>
-                        </div>
-                        <span class="media-type-badge image"><i class="fas fa-trophy"></i> Awards</span>
-                    </div>
-                    <div class="event-card-content">
-                        <div>
-                            <span class="event-category-tag fest">Honors</span>
-                            <h4>Merit Felicitation</h4>
-                            <p>Recognizing outstanding student achievers, rank holders and sports stars.</p>
-                        </div>
-                        <span class="click-hint"><i class="fas fa-search-plus"></i> View Full Photo</span>
-                    </div>
-                </div>
+                <?php endforeach; ?>
             </div>
 
             <!-- Organizing Committees Banner -->

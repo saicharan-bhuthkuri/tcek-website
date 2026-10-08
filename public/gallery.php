@@ -7,8 +7,14 @@
 </head>
 
 <body>
-    <?php $page = 'gallery';
-    include 'header.php'; ?>
+    <?php 
+    $page = 'gallery';
+    include 'header.php'; 
+    @include_once __DIR__ . '/backend/config/database.php';
+    @include_once __DIR__ . '/backend/crud.php';
+    $dyn_photos = function_exists('get_gallery_items') ? get_gallery_items(null, 50) : [];
+    $dyn_news   = function_exists('get_news') ? get_news(50) : [];
+    ?>
 
     <main>
         <!-- Gallery Hero Header -->
@@ -83,6 +89,25 @@
         <!-- Main Photo Grid Section -->
         <section class="gallery-section-body">
             <div class="gallery-modern-grid" id="gallery-grid-container">
+                <?php if (!empty($dyn_photos)): ?>
+                    <!-- Dynamic Uploaded Photos from GoDaddy MySQL & Storage -->
+                    <?php foreach ($dyn_photos as $dp): 
+                        $cat = htmlspecialchars($dp['category']);
+                        $title = htmlspecialchars($dp['title']);
+                        $path = htmlspecialchars($dp['file_path']);
+                    ?>
+                        <div class="gallery-modern-card" data-category="<?php echo $cat; ?>" onclick="openGalleryModal(this)">
+                            <div class="gallery-card-thumb">
+                                <span class="gallery-card-badge badge-event"><i class="fas fa-camera"></i> <?php echo ucfirst($cat); ?></span>
+                                <img src="<?php echo $path; ?>" alt="<?php echo $title; ?>">
+                                <div class="gallery-card-overlay">
+                                    <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> Expand</span>
+                                </div>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+
                 <!-- ================= EVENTS & CELEBRATIONS ================= -->
                 <div class="gallery-modern-card" data-category="events" onclick="openGalleryModal(this)">
                     <div class="gallery-card-thumb">
@@ -297,115 +322,23 @@
                 </div>
 
                 <!-- ================= PRESS & MEDIA CLIPPINGS ================= -->
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper1.jpg" alt="Mana Telangana: Yuva Sangam - Trinity Student Selected for National Tour to IIT Guwahati">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                <?php if (!empty($dyn_news)): ?>
+                    <?php foreach ($dyn_news as $p_item): 
+                        $p_raw = !empty($p_item['image_path']) ? $p_item['image_path'] : 'assets/Gallery/paper1.jpg';
+                        $p_title = htmlspecialchars($p_item['title']);
+                        $p_source = !empty($p_item['source']) ? htmlspecialchars($p_item['source']) : 'Press';
+                    ?>
+                        <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
+                            <div class="gallery-card-thumb">
+                                <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> <?php echo $p_source; ?></span>
+                                <img src="<?php echo htmlspecialchars($p_raw); ?>" alt="<?php echo $p_title; ?>" onerror="this.src='assets/Gallery/paper1.jpg'">
+                                <div class="gallery-card-overlay">
+                                    <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper2.jpg" alt="Prajakranthi: Founder Chairman Felicitates Saniya on National Yuva Sangam Selection">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper3.jpg" alt="Andhra Prabha: Vigilance Inspection of Quality &amp; Infrastructure Across Engineering Colleges">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper4.jpg" alt="State Daily: Quality Benchmark &amp; Lab Infrastructure Vigilance Inspection">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper5.jpg" alt="Andhra Prabha: Smart India Hackathon 2026 Internal Round Inaugurated at Trinity">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper6.jpg" alt="Mana Telangana: Smart India Hackathon 2026 - Innovation &amp; Prototype Exhibition at Trinity">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper7.jpg" alt="Namasthe Telangana: Smart India Hackathon 2026 Organized at Trinity Autonomous College">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper8.jpg" alt="Mana Telangana: MSME Idea Hackathon 6.0 Conducted with 168 Projects and ₹15L Funding">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper9.jpg" alt="Namasthe Telangana: Nurturing Innovation at MSME Hackathon 6.0 - 168 Projects Displayed">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper10.jpg" alt="Andhra Prabha: Tremendous Response to MSME Idea Hackathon 6.0 with ₹15 Lakh Grant">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="gallery-modern-card category-press" data-category="press" onclick="openGalleryModal(this)">
-                    <div class="gallery-card-thumb">
-                        <span class="gallery-card-badge badge-press"><i class="fas fa-newspaper"></i> Press</span>
-                        <img src="assets/Gallery/paper11.jpg" alt="Eenadu Daily: MSME Internal Hackathon 6.0 Successfully Organized at Trinity College">
-                        <div class="gallery-card-overlay">
-                            <span class="gallery-expand-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                        </div>
-                    </div>
-                </div>
+                    <?php endforeach; ?>
+                <?php endif; ?>
 
                 <div id="gallery-empty-state" class="gallery-empty-state" style="display: none;">
                     <div class="gallery-empty-icon"><i class="fas fa-newspaper"></i></div>

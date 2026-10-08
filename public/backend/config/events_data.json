@@ -1,0 +1,162 @@
+[
+    {
+        "id": 1,
+        "title": "Freshers Aarambh 2K26",
+        "event_date": "2026-10-12",
+        "event_time": "10:00 AM \u2013 05:00 PM",
+        "venue": "Trinity Campus Auditorium",
+        "description": "Welcoming the incoming batch of engineers and technocrats to the Trinity family with electrifying music, dazzling dance performances, interactive fun games, and unforgettable memories!",
+        "image_path": "assets/events/tcek-fresher.jpg",
+        "video_path": "assets/events/freshers.mp4",
+        "is_featured": 1,
+        "is_active": 1,
+        "created_at": "2026-10-01 10:00:00",
+        "media_items": [
+            {
+                "id": 1,
+                "event_id": 1,
+                "media_type": "video",
+                "file_path": "assets/events/freshers.mp4",
+                "media_title": "Freshers Aarambh 2K26 Celebration",
+                "media_description": "Official highlight video of Freshers Aarambh 2K26 at Trinity College of Engineering & Technology.",
+                "created_at": "2026-10-01 10:00:00"
+            },
+            {
+                "id": 2,
+                "event_id": 1,
+                "media_type": "image",
+                "file_path": "assets/events/tcek-fresher.jpg",
+                "media_title": "Freshers Aarambh 2K26 Official Event Poster",
+                "media_description": "Official creative poster announcing Freshers Day on 12th October 2026.",
+                "created_at": "2026-10-01 10:05:00"
+            }
+        ]
+    },
+    {
+        "id": 2,
+        "title": "College Sports Week",
+        "event_date": "2026-10-01",
+        "event_time": "09:00 AM \u2013 05:00 PM",
+        "venue": "Trinity Sports Ground",
+        "description": "A week of energy, talent & togetherness \u2014 cricket championship, kabaddi tournaments, badminton and athletic competitions.",
+        "image_path": "assets/events/tcek-poster.jpg",
+        "video_path": "assets/events/cricket-campaigns.mp4",
+        "is_featured": 0,
+        "is_active": 1,
+        "created_at": "2026-09-28 09:00:00",
+        "media_items": [
+            {
+                "id": 3,
+                "event_id": 2,
+                "media_type": "video",
+                "file_path": "assets/events/cricket-campaigns.mp4",
+                "media_title": "AIML & CSE Cricket Campaigns",
+                "media_description": "College Sports Week 2026 cricket championship clashes between Department of AIML and Department of CSE.",
+                "created_at": "2026-10-02 11:00:00"
+            },
+            {
+                "id": 4,
+                "event_id": 2,
+                "media_type": "video",
+                "file_path": "assets/events/kabaddi-wins.mp4",
+                "media_title": "Kabaddi Championship Wins",
+                "media_description": "Sensational raid points, tackles, and trophy celebration in the annual college Kabaddi tournament.",
+                "created_at": "2026-10-03 16:30:00"
+            },
+            {
+                "id": 5,
+                "event_id": 2,
+                "media_type": "image",
+                "file_path": "assets/events/tcek-poster.jpg",
+                "media_title": "Sports & Cultural Week Schedule",
+                "media_description": "Complete 2-week schedule across sports, flash mob and traditional days.",
+                "created_at": "2026-09-29 10:00:00"
+            }
+        ]
+    },
+    {
+        "id": 3,
+        "title": "Flash Mob Dance Showcase",
+        "event_date": "2026-10-09",
+        "event_time": "04:00 PM \u2013 05:30 PM",
+        "venue": "Main Campus Plaza",
+        "description": "High-voltage dance showcase featuring Trinity students, electrifying music, and creative choreography.",
+        "image_path": null,
+        "video_path": null,
+        "is_featured": 0,
+        "is_active": 1,
+        "created_at": "2026-10-02 14:00:00",
+        "media_items": []
+    },
+    {
+        "id": 4,
+        "title": "Traditional & Bathukamma Fest",
+        "event_date": "2026-10-13",
+        "event_time": "10:00 AM \u2013 04:00 PM",
+        "venue": "Central Quadrangle",
+        "description": "Heritage, flowers, authentic cultural fest and celebrations honoring regional traditions.",
+        "image_path": null,
+        "video_path": null,
+        "is_featured": 0,
+        "is_active": 1,
+        "created_at": "2026-10-03 10:00:00",
+        "media_items": []
+    },
+    {
+        "id": 5,
+        "title": "Autonomous Status Felicitation",
+        "event_date": "2026-09-25",
+        "event_time": "11:00 AM \u2013 02:00 PM",
+        "venue": "Main Auditorium",
+        "description": "Grand celebration on UGC granting Autonomous Status to Trinity College of Engineering and Technology.",
+        "image_path": null,
+        "video_path": "assets/College Event/autonomus.mp4",
+        "is_featured": 0,
+        "is_active": 1,
+        "created_at": "2026-09-24 11:00:00",
+        "media_items": [
+            {
+                "id": 6,
+                "event_id": 5,
+                "media_type": "video",
+                "file_path": "assets/College Event/autonomus.mp4",
+                "media_title": "Autonomous Status Felicitation",
+                "media_description": "Special institutional felicitation ceremonies celebrating UGC Autonomous conferment.",
+                "created_at": "2026-09-25 15:00:00"
+            }
+        ]
+    },
+    {
+        "id": 6,
+        "title": "Annual Convocation & Graduation Day",
+        "event_date": "2026-09-18",
+        "event_time": "10:00 AM \u2013 01:30 PM",
+        "venue": "Open Air Amphitheatre",
+        "description": "Graduating engineers celebrating academic degrees, medals, and milestone achievements with parents and mentors.",
+        "image_path": "assets/College Event/caps.jpg",
+        "video_path": null,
+        "is_featured": 0,
+        "is_active": 1,
+        "created_at": "2026-09-17 10:00:00",
+        "media_items": [
+            {
+                "id": 7,
+                "event_id": 6,
+                "media_type": "image",
+                "file_path": "assets/College Event/caps.jpg",
+                "media_title": "Graduation Day Ceremony",
+                "media_description": "Graduating engineers tossing convocation caps in celebration.",
+                "created_at": "2026-09-18 14:00:00"
+            },
+            {
+                "id": 8,
+                "event_id": 6,
+                "media_type": "image",
+                "file_path": "assets/College Event/feli1.jpg",
+                "media_title": "Merit Felicitation Ceremony",
+                "media_description": "Recognizing outstanding student achievers, rank holders and sports stars.",
+                "created_at": "2026-09-18 14:30:00"
+            }
+        ]
+    }
+]
