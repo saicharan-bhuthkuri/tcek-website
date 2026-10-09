@@ -794,7 +794,7 @@ foreach ($live_events as $ev) {
                                     </div>
                                 </div>
                                 <div class="course-card-footer">
-                                    <a href="dept-eee.php" class="btn-course-explore">
+                                    <a href="department.php?slug=eee" class="btn-course-explore">
                                         <span>Explore Department</span>
                                         <i class="fas fa-arrow-right"></i>
                                     </a>
@@ -834,7 +834,7 @@ foreach ($live_events as $ev) {
                                     </div>
                                 </div>
                                 <div class="course-card-footer">
-                                    <a href="dept-ece.php" class="btn-course-explore">
+                                    <a href="department.php?slug=ece" class="btn-course-explore">
                                         <span>Explore Department</span>
                                         <i class="fas fa-arrow-right"></i>
                                     </a>
@@ -875,7 +875,7 @@ foreach ($live_events as $ev) {
                                     </div>
                                 </div>
                                 <div class="course-card-footer">
-                                    <a href="dept-cse.php" class="btn-course-explore">
+                                    <a href="department.php?slug=cse" class="btn-course-explore">
                                         <span>Explore Department</span>
                                         <i class="fas fa-arrow-right"></i>
                                     </a>
@@ -915,7 +915,7 @@ foreach ($live_events as $ev) {
                                     </div>
                                 </div>
                                 <div class="course-card-footer">
-                                    <a href="dept-aiml.php" class="btn-course-explore">
+                                    <a href="department.php?slug=aiml" class="btn-course-explore">
                                         <span>Explore Department</span>
                                         <i class="fas fa-arrow-right"></i>
                                     </a>
@@ -955,7 +955,7 @@ foreach ($live_events as $ev) {
                                     </div>
                                 </div>
                                 <div class="course-card-footer">
-                                    <a href="dept-cse-aiml.php" class="btn-course-explore">
+                                    <a href="department.php?slug=cse-aiml" class="btn-course-explore">
                                         <span>Explore Department</span>
                                         <i class="fas fa-arrow-right"></i>
                                     </a>
@@ -1123,7 +1123,7 @@ foreach ($live_events as $ev) {
                                     </div>
                                 </div>
                                 <div class="course-card-footer">
-                                    <a href="dept-mba.php" class="btn-course-explore">
+                                    <a href="department.php?slug=mba" class="btn-course-explore">
                                         <span>Explore MBA Department</span>
                                         <i class="fas fa-arrow-right"></i>
                                     </a>

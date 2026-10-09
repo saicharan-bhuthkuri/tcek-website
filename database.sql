@@ -98,7 +98,37 @@ CREATE TABLE IF NOT EXISTS `notices` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 5. Staff Table (Staff profile information, department, profile image)
+-- 5. Departments Table (Academic Departments, intake, durations, themes, URLs)
+CREATE TABLE IF NOT EXISTS `departments` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `dept_code` VARCHAR(50) NOT NULL UNIQUE,
+  `name` VARCHAR(255) NOT NULL,
+  `slug` VARCHAR(100) NOT NULL UNIQUE,
+  `degree_level` VARCHAR(50) NOT NULL DEFAULT 'B.Tech',
+  `intake` VARCHAR(50) DEFAULT '60 Seats',
+  `duration` VARCHAR(50) DEFAULT '4 Years',
+  `established_year` INT DEFAULT 2008,
+  `icon_class` VARCHAR(100) DEFAULT 'fas fa-graduation-cap',
+  `theme_class` VARCHAR(50) DEFAULT 'theme-cse',
+  `banner_image` VARCHAR(255) DEFAULT 'assets/courses/cse.png',
+  `tags` TEXT DEFAULT NULL,
+  `syllabus_url` VARCHAR(255) DEFAULT NULL,
+  `peos_url` VARCHAR(255) DEFAULT NULL,
+  `gallery_images` TEXT DEFAULT NULL,
+  `description` TEXT DEFAULT NULL,
+  `vision` TEXT DEFAULT NULL,
+  `mission` TEXT DEFAULT NULL,
+  `page_url` VARCHAR(255) DEFAULT NULL,
+  `display_order` INT DEFAULT 0,
+  `is_active` TINYINT(1) DEFAULT 1,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX (`dept_code`),
+  INDEX (`slug`),
+  INDEX (`degree_level`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 6. Staff Table (Staff profile information, department, profile image)
 CREATE TABLE IF NOT EXISTS `staff` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `full_name` VARCHAR(150) NOT NULL,

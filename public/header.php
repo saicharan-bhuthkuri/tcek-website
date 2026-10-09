@@ -117,15 +117,38 @@
     </div>
 </nav>
 
-<!-- Notification Bar -->
-<div class="news-ticker">
-    <div class="ticker-content">
-        We Proudly Announce That We Got JNTUH & UGC AUTONOMOUS Status for Five Years From The Academic Year
-        2025-2026 to 2029-2030 &nbsp;&nbsp;|&nbsp;&nbsp; We are proud to be the first and only NAAC Accredited
-        Engineering College in Peddapalli District &nbsp;&nbsp;|&nbsp;&nbsp; Diploma , BTech and MBA Admissions are
-        in progress for 2024-25 &nbsp;&nbsp;|&nbsp;&nbsp; For Admissions Contact: 7396903383, 8522954369
+<?php
+// Dynamic Announcement Bar Controller
+@require_once __DIR__ . '/backend/announcements_crud.php';
+$announcement_data = function_exists('get_announcement_data') ? get_announcement_data() : null;
+$ann_settings      = $announcement_data['settings'] ?? ['is_enabled' => 1, 'scrolling_speed' => 60, 'last_updated' => date('d F Y'), 'show_last_updated' => 1];
+$is_ann_enabled    = !empty($ann_settings['is_enabled']);
+$ann_speed         = max(10, min(300, (int)($ann_settings['scrolling_speed'] ?? 60)));
+$ann_last_updated  = $ann_settings['last_updated'] ?? date('d F Y');
+$show_updated_msg  = !empty($ann_settings['show_last_updated']);
+$ann_ticker_html   = function_exists('get_announcement_ticker_html') ? get_announcement_ticker_html($announcement_data) : '';
+?>
+<?php if ($is_ann_enabled && !empty($ann_ticker_html)): ?>
+<!-- Dynamic Top Announcement Scrolling Bar -->
+<div class="news-ticker-wrap">
+    <div class="news-ticker" style="--ticker-speed: <?php echo $ann_speed; ?>s;">
+        <div class="ticker-bar-container">
+            <?php if ($show_updated_msg): ?>
+                <div class="ticker-meta-side">
+                    <span class="ticker-live-badge"><i class="fas fa-bullhorn"></i> ANNOUNCEMENT</span>
+                    <span class="ticker-meta-divider">&bull;</span>
+                    <span class="ticker-updated-badge"><i class="far fa-calendar-check"></i> Last Updated: <?php echo htmlspecialchars($ann_last_updated); ?></span>
+                </div>
+            <?php endif; ?>
+            <div class="ticker-flow-track">
+                <div class="ticker-content" style="animation-duration: <?php echo $ann_speed; ?>s;">
+                    <?php echo $ann_ticker_html; ?>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
+<?php endif; ?>
 
 <!-- Admission Codes Banner -->
 <div class="admission-banner">

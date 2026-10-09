@@ -19,15 +19,25 @@ if (isset($_GET['msg']) && $_GET['msg'] === 'logged_out') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'] ?? '';
-    $password = $_POST['password'] ?? '';
-
-    $res = verify_admin_login($username, $password);
-    if ($res['success']) {
-        header('Location: dashboard.php');
-        exit;
+    $csrfToken = $_POST['csrf_token'] ?? '';
+    if (!verify_csrf_token($csrfToken)) {
+        $error_msg = 'Security validation failed (CSRF token mismatch). Please reload and try again.';
+        http_response_code(403);
     } else {
-        $error_msg = $res['message'];
+        $username = $_POST['username'] ?? '';
+        $password = $_POST['password'] ?? '';
+
+        $res = verify_admin_login($username, $password);
+        if ($res['success']) {
+            header('Location: dashboard.php');
+            exit;
+        } else {
+            $error_msg = $res['message'];
+            if (!empty($res['retry_after'])) {
+                http_response_code(429);
+                header('Retry-After: ' . (int)$res['retry_after']);
+            }
+        }
     }
 }
 
@@ -40,7 +50,7 @@ $db_connected = isDbConnected();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff &amp; Admin Login - Trinity College of Engineering &amp; Technology</title>
     <!-- Fonts & Icons matching index.php -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Main College Website Stylesheet -->
     <link rel="stylesheet" href="../css/style.css">
@@ -282,91 +292,30 @@ $db_connected = isDbConnected();
             text-decoration: none;
         }
 
-        /* College Navigation Bar */
-        .portal-nav-bar {
+        /* Sleek Minimal Portal Footer */
+        .portal-minimal-footer {
+            margin-top: auto;
+            padding: 24px 20px;
+            text-align: center;
+            border-top: 1px solid #e2e8f0;
             background: #ffffff;
-            border-bottom: 1px solid #f0f0f0;
-            padding: 10px 0;
+            color: #94a3b8;
+            font-size: 12.5px;
         }
 
-        .portal-nav-container {
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 0 20px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-
-        .portal-nav-brand {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            color: #0f172a;
-            font-weight: 700;
-            font-size: 14.5px;
-        }
-
-        .portal-nav-links {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .portal-nav-link {
-            text-decoration: none;
-            color: #475569;
-            font-size: 13px;
-            font-weight: 600;
-            padding: 6px 12px;
-            border-radius: 6px;
-            transition: all 0.2s;
-        }
-
-        .portal-nav-link:hover {
+        .portal-minimal-footer a {
             color: #00b894;
-            background: #ecfdf5;
+            text-decoration: none;
+            font-weight: 600;
+            margin-left: 6px;
+        }
+
+        .portal-minimal-footer a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-
-    <!-- Top Header Banner (Matching index.php) -->
-    <header class="main-header">
-        <div class="header-container">
-            <div class="logo-section">
-                <a href="../index.php">
-                    <img src="../assets/Top Header/header_banner.png" alt="Trinity College Logo" class="main-logo" onerror="this.src='../assets/Top Header/logo.jpg'">
-                </a>
-            </div>
-            <div class="accreditation-logos">
-                <img src="../assets/Top Header/naac_logo.png" alt="NAAC">
-                <img src="../assets/Top Header/jntuh_logo.png" alt="JNTUH">
-                <img src="../assets/Top Header/nptel_logo.png" alt="NPTEL">
-                <img src="../assets/Top Header/ISO-LOGO.png" alt="ISO">
-                <img src="../assets/Top Header/nss_logo.png" alt="NSS">
-                <img src="../assets/Top Header/aicte_logo.png" alt="AICTE">
-            </div>
-        </div>
-    </header>
-
-    <!-- Portal Navigation Bar -->
-    <div class="portal-nav-bar">
-        <div class="portal-nav-container">
-            <a href="../index.php" class="portal-nav-brand">
-                <i class="fas fa-university" style="color:#00b894; font-size:18px;"></i>
-                <span>TRINITY COLLEGE OF ENGINEERING &amp; TECHNOLOGY</span>
-            </a>
-            <div class="portal-nav-links">
-                <a href="../index.php" class="portal-nav-link"><i class="fas fa-home"></i> College Website</a>
-                <a href="../admission.php" class="portal-nav-link">Admissions</a>
-                <a href="../circulars.php" class="portal-nav-link">Circulars</a>
-                <a href="../gallery.php" class="portal-nav-link">Gallery</a>
-                <a href="../contact.php" class="portal-nav-link">Contact</a>
-            </div>
-        </div>
-    </div>
 
     <!-- Portal Hero Header (Clean Light Theme) -->
     <section class="portal-hero-light">
@@ -403,11 +352,12 @@ $db_connected = isDbConnected();
             <?php endif; ?>
 
             <form action="login.php" method="POST">
+                <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars(get_csrf_token(), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="form-group">
-                    <label for="username" class="form-label"><i class="fas fa-user-shield" style="color:#00b894;"></i> Username / Staff ID</label>
+                    <label for="username" class="form-label"><i class="fas fa-user-shield" style="color:#00b894;"></i> Username or Email</label>
                     <div class="input-group-modern">
                         <i class="fas fa-user input-icon"></i>
-                        <input type="text" id="username" name="username" class="form-control" placeholder="Enter username" value="tcek" required autofocus>
+                        <input type="text" id="username" name="username" class="form-control" placeholder="Enter username or email" value="<?php echo htmlspecialchars($_POST['username'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" required autocomplete="username" autofocus>
                     </div>
                 </div>
 
@@ -415,7 +365,7 @@ $db_connected = isDbConnected();
                     <label for="password" class="form-label"><i class="fas fa-key" style="color:#00b894;"></i> Secure Password</label>
                     <div class="input-group-modern">
                         <i class="fas fa-lock input-icon"></i>
-                        <input type="password" id="password" name="password" class="form-control" placeholder="Enter password" value="tcek@developer" required>
+                        <input type="password" id="password" name="password" class="form-control" placeholder="Enter password" required autocomplete="current-password">
                         <button type="button" class="btn-pwd-toggle" id="btnTogglePassword" title="Show/Hide Password">
                             <i class="far fa-eye" id="togglePasswordIcon"></i>
                         </button>
@@ -424,7 +374,7 @@ $db_connected = isDbConnected();
 
                 <div class="form-meta-row">
                     <label class="checkbox-label">
-                        <input type="checkbox" name="remember" checked style="accent-color:#00b894;">
+                        <input type="checkbox" name="remember" style="accent-color:#00b894;">
                         <span>Keep me signed in</span>
                     </label>
                     <a href="../index.php" class="return-link"><i class="fas fa-arrow-left"></i> Return to Site</a>
@@ -437,69 +387,19 @@ $db_connected = isDbConnected();
             </form>
 
             <div class="card-footer-info">
-                <span>Database: <strong><?php echo $db_connected ? 'Connected (tcek)' : 'Offline (Developer Mode Active)'; ?></strong> &bull; Host: localhost</span>
+                <span>Portal Security: <strong>Active</strong> &bull; Authenticated Access Control</span>
             </div>
         </div>
 
         <div class="portal-help-note">
             Trinity College of Engineering and Technology &bull; Bandarikunta, Peddapalli<br>
-            Technical support: <a href="mailto:officetcek@gmail.com">officetcek@gmail.com</a>
+            Technical support: <a href="mailto:saivortex.dev@gmail.com">saivortex.dev@gmail.com</a>
         </div>
     </div>
 
-    <!-- College Footer (Matching index.php footer) -->
-    <footer>
-        <div class="footer-content">
-            <div class="footer-section">
-                <h3>Trinity College</h3>
-                <p>Peddapalli, Telangana. Approved by AICTE, Affiliated to JNTUH.</p>
-                <div class="footer-banners">
-                    <img src="../assets/footer/college_logo_banner.png" alt="College Logo Banner">
-                    <img src="../assets/footer/branding_banner.png" alt="Branding Banner">
-                </div>
-            </div>
-            <div class="footer-section">
-                <h3>Quick Links</h3>
-                <ul>
-                    <li><a href="../index.php">Home</a></li>
-                    <li><a href="../admission.php">Admissions</a></li>
-                    <li><a href="../courses.php">Courses</a></li>
-                    <li><a href="../events.php">Events &amp; Fest</a></li>
-                    <li><a href="../rnd-rankings.php">R&amp;D Rankings</a></li>
-                    <li><a href="../contact.php">Contact</a></li>
-                </ul>
-                <div class="social-links">
-                    <a href="#"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#"><i class="fab fa-twitter"></i></a>
-                    <a href="#"><i class="fab fa-linkedin-in"></i></a>
-                    <a href="#"><i class="fab fa-instagram"></i></a>
-                </div>
-            </div>
-            <div class="footer-section">
-                <h3>Contact Info</h3>
-                <ul class="contact-list">
-                    <li>
-                        <div>
-                            <strong>Location:</strong><br>
-                            Trinity College of Engineering and Technology, Bandarikunta, Peddapalli, Telangana-505172
-                        </div>
-                    </li>
-                    <li>
-                        <div>
-                            <strong>Email:</strong> <a href="mailto:officetcek@gmail.com">officetcek@gmail.com</a>
-                        </div>
-                    </li>
-                    <li>
-                        <div>
-                            <strong>Phone:</strong> <a href="tel:+917396903383">7396903383</a>
-                        </div>
-                    </li>
-                </ul>
-            </div>
-        </div>
-        <div class="footer-bottom">
-            <p>&copy; 2026 Trinity College of Engineering & Technology. All Rights Reserved. &bull; <a href="../index.php" style="color: #94a3b8; text-decoration: none;"><i class="fas fa-arrow-left"></i> Return to Main Website</a></p>
-        </div>
+    <!-- Sleek Minimal Portal Footer -->
+    <footer class="portal-minimal-footer">
+        <p>&copy; <?php echo date('Y'); ?> Trinity College of Engineering &amp; Technology. All Rights Reserved. &bull; <a href="../index.php"><i class="fas fa-arrow-left"></i> Return to Main Website</a></p>
     </footer>
 
     <script>

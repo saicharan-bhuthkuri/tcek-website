@@ -22,7 +22,6 @@ foreach ($all_news as $n) {
     <title>News &amp; Media Coverage - Trinity College of Engineering &amp; Technology</title>
     <meta name="description" content="Official newspaper clippings, print media highlights, and regional press coverage of Trinity College of Engineering and Technology (TCEK), Peddapalli.">
     <?php include 'head.php'; ?>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* Dedicated News & Press Page Styles */
         .news-page-hero {

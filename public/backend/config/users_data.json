@@ -1,0 +1,20 @@
+[
+    {
+        "id": 1,
+        "username": "Charan",
+        "password": "$2y$12$4UEnf0l1e/dEsA8PtrujXOjWsH3movWizobG5vHq.INjW/t65lg/i",
+        "full_name": "Charan",
+        "email": "saivortex.dev@gmail.com",
+        "role": "admin",
+        "is_active": 1
+    },
+    {
+        "id": 2,
+        "username": "tcek",
+        "password": "$2y$12$4UEnf0l1e/dEsA8PtrujXOjWsH3movWizobG5vHq.INjW/t65lg/i",
+        "full_name": "TCEK Administrator",
+        "email": "officetcek@gmail.com",
+        "role": "admin",
+        "is_active": 1
+    }
+]

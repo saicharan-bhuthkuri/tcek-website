@@ -9,8 +9,13 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 
 require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/security/RateLimiter.php';
+require_once __DIR__ . '/security/Validator.php';
+require_once __DIR__ . '/security/ErrorHandler.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/upload.php';
+require_once __DIR__ . '/departments_crud.php';
+require_once __DIR__ . '/announcements_crud.php';
 
 if (!function_exists('mb_strimwidth')) {
     function mb_strimwidth($str, $start = 0, $width = 100, $trimmarker = '...') {
@@ -19,6 +24,140 @@ if (!function_exists('mb_strimwidth')) {
         if (strlen($s) <= $width) return $s;
         return substr($s, $start, max(0, $width - strlen($trimmarker))) . $trimmarker;
     }
+}
+
+// ==============================================================
+// 0. UNIVERSAL PAGINATION ENGINE
+// ==============================================================
+
+/**
+ * Universal Pagination Meta Calculator
+ *
+ * @param int $total Total records
+ * @param int $page Current page (1-based)
+ * @param int $per_page Records per page
+ * @return array
+ */
+function build_pagination_meta($total, $page = 1, $per_page = 10) {
+    $total = max(0, (int)$total);
+    $per_page = max(1, (int)$per_page);
+    $total_pages = max(1, (int)ceil($total / $per_page));
+    $page = max(1, min((int)$page, $total_pages));
+    $offset = ($page - 1) * $per_page;
+    $start_index = $total > 0 ? $offset + 1 : 0;
+    $end_index = min($offset + $per_page, $total);
+
+    return [
+        'total'       => $total,
+        'page'        => $page,
+        'per_page'    => $per_page,
+        'total_pages' => $total_pages,
+        'offset'      => $offset,
+        'start_index' => $start_index,
+        'end_index'   => $end_index,
+        'items'       => []
+    ];
+}
+
+/**
+ * Universal Pagination Bar Component HTML Renderer
+ *
+ * @param array $pagination Result from build_pagination_meta
+ * @param array $extra_params Query overrides/defaults
+ * @return string
+ */
+function render_pagination_bar($pagination, $extra_params = []) {
+    if (empty($pagination)) {
+        return '';
+    }
+
+    $current_page = (int)($pagination['page'] ?? 1);
+    $total_pages  = (int)($pagination['total_pages'] ?? 1);
+    $total_items  = (int)($pagination['total'] ?? 0);
+    $start_index  = (int)($pagination['start_index'] ?? 0);
+    $end_index    = (int)($pagination['end_index'] ?? 0);
+
+    if ($total_items === 0) {
+        return '';
+    }
+
+    // Build URL function preserving current GET params
+    $base_params = $_GET ?? [];
+    foreach ($extra_params as $k => $v) {
+        if ($v === null || $v === '') {
+            unset($base_params[$k]);
+        } else {
+            $base_params[$k] = $v;
+        }
+    }
+
+    $build_url = function($pageNum) use ($base_params) {
+        $p = $base_params;
+        $p['page'] = $pageNum;
+        return '?' . http_build_query($p);
+    };
+
+    ob_start();
+    ?>
+    <div class="pagination-footer-bar">
+        <div class="pagination-info-text">
+            Showing <strong><?php echo $start_index; ?>–<?php echo $end_index; ?></strong> of <strong><?php echo $total_items; ?></strong> records
+        </div>
+
+        <nav class="pagination-controls" aria-label="Table Navigation">
+            <!-- Prev Button -->
+            <?php if ($current_page <= 1): ?>
+                <span class="pagination-btn disabled" aria-disabled="true">
+                    <i class="fas fa-arrow-left"></i> Prev
+                </span>
+            <?php else: ?>
+                <a href="<?php echo htmlspecialchars($build_url($current_page - 1)); ?>" class="pagination-btn" title="Go to previous page">
+                    <i class="fas fa-arrow-left"></i> Prev
+                </a>
+            <?php endif; ?>
+
+            <!-- Page Numbers -->
+            <div class="pagination-pages-group">
+                <?php
+                $range = 2;
+                $page_numbers = [];
+                for ($i = 1; $i <= $total_pages; $i++) {
+                    if ($i === 1 || $i === $total_pages || ($i >= $current_page - $range && $i <= $current_page + $range)) {
+                        $page_numbers[] = $i;
+                    }
+                }
+
+                $prev_num = null;
+                foreach ($page_numbers as $num):
+                    if ($prev_num !== null && $num - $prev_num > 1): ?>
+                        <span class="pagination-ellipsis">&hellip;</span>
+                    <?php endif;
+
+                    if ($num === $current_page): ?>
+                        <span class="pagination-page-btn active" aria-current="page"><?php echo $num; ?></span>
+                    <?php else: ?>
+                        <a href="<?php echo htmlspecialchars($build_url($num)); ?>" class="pagination-page-btn" title="Go to page <?php echo $num; ?>">
+                            <?php echo $num; ?>
+                        </a>
+                    <?php endif;
+                    $prev_num = $num;
+                endforeach; ?>
+            </div>
+
+            <!-- Next Button -->
+            <?php if ($current_page >= $total_pages): ?>
+                <span class="pagination-btn disabled" aria-disabled="true">
+                    Next <i class="fas fa-arrow-right"></i>
+                </span>
+            <?php else: ?>
+                <a href="<?php echo htmlspecialchars($build_url($current_page + 1)); ?>" class="pagination-btn" title="Go to next page">
+                    Next <i class="fas fa-arrow-right"></i>
+                </a>
+            <?php endif; ?>
+        </nav>
+    </div>
+    <?php
+    return ob_get_clean();
 }
 
 // ==============================================================
@@ -207,6 +346,114 @@ function get_activity_logs($module = null, $action = null, $limit = 100) {
     return array_slice($filtered, 0, (int)$limit);
 }
 
+/**
+ * Fetch paginated activity logs with filters, search, and limits
+ *
+ * @param int $page
+ * @param int $per_page
+ * @param string|null $module
+ * @param string|null $action
+ * @param string|null $search
+ * @return array
+ */
+function get_activity_logs_paginated($page = 1, $per_page = 10, $module = null, $action = null, $search = null) {
+    global $pdo;
+    $per_page = max(1, (int)$per_page);
+    $page = max(1, (int)$page);
+
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = [];
+            $params = [];
+
+            if ($module && $module !== 'all') {
+                $conditions[] = "module = :module";
+                $params[':module'] = $module;
+            }
+            if ($action && $action !== 'all') {
+                $conditions[] = "action = :action";
+                $params[':action'] = $action;
+            }
+            if (!empty($search)) {
+                $conditions[] = "(record_name LIKE :s OR admin_name LIKE :s OR description LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+
+            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
+            $cStmt = $pdo->prepare("SELECT COUNT(*) FROM activity_logs {$whereClause}");
+            foreach ($params as $k => $v) {
+                $cStmt->bindValue($k, $v);
+            }
+            $cStmt->execute();
+            $total = (int)$cStmt->fetchColumn();
+
+            $meta = build_pagination_meta($total, $page, $per_page);
+
+            $sql = "SELECT * FROM activity_logs {$whereClause} ORDER BY created_at DESC, id DESC LIMIT :limit OFFSET :offset";
+            $stmt = $pdo->prepare($sql);
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v);
+            }
+            $stmt->bindValue(':limit', $meta['per_page'], PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $meta['offset'], PDO::PARAM_INT);
+            $stmt->execute();
+            $meta['items'] = $stmt->fetchAll();
+            return $meta;
+        } catch (PDOException $e) {
+            error_log("Failed to fetch paginated activity logs: " . $e->getMessage());
+        }
+    }
+
+    // Fallback store
+    $all = load_activity_logs_from_store();
+    $filtered = [];
+    foreach ($all as $item) {
+        if ($module && $module !== 'all' && strcasecmp($item['module'] ?? '', $module) !== 0) {
+            continue;
+        }
+        if ($action && $action !== 'all' && strcasecmp($item['action'] ?? '', $action) !== 0) {
+            continue;
+        }
+        if (!empty($search)) {
+            $s = strtolower(trim($search));
+            if (strpos(strtolower($item['record_name'] ?? ''), $s) === false &&
+                strpos(strtolower($item['admin_name'] ?? ''), $s) === false &&
+                strpos(strtolower($item['description'] ?? ''), $s) === false) {
+                continue;
+            }
+        }
+        $filtered[] = $item;
+    }
+    $total = count($filtered);
+    $meta = build_pagination_meta($total, $page, $per_page);
+    $meta['items'] = array_slice($filtered, $meta['offset'], $meta['per_page']);
+    return $meta;
+}
+
+function get_activity_logs_count($module = null, $action = null) {
+    global $pdo;
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = [];
+            $params = [];
+            if ($module && $module !== 'all') {
+                $conditions[] = "module = :m";
+                $params[':m'] = $module;
+            }
+            if ($action && $action !== 'all') {
+                $conditions[] = "action = :a";
+                $params[':a'] = $action;
+            }
+            $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM activity_logs {$where}");
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (Throwable $e) {}
+    }
+    return count(load_activity_logs_from_store());
+}
+
 // ==============================================================
 // 2. USERS MANAGEMENT
 // ==============================================================
@@ -271,8 +518,9 @@ function get_users($limit = 50) {
         $stmt->execute();
         $res = $stmt->fetchAll();
         if (empty($res)) {
-            // Seed default admin in database
-            $hash = password_hash('tcek@developer', PASSWORD_BCRYPT);
+            // Seed default admin in database using environment configuration
+            $seedPass = env('DEFAULT_ADMIN_PASSWORD', 'tcek@developer');
+            $hash = password_hash($seedPass, PASSWORD_BCRYPT);
             try {
                 $ins = $pdo->prepare("INSERT INTO users (username, password, full_name, email, role, is_active, created_at) VALUES ('tcek', :p, 'Charan (Lead Developer)', 'tcekrdcell@gmail.com', 'admin', 1, NOW())");
                 $ins->execute([':p' => $hash]);
@@ -309,7 +557,7 @@ function add_user($username, $password, $full_name, $email, $role = 'staff') {
         log_activity('Added', 'Users', $username, "Created user with role '{$role}'", $id);
         return ['success' => true, 'message' => 'User created successfully!'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
     }
 }
 
@@ -328,7 +576,7 @@ function delete_user($id) {
         log_activity('Deleted', 'Users', $uName, "Deleted user record", $id);
         return ['success' => true, 'message' => 'User removed successfully.'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
     }
 }
 
@@ -388,7 +636,7 @@ function add_gallery_item($title, $media_type, $category, $file_path = null, $vi
         log_activity('Added', 'Gallery', $title, "Added {$media_type} to '{$category}' category", $id);
         return ['success' => true, 'message' => 'Gallery media added successfully!'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
     }
 }
 
@@ -407,7 +655,7 @@ function delete_gallery_item($id) {
         log_activity('Deleted', 'Gallery', $title, "Deleted gallery record", $id);
         return ['success' => true, 'message' => 'Gallery item deleted.'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
     }
 }
 
@@ -665,6 +913,118 @@ function get_events($limit = 50, $featured_only = false) {
     return array_slice($events, 0, $limit);
 }
 
+/**
+ * Fetch paginated events with search and featured filters
+ *
+ * @param int $page
+ * @param int $per_page
+ * @param string|null $search
+ * @param bool $featured_only
+ * @return array
+ */
+function get_events_paginated($page = 1, $per_page = 10, $search = null, $featured_only = false) {
+    global $pdo;
+    $per_page = max(1, (int)$per_page);
+    $page = max(1, (int)$page);
+
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = ["is_active = 1"];
+            $params = [];
+
+            if ($featured_only) {
+                $conditions[] = "is_featured = 1";
+            }
+            if (!empty($search)) {
+                $conditions[] = "(title LIKE :s OR venue LIKE :s OR description LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+
+            $where = "WHERE " . implode(" AND ", $conditions);
+
+            $cStmt = $pdo->prepare("SELECT COUNT(*) FROM events {$where}");
+            foreach ($params as $k => $v) {
+                $cStmt->bindValue($k, $v);
+            }
+            $cStmt->execute();
+            $total = (int)$cStmt->fetchColumn();
+
+            $meta = build_pagination_meta($total, $page, $per_page);
+
+            $stmt = $pdo->prepare("SELECT * FROM events {$where} ORDER BY event_date DESC, id DESC LIMIT :limit OFFSET :offset");
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v);
+            }
+            $stmt->bindValue(':limit', $meta['per_page'], PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $meta['offset'], PDO::PARAM_INT);
+            $stmt->execute();
+            $events = $stmt->fetchAll();
+
+            // Attach multi-media items for the fetched events
+            foreach ($events as &$ev) {
+                try {
+                    $mStmt = $pdo->prepare("SELECT * FROM event_media WHERE event_id = :eid ORDER BY id DESC");
+                    $mStmt->execute([':eid' => $ev['id']]);
+                    $ev['media_items'] = $mStmt->fetchAll();
+                } catch (Throwable $e2) {
+                    $ev['media_items'] = [];
+                }
+            }
+            unset($ev);
+
+            $meta['items'] = $events;
+            return $meta;
+        } catch (PDOException $e) {
+            error_log("Events DB pagination failed: " . $e->getMessage());
+        }
+    }
+
+    // Fallback store
+    $all = load_events_from_store();
+    $filtered = [];
+    foreach ($all as $e) {
+        if (empty($e['is_active'])) continue;
+        if ($featured_only && empty($e['is_featured'])) continue;
+        if (!empty($search)) {
+            $s = strtolower(trim($search));
+            if (strpos(strtolower($e['title'] ?? ''), $s) === false &&
+                strpos(strtolower($e['venue'] ?? ''), $s) === false &&
+                strpos(strtolower($e['description'] ?? ''), $s) === false) {
+                continue;
+            }
+        }
+        $filtered[] = $e;
+    }
+    usort($filtered, function($a, $b) {
+        return strcmp($b['event_date'] ?? '', $a['event_date'] ?? '');
+    });
+    $total = count($filtered);
+    $meta = build_pagination_meta($total, $page, $per_page);
+    $meta['items'] = array_slice($filtered, $meta['offset'], $meta['per_page']);
+    return $meta;
+}
+
+function get_events_count($search = null, $featured_only = false) {
+    global $pdo;
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = ["is_active = 1"];
+            $params = [];
+            if ($featured_only) $conditions[] = "is_featured = 1";
+            if (!empty($search)) {
+                $conditions[] = "(title LIKE :s OR venue LIKE :s OR description LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+            $where = "WHERE " . implode(" AND ", $conditions);
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM events {$where}");
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (Throwable $e) {}
+    }
+    $all = load_events_from_store();
+    return count(array_filter($all, function($e) { return !empty($e['is_active']); }));
+}
+
 function get_event_by_id($id) {
     global $pdo;
     $id = (int)$id;
@@ -718,7 +1078,7 @@ function add_event($title, $event_date, $event_time = '10:00 AM', $description =
             log_activity('Added', 'Events', $title, "Created college event scheduled for {$event_date} ({$event_time})", $id);
             return ['success' => true, 'message' => 'Event created successfully!', 'id' => $id];
         } catch (PDOException $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
         }
     }
 
@@ -781,7 +1141,7 @@ function update_event($id, $title, $event_date, $event_time = '10:00 AM', $venue
             log_activity('Updated', 'Events', $title, "Updated event details", $id);
             return ['success' => true, 'message' => 'Event updated successfully!'];
         } catch (PDOException $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
         }
     }
 
@@ -868,7 +1228,7 @@ function add_event_media($event_id, $file, $media_title, $media_description = ''
             log_activity('Uploaded', 'Events', $media_title, "Uploaded {$file_type} for Event #{$event_id}", $media_id);
             return ['success' => true, 'message' => 'Event details and media uploaded successfully!'];
         } catch (PDOException $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
         }
     }
 
@@ -949,6 +1309,130 @@ function get_all_event_media($limit = 100) {
     return array_slice($all_media, 0, $limit);
 }
 
+/**
+ * Fetch paginated event media with event_id and search filters
+ *
+ * @param int $page
+ * @param int $per_page
+ * @param string|null $search
+ * @param int|null $event_id
+ * @return array
+ */
+function get_event_media_paginated($page = 1, $per_page = 10, $search = null, $event_id = null) {
+    global $pdo;
+    $per_page = max(1, (int)$per_page);
+    $page = max(1, (int)$page);
+
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = [];
+            $params = [];
+
+            if (!empty($event_id)) {
+                $conditions[] = "m.event_id = :eid";
+                $params[':eid'] = (int)$event_id;
+            }
+            if (!empty($search)) {
+                $conditions[] = "(m.media_title LIKE :s OR m.media_description LIKE :s OR e.title LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+
+            $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
+            $cStmt = $pdo->prepare("
+                SELECT COUNT(*) 
+                FROM event_media m
+                LEFT JOIN events e ON m.event_id = e.id
+                {$where}
+            ");
+            foreach ($params as $k => $v) {
+                $cStmt->bindValue($k, $v);
+            }
+            $cStmt->execute();
+            $total = (int)$cStmt->fetchColumn();
+
+            $meta = build_pagination_meta($total, $page, $per_page);
+
+            $stmt = $pdo->prepare("
+                SELECT m.*, e.title AS event_title, e.event_date
+                FROM event_media m
+                LEFT JOIN events e ON m.event_id = e.id
+                {$where}
+                ORDER BY m.id DESC
+                LIMIT :limit OFFSET :offset
+            ");
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v);
+            }
+            $stmt->bindValue(':limit', $meta['per_page'], PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $meta['offset'], PDO::PARAM_INT);
+            $stmt->execute();
+            $meta['items'] = $stmt->fetchAll();
+            return $meta;
+        } catch (Throwable $e) {
+            error_log("Event media DB pagination failed: " . $e->getMessage());
+        }
+    }
+
+    // Fallback store
+    $events = load_events_from_store();
+    $all_media = [];
+    foreach ($events as $ev) {
+        if (!empty($ev['media_items']) && is_array($ev['media_items'])) {
+            foreach ($ev['media_items'] as $m) {
+                $m['event_title'] = $ev['title'] ?? ('Event #' . ($m['event_id'] ?? ''));
+                $m['event_date']  = $ev['event_date'] ?? '';
+                $all_media[] = $m;
+            }
+        }
+    }
+    $filtered = [];
+    foreach ($all_media as $m) {
+        if (!empty($event_id) && (int)($m['event_id'] ?? 0) !== (int)$event_id) {
+            continue;
+        }
+        if (!empty($search)) {
+            $s = strtolower(trim($search));
+            if (strpos(strtolower($m['media_title'] ?? ''), $s) === false &&
+                strpos(strtolower($m['media_description'] ?? ''), $s) === false &&
+                strpos(strtolower($m['event_title'] ?? ''), $s) === false) {
+                continue;
+            }
+        }
+        $filtered[] = $m;
+    }
+    usort($filtered, function($a, $b) {
+        return ($b['id'] ?? 0) <=> ($a['id'] ?? 0);
+    });
+    $total = count($filtered);
+    $meta = build_pagination_meta($total, $page, $per_page);
+    $meta['items'] = array_slice($filtered, $meta['offset'], $meta['per_page']);
+    return $meta;
+}
+
+function get_event_media_count($event_id = null, $search = null) {
+    global $pdo;
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = [];
+            $params = [];
+            if (!empty($event_id)) {
+                $conditions[] = "m.event_id = :eid";
+                $params[':eid'] = (int)$event_id;
+            }
+            if (!empty($search)) {
+                $conditions[] = "(m.media_title LIKE :s OR m.media_description LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+            $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM event_media m {$where}");
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (Throwable $e) {}
+    }
+    return count(get_all_event_media(1000));
+}
+
 function update_event_media($media_id, $media_title, $media_description = '', $event_id = null) {
     global $pdo;
     $media_id          = (int)$media_id;
@@ -972,7 +1456,7 @@ function update_event_media($media_id, $media_title, $media_description = '', $e
             log_activity('Updated', 'Events', $media_title, "Updated event media details", $media_id);
             return ['success' => true, 'message' => 'Media details updated successfully.'];
         } catch (PDOException $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
         }
     }
 
@@ -1044,7 +1528,7 @@ function delete_event_media($media_id) {
             }
             return ['success' => true, 'message' => 'Media file removed successfully.'];
         } catch (PDOException $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
         }
     }
 
@@ -1106,7 +1590,7 @@ function delete_event($id) {
             log_activity('Deleted', 'Events', $title, "Deleted event from schedule", $id);
             return ['success' => true, 'message' => 'Event and its media deleted successfully.'];
         } catch (PDOException $e) {
-            return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
         }
     }
 
@@ -1273,6 +1757,121 @@ function get_notifications($limit = 50, $marquee_only = false) {
     }
 
     return array_slice($all, 0, (int)$limit);
+}
+
+/**
+ * Fetch paginated notifications/circulars with search and marquee filters
+ *
+ * @param int $page
+ * @param int $per_page
+ * @param string|null $search
+ * @param bool $marquee_only
+ * @return array
+ */
+function get_notifications_paginated($page = 1, $per_page = 10, $search = null, $marquee_only = false) {
+    global $pdo;
+    $per_page = max(1, (int)$per_page);
+    $page = max(1, (int)$page);
+
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = ["is_active = 1"];
+            $params = [];
+
+            if ($marquee_only) {
+                $conditions[] = "is_marquee = 1";
+            }
+            if (!empty($search)) {
+                $conditions[] = "(title LIKE :s OR description LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+
+            $where = "WHERE " . implode(" AND ", $conditions);
+
+            $cStmt = $pdo->prepare("SELECT COUNT(*) FROM notifications {$where}");
+            foreach ($params as $k => $v) {
+                $cStmt->bindValue($k, $v);
+            }
+            $cStmt->execute();
+            $total = (int)$cStmt->fetchColumn();
+
+            $meta = build_pagination_meta($total, $page, $per_page);
+
+            $sql = "SELECT * FROM notifications {$where} ORDER BY is_marquee DESC, publish_date DESC, id DESC LIMIT :limit OFFSET :offset";
+            $stmt = $pdo->prepare($sql);
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v);
+            }
+            $stmt->bindValue(':limit', $meta['per_page'], PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $meta['offset'], PDO::PARAM_INT);
+            $stmt->execute();
+            $res = $stmt->fetchAll();
+
+            foreach ($res as &$r) {
+                if (empty($r['file_path']) && !empty($r['attachment_path'])) {
+                    $r['file_path'] = $r['attachment_path'];
+                }
+            }
+            unset($r);
+
+            $meta['items'] = $res;
+            return $meta;
+        } catch (PDOException $e) {
+            error_log("Notifications DB pagination failed: " . $e->getMessage());
+        }
+    }
+
+    // Fallback store
+    $all = load_notifications_from_store();
+    $filtered = [];
+    foreach ($all as $item) {
+        if (empty($item['is_active'])) continue;
+        if ($marquee_only && empty($item['is_marquee'])) continue;
+        if (!empty($search)) {
+            $s = strtolower(trim($search));
+            if (strpos(strtolower($item['title'] ?? ''), $s) === false &&
+                strpos(strtolower($item['description'] ?? ''), $s) === false) {
+                continue;
+            }
+        }
+        $filtered[] = $item;
+    }
+    usort($filtered, function($a, $b) {
+        $cmp = strcmp($b['publish_date'] ?? '', $a['publish_date'] ?? '');
+        return ($cmp !== 0) ? $cmp : ((int)($b['id'] ?? 0) - (int)($a['id'] ?? 0));
+    });
+    foreach ($filtered as &$r) {
+        if (empty($r['file_path']) && !empty($r['attachment_path'])) {
+            $r['file_path'] = $r['attachment_path'];
+        }
+    }
+    unset($r);
+
+    $total = count($filtered);
+    $meta = build_pagination_meta($total, $page, $per_page);
+    $meta['items'] = array_slice($filtered, $meta['offset'], $meta['per_page']);
+    return $meta;
+}
+
+function get_notifications_count($search = null, $marquee_only = false) {
+    global $pdo;
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = ["is_active = 1"];
+            $params = [];
+            if ($marquee_only) $conditions[] = "is_marquee = 1";
+            if (!empty($search)) {
+                $conditions[] = "(title LIKE :s OR description LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+            $where = "WHERE " . implode(" AND ", $conditions);
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications {$where}");
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (Throwable $e) {}
+    }
+    $all = load_notifications_from_store();
+    return count(array_filter($all, function($i) { return !empty($i['is_active']); }));
 }
 
 function get_notification_by_id($id) {
@@ -1541,7 +2140,7 @@ function add_staff($full_name, $designation, $department, $qualification, $email
         log_activity('Added', 'Staff', $full_name, "Added {$designation} in {$department} department", $id);
         return ['success' => true, 'message' => 'Staff profile created successfully!'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
     }
 }
 
@@ -1572,7 +2171,7 @@ function update_staff($id, $full_name, $designation, $department, $qualification
         log_activity('Updated', 'Staff', $full_name, "Updated faculty profile information", $id);
         return ['success' => true, 'message' => 'Staff profile updated!'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
     }
 }
 
@@ -1591,7 +2190,7 @@ function delete_staff($id) {
         log_activity('Deleted', 'Staff', $name, "Removed staff directory record", $id);
         return ['success' => true, 'message' => 'Staff profile deleted.'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
     }
 }
 
@@ -1677,6 +2276,134 @@ function get_workshops($limit = 50) {
     }
 }
 
+/**
+ * Fetch paginated workshops with search and category filters
+ *
+ * @param int $page
+ * @param int $per_page
+ * @param string|null $search
+ * @param string|null $category
+ * @return array
+ */
+function get_workshops_paginated($page = 1, $per_page = 10, $search = null, $category = null) {
+    global $pdo;
+    $per_page = max(1, (int)$per_page);
+    $page = max(1, (int)$page);
+
+    if ($pdo instanceof PDO) {
+        try {
+            // Ensure table exists
+            $pdo->exec("CREATE TABLE IF NOT EXISTS workshops (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                title VARCHAR(255) NOT NULL,
+                instructor VARCHAR(150) DEFAULT NULL,
+                category VARCHAR(100) DEFAULT 'Technical',
+                event_date DATE NOT NULL,
+                venue VARCHAR(255) DEFAULT 'TCEK Seminar Hall',
+                description TEXT DEFAULT NULL,
+                status VARCHAR(50) DEFAULT 'UPCOMING',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
+
+            $conditions = [];
+            $params = [];
+
+            if (!empty($search)) {
+                $conditions[] = "(title LIKE :s OR instructor LIKE :s OR venue LIKE :s OR category LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+            if (!empty($category) && $category !== 'all') {
+                $conditions[] = "category = :cat";
+                $params[':cat'] = trim($category);
+            }
+
+            $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
+            // Total count
+            $cStmt = $pdo->prepare("SELECT COUNT(*) FROM workshops {$where}");
+            foreach ($params as $k => $v) {
+                $cStmt->bindValue($k, $v);
+            }
+            $cStmt->execute();
+            $total = (int)$cStmt->fetchColumn();
+
+            // Auto-seed if empty and no filters
+            if ($total === 0 && empty($conditions)) {
+                add_workshop('Generative AI & LLM Deployment Workshop', 'Dr. A. K. Vootla', 'AI / ML', '2026-10-15', 'CSE Lab 3', 'Hands-on development of full-stack AI applications.', 'ACTIVE');
+                add_workshop('Full-Stack Web Dev Sprint (PHP, MySQL)', 'Charan (Lead Developer)', 'Web Dev', '2026-10-22', 'Seminar Hall A', 'Live deployment to GoDaddy cPanel hosting.', 'UPCOMING');
+                $cStmt->execute();
+                $total = (int)$cStmt->fetchColumn();
+            }
+
+            $meta = build_pagination_meta($total, $page, $per_page);
+
+            // Fetch records
+            $stmt = $pdo->prepare("SELECT * FROM workshops {$where} ORDER BY event_date ASC, id DESC LIMIT :limit OFFSET :offset");
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v);
+            }
+            $stmt->bindValue(':limit', $meta['per_page'], PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $meta['offset'], PDO::PARAM_INT);
+            $stmt->execute();
+            $meta['items'] = $stmt->fetchAll();
+            return $meta;
+        } catch (PDOException $e) {
+            error_log("Workshops DB pagination failed: " . $e->getMessage());
+        }
+    }
+
+    // Fallback store
+    $default_workshops = [
+        ['id' => 1, 'title' => 'Generative AI & LLM Deployment Workshop', 'instructor' => 'Dr. A. K. Vootla', 'category' => 'AI / ML', 'event_date' => '2026-10-15', 'venue' => 'CSE Lab 3', 'status' => 'ACTIVE', 'description' => 'Hands-on development of full-stack AI applications with Python & PyTorch.'],
+        ['id' => 2, 'title' => 'Full-Stack Web Dev Sprint (HTML, PHP, MySQL)', 'instructor' => 'Charan (Lead Developer)', 'category' => 'Web Dev', 'event_date' => '2026-10-22', 'venue' => 'Seminar Hall A', 'status' => 'UPCOMING', 'description' => 'Live deployment to GoDaddy cPanel hosting, database triggers, and auth.'],
+        ['id' => 3, 'title' => 'IoT Smart Embedded Robotics Task', 'instructor' => 'Prof. S. Rao (ECE HoD)', 'category' => 'Embedded / IoT', 'event_date' => '2026-11-05', 'venue' => 'Robotics Studio', 'status' => 'UPCOMING', 'description' => 'Microcontroller sensors, Arduino, and ESP32 wireless telemetry.']
+    ];
+    $filtered = [];
+    foreach ($default_workshops as $w) {
+        if (!empty($search)) {
+            $s = strtolower(trim($search));
+            if (strpos(strtolower($w['title']), $s) === false &&
+                strpos(strtolower($w['instructor'] ?? ''), $s) === false &&
+                strpos(strtolower($w['venue'] ?? ''), $s) === false) {
+                continue;
+            }
+        }
+        if (!empty($category) && $category !== 'all') {
+            if (strcasecmp($w['category'] ?? '', $category) !== 0) {
+                continue;
+            }
+        }
+        $filtered[] = $w;
+    }
+    $total = count($filtered);
+    $meta = build_pagination_meta($total, $page, $per_page);
+    $meta['items'] = array_slice($filtered, $meta['offset'], $meta['per_page']);
+    return $meta;
+}
+
+function get_workshops_count($search = null, $category = null) {
+    global $pdo;
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = [];
+            $params = [];
+            if (!empty($search)) {
+                $conditions[] = "(title LIKE :s OR instructor LIKE :s OR venue LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+            if (!empty($category) && $category !== 'all') {
+                $conditions[] = "category = :cat";
+                $params[':cat'] = trim($category);
+            }
+            $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM workshops {$where}");
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (Throwable $e) {}
+    }
+    return count(get_workshops(50));
+}
+
 function add_workshop($title, $instructor, $category, $event_date, $venue, $description, $status = 'UPCOMING') {
     global $pdo;
     if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
@@ -1695,7 +2422,7 @@ function add_workshop($title, $instructor, $category, $event_date, $venue, $desc
         log_activity('Added', 'Workshops', $title, "Created workshop/task in category '{$category}'", $id);
         return ['success' => true, 'message' => 'Workshop / Task created successfully!'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
     }
 }
 
@@ -1713,7 +2440,7 @@ function delete_workshop($id) {
         log_activity('Deleted', 'Workshops', $title, "Deleted workshop record", $id);
         return ['success' => true, 'message' => 'Workshop removed.'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
     }
 }
 
@@ -1933,6 +2660,96 @@ function get_news($limit = 50) {
     return array_slice($all, 0, (int)$limit);
 }
 
+/**
+ * Fetch paginated news with search filter
+ *
+ * @param int $page
+ * @param int $per_page
+ * @param string|null $search
+ * @return array
+ */
+function get_news_paginated($page = 1, $per_page = 10, $search = null) {
+    global $pdo;
+    $per_page = max(1, (int)$per_page);
+    $page = max(1, (int)$page);
+
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = [];
+            $params = [];
+
+            if (!empty($search)) {
+                $conditions[] = "(title LIKE :s OR description LIKE :s OR source LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+
+            $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+
+            $cStmt = $pdo->prepare("SELECT COUNT(*) FROM news {$where}");
+            foreach ($params as $k => $v) {
+                $cStmt->bindValue($k, $v);
+            }
+            $cStmt->execute();
+            $total = (int)$cStmt->fetchColumn();
+
+            $meta = build_pagination_meta($total, $page, $per_page);
+
+            $stmt = $pdo->prepare("SELECT * FROM news {$where} ORDER BY publish_date DESC, id DESC LIMIT :limit OFFSET :offset");
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v);
+            }
+            $stmt->bindValue(':limit', $meta['per_page'], PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $meta['offset'], PDO::PARAM_INT);
+            $stmt->execute();
+            $meta['items'] = $stmt->fetchAll();
+            return $meta;
+        } catch (PDOException $e) {
+            error_log("News DB pagination failed: " . $e->getMessage());
+        }
+    }
+
+    // Fallback store
+    $all = load_news_from_store();
+    $filtered = [];
+    foreach ($all as $nws) {
+        if (!empty($search)) {
+            $s = strtolower(trim($search));
+            if (strpos(strtolower($nws['title'] ?? ''), $s) === false &&
+                strpos(strtolower($nws['description'] ?? ''), $s) === false) {
+                continue;
+            }
+        }
+        $filtered[] = $nws;
+    }
+    usort($filtered, function($a, $b) {
+        $c = strcmp($b['publish_date'] ?? '', $a['publish_date'] ?? '');
+        return ($c !== 0) ? $c : ((int)($b['id'] ?? 0) - (int)($a['id'] ?? 0));
+    });
+    $total = count($filtered);
+    $meta = build_pagination_meta($total, $page, $per_page);
+    $meta['items'] = array_slice($filtered, $meta['offset'], $meta['per_page']);
+    return $meta;
+}
+
+function get_news_count($search = null) {
+    global $pdo;
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = [];
+            $params = [];
+            if (!empty($search)) {
+                $conditions[] = "(title LIKE :s OR description LIKE :s)";
+                $params[':s'] = '%' . trim($search) . '%';
+            }
+            $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM news {$where}");
+            $stmt->execute($params);
+            return (int)$stmt->fetchColumn();
+        } catch (Throwable $e) {}
+    }
+    return count(load_news_from_store());
+}
+
 function get_news_by_id($id) {
     global $pdo;
     $id = (int)$id;
@@ -2112,41 +2929,71 @@ function delete_news($id) {
 // 10. DISPATCHER FOR ADMIN FORM SUBMISSIONS
 // ==============================================================
 
+// Direct GET handler for Excel Export (e.g. from export link/button in dashboard)
+if (($_GET['action'] ?? '') === 'export_faculty_excel') {
+    require_admin_login();
+    export_faculty_excel($_GET);
+    exit;
+}
+
 if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     require_admin_login();
 
-    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+    // 1. Rate Limiting on Authenticated User Operations
+    $rateCheck = RateLimiter::checkAuthenticatedLimit();
+    if (!$rateCheck['allowed']) {
         $_SESSION['flash_type'] = 'danger';
-        $_SESSION['flash_msg']  = 'Security validation failed (CSRF token invalid). Please try again.';
+        $_SESSION['flash_msg']  = "Too many requests. Please wait {$rateCheck['retry_after']} seconds before submitting again.";
+        http_response_code(429);
+        header('Retry-After: ' . (int)$rateCheck['retry_after']);
         header('Location: ../admin/dashboard.php');
         exit;
     }
 
-    $action = $_POST['action'];
+    // 2. CSRF Token Verification
+    if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
+        $_SESSION['flash_type'] = 'danger';
+        $_SESSION['flash_msg']  = 'Security validation failed (CSRF token mismatch). Please reload and try again.';
+        http_response_code(403);
+        header('Location: ../admin/dashboard.php');
+        exit;
+    }
+
+    $action = (string)$_POST['action'];
 
     // --- NOTIFICATION & CIRCULAR ACTIONS ---
     if ($action === 'add_notification' || $action === 'add_notice' || $action === 'add_circular') {
-        $title        = trim($_POST['title'] ?? '');
-        $category     = trim($_POST['category'] ?? 'Circular');
-        $description  = trim($_POST['description'] ?? '');
-        $link_url     = trim($_POST['link_url'] ?? '');
-        $publish_date = trim($_POST['publish_date'] ?? date('Y-m-d'));
-        $is_marquee   = isset($_POST['is_marquee']) ? 1 : (isset($_POST['is_pinned']) ? 1 : 0);
-        $file_path    = null;
-        $file_type    = 'none';
+        $validation = Validator::validate($_POST, [
+            'title'        => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 255, 'label' => 'Circular Title'],
+            'category'     => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'Circular', 'label' => 'Category'],
+            'description'  => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Description'],
+            'link_url'     => ['type' => 'url_or_path', 'required' => false, 'max_len' => 255, 'default' => '', 'label' => 'Link URL'],
+            'publish_date' => ['type' => 'date', 'required' => false, 'default' => date('Y-m-d'), 'label' => 'Publish Date'],
+            'is_marquee'   => ['type' => 'boolean', 'required' => false, 'default' => 0, 'label' => 'Marquee Status'],
+        ]);
 
-        if (empty($title)) {
+        if (!$validation['valid']) {
             $_SESSION['flash_type'] = 'danger';
-            $_SESSION['flash_msg']  = 'Circular Title is required.';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
             header('Location: ../admin/dashboard.php?tab=notifications');
             exit;
         }
+
+        $v = $validation['data'];
+        $title        = $v['title'];
+        $category     = $v['category'];
+        $description  = $v['description'];
+        $link_url     = $v['link_url'];
+        $publish_date = $v['publish_date'];
+        $is_marquee   = $v['is_marquee'];
+        $file_path    = null;
+        $file_type    = 'none';
 
         if (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) {
             $up = process_file_upload($_FILES['attachment'], $title, 'circular', $description);
             if ($up['success']) {
                 $file_path = $up['data']['file_path'];
-                $file_type = $up['data']['file_type']; // 'pdf', 'image', 'docx'
+                $file_type = $up['data']['file_type'];
             } else {
                 $_SESSION['flash_type'] = 'danger';
                 $_SESSION['flash_msg']  = 'Attachment upload error: ' . $up['message'];
@@ -2154,7 +3001,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
                 exit;
             }
         } elseif (!empty($_POST['existing_file_path'])) {
-            $file_path = trim($_POST['existing_file_path']);
+            $existingPath = trim((string)$_POST['existing_file_path']);
+            // Verify path safe against traversal
+            if (!preg_match('/^[a-zA-Z0-9_\-\.\/]+$/', $existingPath) || str_contains($existingPath, '..')) {
+                $_SESSION['flash_type'] = 'danger';
+                $_SESSION['flash_msg']  = 'Invalid existing file path.';
+                header('Location: ../admin/dashboard.php?tab=notifications');
+                exit;
+            }
+            $file_path = $existingPath;
             $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
             $file_type = in_array($ext, ['doc', 'docx']) ? 'docx' : ($ext === 'pdf' ? 'pdf' : (in_array($ext, ['jpg', 'jpeg', 'png', 'webp']) ? 'image' : 'none'));
         }
@@ -2167,23 +3022,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'update_circular' || $action === 'update_notification' || $action === 'edit_circular') {
-        $id           = (int)($_POST['id'] ?? 0);
-        $title        = trim($_POST['title'] ?? '');
-        $category     = trim($_POST['category'] ?? 'Circular');
-        $description  = trim($_POST['description'] ?? '');
-        $link_url     = trim($_POST['link_url'] ?? '');
-        $publish_date = trim($_POST['publish_date'] ?? date('Y-m-d'));
-        $is_marquee   = isset($_POST['is_marquee']) ? 1 : 0;
-        $attachment   = (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) ? $_FILES['attachment'] : null;
+        $validation = Validator::validate($_POST, [
+            'id'           => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Circular ID'],
+            'title'        => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 255, 'label' => 'Circular Title'],
+            'category'     => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'Circular', 'label' => 'Category'],
+            'description'  => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Description'],
+            'link_url'     => ['type' => 'url_or_path', 'required' => false, 'max_len' => 255, 'default' => '', 'label' => 'Link URL'],
+            'publish_date' => ['type' => 'date', 'required' => false, 'default' => date('Y-m-d'), 'label' => 'Publish Date'],
+            'is_marquee'   => ['type' => 'boolean', 'required' => false, 'default' => 0, 'label' => 'Marquee Status'],
+        ]);
 
-        if ($id <= 0 || empty($title)) {
+        if (!$validation['valid']) {
             $_SESSION['flash_type'] = 'danger';
-            $_SESSION['flash_msg']  = 'Circular ID and Title are required.';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
             header('Location: ../admin/dashboard.php?tab=notifications');
             exit;
         }
 
-        $res = update_notification($id, $title, $publish_date, $description, $attachment, $category, $link_url, $is_marquee);
+        $v = $validation['data'];
+        $attachment = (isset($_FILES['attachment']) && $_FILES['attachment']['error'] === UPLOAD_ERR_OK) ? $_FILES['attachment'] : null;
+
+        $res = update_notification($v['id'], $v['title'], $v['publish_date'], $v['description'], $attachment, $v['category'], $v['link_url'], $v['is_marquee']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=notifications');
@@ -2191,8 +3050,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_notification' || $action === 'delete_notice' || $action === 'delete_circular') {
-        $id = (int)($_POST['id'] ?? 0);
-        $res = delete_notification($id);
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Notification ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=notifications');
+            exit;
+        }
+
+        $res = delete_notification($validation['data']['id']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=notifications');
@@ -2201,20 +3069,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
 
     // --- EVENTS ACTIONS ---
     if ($action === 'add_event') {
-        $title       = trim($_POST['title'] ?? '');
-        $event_date  = $_POST['event_date'] ?? date('Y-m-d');
-        $event_time  = trim($_POST['event_time'] ?? '10:00 AM');
-        $venue       = trim($_POST['venue'] ?? 'Trinity Campus Auditorium');
-        $description = trim($_POST['description'] ?? '');
+        $validation = Validator::validate($_POST, [
+            'title'       => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 255, 'label' => 'Event Title'],
+            'event_date'  => ['type' => 'date', 'required' => true, 'label' => 'Event Date'],
+            'event_time'  => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '10:00 AM', 'label' => 'Event Time'],
+            'venue'       => ['type' => 'string', 'required' => false, 'max_len' => 255, 'default' => 'Trinity Campus Auditorium', 'label' => 'Venue'],
+            'description' => ['type' => 'string', 'required' => false, 'max_len' => 10000, 'default' => '', 'label' => 'Description'],
+        ]);
 
-        if (empty($title)) {
+        if (!$validation['valid']) {
             $_SESSION['flash_type'] = 'danger';
-            $_SESSION['flash_msg']  = 'Event Name / Title is required.';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
             header('Location: ../admin/dashboard.php?tab=events');
             exit;
         }
 
-        $res = add_event($title, $event_date, $event_time, $description, $venue);
+        $v = $validation['data'];
+        $res = add_event($v['title'], $v['event_date'], $v['event_time'], $v['description'], $v['venue']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=events');
@@ -2222,20 +3093,15 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'upload_event_media' || $action === 'upload_event_details') {
-        $event_id          = (int)($_POST['event_id'] ?? 0);
-        $media_title       = trim($_POST['media_title'] ?? '');
-        $media_description = trim($_POST['media_description'] ?? '');
+        $validation = Validator::validate($_POST, [
+            'event_id'          => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Event ID'],
+            'media_title'       => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 255, 'label' => 'Media Title'],
+            'media_description' => ['type' => 'string', 'required' => false, 'max_len' => 2000, 'default' => '', 'label' => 'Media Description'],
+        ]);
 
-        if ($event_id <= 0) {
+        if (!$validation['valid']) {
             $_SESSION['flash_type'] = 'danger';
-            $_SESSION['flash_msg']  = 'Please select a valid event.';
-            header('Location: ../admin/dashboard.php?tab=events');
-            exit;
-        }
-
-        if (empty($media_title)) {
-            $_SESSION['flash_type'] = 'danger';
-            $_SESSION['flash_msg']  = 'Media Name / Title is required.';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
             header('Location: ../admin/dashboard.php?tab=event_files');
             exit;
         }
@@ -2247,7 +3113,8 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
             exit;
         }
 
-        $res = add_event_media($event_id, $_FILES['media_file'], $media_title, $media_description);
+        $v = $validation['data'];
+        $res = add_event_media($v['event_id'], $_FILES['media_file'], $v['media_title'], $v['media_description']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=event_files');
@@ -2255,8 +3122,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_event_media') {
-        $media_id = (int)($_POST['media_id'] ?? 0);
-        $res = delete_event_media($media_id);
+        $validation = Validator::validate($_POST, [
+            'media_id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Media ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=event_files');
+            exit;
+        }
+
+        $res = delete_event_media($validation['data']['media_id']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=event_files');
@@ -2264,19 +3140,22 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'update_event_media' || $action === 'edit_event_media') {
-        $media_id          = (int)($_POST['media_id'] ?? 0);
-        $event_id          = !empty($_POST['event_id']) ? (int)$_POST['event_id'] : null;
-        $media_title       = trim($_POST['media_title'] ?? '');
-        $media_description = trim($_POST['media_description'] ?? '');
+        $validation = Validator::validate($_POST, [
+            'media_id'          => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Media ID'],
+            'event_id'          => ['type' => 'int', 'required' => false, 'min' => 1, 'default' => null, 'label' => 'Event ID'],
+            'media_title'       => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 255, 'label' => 'Media Title'],
+            'media_description' => ['type' => 'string', 'required' => false, 'max_len' => 2000, 'default' => '', 'label' => 'Media Description'],
+        ]);
 
-        if ($media_id <= 0 || empty($media_title)) {
+        if (!$validation['valid']) {
             $_SESSION['flash_type'] = 'danger';
-            $_SESSION['flash_msg']  = 'File Name / Title is required.';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
             header('Location: ../admin/dashboard.php?tab=event_files');
             exit;
         }
 
-        $res = update_event_media($media_id, $media_title, $media_description, $event_id);
+        $v = $validation['data'];
+        $res = update_event_media($v['media_id'], $v['media_title'], $v['media_description'], $v['event_id']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=event_files');
@@ -2284,17 +3163,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'update_event') {
-        $id          = (int)($_POST['id'] ?? 0);
-        $title       = trim($_POST['title'] ?? '');
-        $event_date  = $_POST['event_date'] ?? date('Y-m-d');
-        $event_time  = trim($_POST['event_time'] ?? '10:00 AM');
-        $venue       = trim($_POST['venue'] ?? 'Trinity Campus Auditorium');
-        $description = trim($_POST['description'] ?? '');
-        $is_featured = isset($_POST['is_featured']) ? 1 : 0;
-        $image_path  = null;
-        $video_path  = null;
+        $validation = Validator::validate($_POST, [
+            'id'          => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Event ID'],
+            'title'       => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 255, 'label' => 'Event Title'],
+            'event_date'  => ['type' => 'date', 'required' => true, 'label' => 'Event Date'],
+            'event_time'  => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '10:00 AM', 'label' => 'Event Time'],
+            'venue'       => ['type' => 'string', 'required' => false, 'max_len' => 255, 'default' => 'Trinity Campus Auditorium', 'label' => 'Venue'],
+            'description' => ['type' => 'string', 'required' => false, 'max_len' => 10000, 'default' => '', 'label' => 'Description'],
+            'is_featured' => ['type' => 'boolean', 'required' => false, 'default' => 0, 'label' => 'Featured Status'],
+        ]);
 
-        $res = update_event($id, $title, $event_date, $event_time, $venue, $description, $image_path, $video_path, $is_featured);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=events');
+            exit;
+        }
+
+        $v = $validation['data'];
+        $res = update_event($v['id'], $v['title'], $v['event_date'], $v['event_time'], $v['venue'], $v['description'], null, null, $v['is_featured']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=events');
@@ -2302,8 +3189,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_event') {
-        $id = (int)($_POST['id'] ?? 0);
-        $res = delete_event($id);
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Event ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=events');
+            exit;
+        }
+
+        $res = delete_event($validation['data']['id']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=events');
@@ -2312,11 +3208,27 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
 
     // --- GALLERY ACTIONS (IMAGES & VIDEOS) ---
     if ($action === 'add_gallery') {
-        $title       = $_POST['title'] ?? '';
-        $media_type  = $_POST['media_type'] ?? 'image';
-        $category    = $_POST['category'] ?? 'events';
-        $description = $_POST['description'] ?? '';
-        $video_url   = !empty($_POST['video_url']) ? trim($_POST['video_url']) : null;
+        $validation = Validator::validate($_POST, [
+            'title'       => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 255, 'label' => 'Title'],
+            'media_type'  => ['type' => 'enum', 'required' => false, 'allowed' => ['image', 'video'], 'default' => 'image', 'label' => 'Media Type'],
+            'category'    => ['type' => 'enum', 'required' => false, 'allowed' => ['events', 'campus', 'milestones', 'press'], 'default' => 'events', 'label' => 'Category'],
+            'description' => ['type' => 'string', 'required' => false, 'max_len' => 3000, 'default' => '', 'label' => 'Description'],
+            'video_url'   => ['type' => 'url', 'required' => false, 'max_len' => 255, 'default' => null, 'label' => 'Video URL'],
+        ]);
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=gallery');
+            exit;
+        }
+
+        $v = $validation['data'];
+        $title       = $v['title'];
+        $media_type  = $v['media_type'];
+        $category    = $v['category'];
+        $description = $v['description'];
+        $video_url   = $v['video_url'];
         $file_path   = null;
 
         if (isset($_FILES['gallery_file']) && $_FILES['gallery_file']['error'] === UPLOAD_ERR_OK) {
@@ -2324,6 +3236,11 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
             if ($up['success']) {
                 $file_path = $up['data']['file_path'];
                 if ($up['data']['file_type'] === 'video') $media_type = 'video';
+            } else {
+                $_SESSION['flash_type'] = 'danger';
+                $_SESSION['flash_msg']  = 'File upload error: ' . $up['message'];
+                header('Location: ../admin/dashboard.php?tab=gallery');
+                exit;
             }
         }
 
@@ -2335,8 +3252,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_gallery') {
-        $id = (int)($_POST['id'] ?? 0);
-        $res = delete_gallery_item($id);
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Gallery ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=gallery');
+            exit;
+        }
+
+        $res = delete_gallery_item($validation['data']['id']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=gallery');
@@ -2345,22 +3271,40 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
 
     // --- STAFF ACTIONS ---
     if ($action === 'add_staff') {
-        $full_name     = $_POST['full_name'] ?? '';
-        $designation   = $_POST['designation'] ?? '';
-        $department    = $_POST['department'] ?? 'CSE';
-        $qualification = $_POST['qualification'] ?? '';
-        $email         = $_POST['email'] ?? '';
-        $phone         = $_POST['phone'] ?? '';
-        $bio           = $_POST['bio'] ?? '';
-        $display_order = (int)($_POST['display_order'] ?? 0);
+        $validation = Validator::validate($_POST, [
+            'full_name'     => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 150, 'label' => 'Full Name'],
+            'designation'   => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 100, 'label' => 'Designation'],
+            'department'    => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 100, 'label' => 'Department'],
+            'qualification' => ['type' => 'string', 'required' => false, 'max_len' => 150, 'default' => '', 'label' => 'Qualification'],
+            'email'         => ['type' => 'email', 'required' => false, 'default' => '', 'label' => 'Email'],
+            'phone'         => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '', 'label' => 'Phone'],
+            'bio'           => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Biography'],
+            'display_order' => ['type' => 'int', 'required' => false, 'min' => 0, 'max' => 9999, 'default' => 0, 'label' => 'Display Order'],
+        ]);
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=staff');
+            exit;
+        }
+
+        $v = $validation['data'];
         $profile_image = null;
 
         if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
-            $up = process_file_upload($_FILES['profile_image'], $full_name . ' Profile', 'staff_photo', 'Staff profile photo');
-            if ($up['success']) $profile_image = $up['data']['file_path'];
+            $up = process_file_upload($_FILES['profile_image'], $v['full_name'] . ' Profile', 'staff_photo', 'Staff profile photo');
+            if ($up['success']) {
+                $profile_image = $up['data']['file_path'];
+            } else {
+                $_SESSION['flash_type'] = 'danger';
+                $_SESSION['flash_msg']  = 'Profile image upload error: ' . $up['message'];
+                header('Location: ../admin/dashboard.php?tab=staff');
+                exit;
+            }
         }
 
-        $res = add_staff($full_name, $designation, $department, $qualification, $email, $phone, $profile_image, $bio, $display_order);
+        $res = add_staff($v['full_name'], $v['designation'], $v['department'], $v['qualification'], $v['email'], $v['phone'], $profile_image, $v['bio'], $v['display_order']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=staff');
@@ -2368,8 +3312,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_staff') {
-        $id = (int)($_POST['id'] ?? 0);
-        $res = delete_staff($id);
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Staff ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=staff');
+            exit;
+        }
+
+        $res = delete_staff($validation['data']['id']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=staff');
@@ -2379,13 +3332,23 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     // --- USER MANAGEMENT ACTIONS ---
     if ($action === 'add_user') {
         require_admin_role();
-        $username  = $_POST['username'] ?? '';
-        $password  = $_POST['password'] ?? '';
-        $full_name = $_POST['full_name'] ?? '';
-        $email     = $_POST['email'] ?? '';
-        $role      = $_POST['role'] ?? 'staff';
+        $validation = Validator::validate($_POST, [
+            'username'  => ['type' => 'username', 'required' => true, 'label' => 'Username'],
+            'password'  => ['type' => 'string', 'required' => true, 'min_len' => 8, 'max_len' => 100, 'label' => 'Password'],
+            'full_name' => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 100, 'label' => 'Full Name'],
+            'email'     => ['type' => 'email', 'required' => false, 'default' => '', 'label' => 'Email'],
+            'role'      => ['type' => 'enum', 'required' => false, 'allowed' => ['admin', 'editor', 'staff'], 'default' => 'staff', 'label' => 'Role'],
+        ]);
 
-        $res = add_user($username, $password, $full_name, $email, $role);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=users');
+            exit;
+        }
+
+        $v = $validation['data'];
+        $res = add_user($v['username'], $v['password'], $v['full_name'], $v['email'], $v['role']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=users');
@@ -2394,7 +3357,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
 
     if ($action === 'delete_user') {
         require_admin_role();
-        $id = (int)($_POST['id'] ?? 0);
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'User ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=users');
+            exit;
+        }
+
+        $id = $validation['data']['id'];
         if ($id === (int)($_SESSION['tcek_admin_id'] ?? 0)) {
             $_SESSION['flash_type'] = 'danger';
             $_SESSION['flash_msg']  = 'You cannot delete your own account.';
@@ -2409,9 +3382,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
 
     // --- DELETE UPLOADED FILE ---
     if ($action === 'delete_upload') {
-        $id = (int)($_POST['id'] ?? 0);
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Upload ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=explorer');
+            exit;
+        }
+
+        $id = $validation['data']['id'];
         $res = delete_uploaded_file($id);
-        log_activity('Deleted', 'Uploads', 'File #' . $id, 'Deleted file from GoDaddy disk and MySQL registry');
+        log_activity('Deleted', 'Uploads', 'File #' . $id, 'Deleted file registry and storage record');
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=explorer');
@@ -2420,15 +3403,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
 
     // --- WORKSHOPS & TASKS ACTIONS ---
     if ($action === 'add_workshop') {
-        $title       = $_POST['title'] ?? '';
-        $instructor  = $_POST['instructor'] ?? '';
-        $category    = $_POST['category'] ?? 'Technical';
-        $event_date  = $_POST['event_date'] ?? date('Y-m-d');
-        $venue       = $_POST['venue'] ?? 'TCEK Seminar Hall';
-        $description = $_POST['description'] ?? '';
-        $status      = $_POST['status'] ?? 'UPCOMING';
+        $validation = Validator::validate($_POST, [
+            'title'       => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 255, 'label' => 'Workshop Title'],
+            'instructor'  => ['type' => 'string', 'required' => false, 'max_len' => 150, 'default' => '', 'label' => 'Instructor'],
+            'category'    => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'Technical', 'label' => 'Category'],
+            'event_date'  => ['type' => 'date', 'required' => true, 'label' => 'Event Date'],
+            'venue'       => ['type' => 'string', 'required' => false, 'max_len' => 255, 'default' => 'TCEK Seminar Hall', 'label' => 'Venue'],
+            'description' => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Description'],
+            'status'      => ['type' => 'enum', 'required' => false, 'allowed' => ['UPCOMING', 'ACTIVE', 'COMPLETED'], 'default' => 'UPCOMING', 'label' => 'Status'],
+        ]);
 
-        $res = add_workshop($title, $instructor, $category, $event_date, $venue, $description, $status);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=workshops');
+            exit;
+        }
+
+        $v = $validation['data'];
+        $res = add_workshop($v['title'], $v['instructor'], $v['category'], $v['event_date'], $v['venue'], $v['description'], $v['status']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=workshops');
@@ -2436,8 +3429,17 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_workshop') {
-        $id = (int)($_POST['id'] ?? 0);
-        $res = delete_workshop($id);
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Workshop ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=workshops');
+            exit;
+        }
+
+        $res = delete_workshop($validation['data']['id']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=workshops');
@@ -2446,20 +3448,24 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
 
     // --- NEWS ACTIONS ---
     if ($action === 'add_news') {
-        $title        = trim($_POST['title'] ?? '');
-        $publish_date = trim($_POST['publish_date'] ?? date('Y-m-d'));
-        $description  = trim($_POST['description'] ?? ($_POST['summary'] ?? ''));
-        $source       = trim($_POST['source'] ?? 'Press & Media');
-        $image_file   = (isset($_FILES['newspaper_image']) && $_FILES['newspaper_image']['error'] === UPLOAD_ERR_OK) ? $_FILES['newspaper_image'] : null;
+        $validation = Validator::validate($_POST, [
+            'title'        => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 255, 'label' => 'News Title'],
+            'publish_date' => ['type' => 'date', 'required' => false, 'default' => date('Y-m-d'), 'label' => 'Publish Date'],
+            'description'  => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Description'],
+            'source'       => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'Press & Media', 'label' => 'Source'],
+        ]);
 
-        if (empty($title)) {
+        if (!$validation['valid']) {
             $_SESSION['flash_type'] = 'danger';
-            $_SESSION['flash_msg']  = 'News Title is required.';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
             header('Location: ../admin/dashboard.php?tab=news');
             exit;
         }
 
-        $res = add_news($title, $publish_date, $description, $image_file, $source);
+        $v = $validation['data'];
+        $image_file = (isset($_FILES['newspaper_image']) && $_FILES['newspaper_image']['error'] === UPLOAD_ERR_OK) ? $_FILES['newspaper_image'] : null;
+
+        $res = add_news($v['title'], $v['publish_date'], $v['description'], $image_file, $v['source']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=news');
@@ -2467,21 +3473,25 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'update_news') {
-        $id           = (int)($_POST['id'] ?? 0);
-        $title        = trim($_POST['title'] ?? '');
-        $publish_date = trim($_POST['publish_date'] ?? date('Y-m-d'));
-        $description  = trim($_POST['description'] ?? ($_POST['summary'] ?? ''));
-        $source       = trim($_POST['source'] ?? 'Press & Media');
-        $image_file   = (isset($_FILES['newspaper_image']) && $_FILES['newspaper_image']['error'] === UPLOAD_ERR_OK) ? $_FILES['newspaper_image'] : null;
+        $validation = Validator::validate($_POST, [
+            'id'           => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'News ID'],
+            'title'        => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 255, 'label' => 'News Title'],
+            'publish_date' => ['type' => 'date', 'required' => false, 'default' => date('Y-m-d'), 'label' => 'Publish Date'],
+            'description'  => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Description'],
+            'source'       => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'Press & Media', 'label' => 'Source'],
+        ]);
 
-        if (empty($id) || empty($title)) {
+        if (!$validation['valid']) {
             $_SESSION['flash_type'] = 'danger';
-            $_SESSION['flash_msg']  = 'Invalid news item or title is empty.';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
             header('Location: ../admin/dashboard.php?tab=news');
             exit;
         }
 
-        $res = update_news($id, $title, $publish_date, $description, $image_file, $source);
+        $v = $validation['data'];
+        $image_file = (isset($_FILES['newspaper_image']) && $_FILES['newspaper_image']['error'] === UPLOAD_ERR_OK) ? $_FILES['newspaper_image'] : null;
+
+        $res = update_news($v['id'], $v['title'], $v['publish_date'], $v['description'], $image_file, $v['source']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=news');
@@ -2489,34 +3499,355 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
     }
 
     if ($action === 'delete_news') {
-        $id = (int)($_POST['id'] ?? 0);
-        $res = delete_news($id);
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'News ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=news');
+            exit;
+        }
+
+        $res = delete_news($validation['data']['id']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=news');
         exit;
     }
 
-    // --- SCROLLBAR TICKER ACTIONS ---
-    if ($action === 'add_scrollbar') {
-        $title       = $_POST['title'] ?? '';
-        $description = $_POST['description'] ?? '';
-        $link_url    = $_POST['link_url'] ?? '';
-        $publish_date= date('Y-m-d');
-        
-        $res = add_notification($title, 'Marquee Ticker', $description, 'none', null, $link_url, 1, $publish_date);
+    // --- MAIN SINGLE ANNOUNCEMENT TICKER ACTIONS ---
+    if ($action === 'save_main_announcement' || $action === 'save_announcement_settings') {
+        $announcement_text = trim($_POST['announcement_text'] ?? ($_POST['title'] ?? ($_POST['custom_text'] ?? '')));
+        $link_url          = trim($_POST['link_url'] ?? '');
+        $is_enabled        = (!empty($_POST['is_enabled']) && $_POST['is_enabled'] != '0') ? 1 : 0;
+        $scrolling_speed   = isset($_POST['scrolling_speed']) ? max(10, min(300, (int)$_POST['scrolling_speed'])) : 60;
+        $last_updated      = !empty($_POST['last_updated']) ? trim($_POST['last_updated']) : date('d F Y');
+        $show_last_updated = (!empty($_POST['show_last_updated']) && $_POST['show_last_updated'] != '0') ? 1 : 0;
+
+        if (empty($announcement_text)) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = 'Announcement message cannot be empty.';
+            header('Location: ../admin/dashboard.php?tab=announcements');
+            exit;
+        }
+
+        $res = save_main_announcement($announcement_text, $link_url, $is_enabled, $scrolling_speed, $last_updated, $show_last_updated);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
-        $_SESSION['flash_msg']  = 'Scrollbar marquee announcement updated successfully!';
-        header('Location: ../admin/dashboard.php?tab=scrollbar');
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=announcements');
         exit;
     }
 
-    if ($action === 'delete_scrollbar') {
-        $id = (int)($_POST['id'] ?? 0);
-        $res = delete_notification($id);
+    if ($action === 'add_announcement' || $action === 'add_scrollbar') {
+        $validation = Validator::validate($_POST, [
+            'title'     => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 1000, 'label' => 'Announcement Text'],
+            'link_url'  => ['type' => 'url_or_path', 'required' => false, 'max_len' => 255, 'default' => '', 'label' => 'Link URL'],
+            'is_active' => ['type' => 'int', 'required' => false, 'min' => 0, 'max' => 1, 'default' => 1, 'label' => 'Status']
+        ]);
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=announcements');
+            exit;
+        }
+
+        $v = $validation['data'];
+        $res = add_announcement_item($v['title'], $v['link_url'], $v['is_active']);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
-        $_SESSION['flash_msg']  = 'Scrollbar marquee item removed.';
-        header('Location: ../admin/dashboard.php?tab=scrollbar');
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=announcements');
+        exit;
+    }
+
+    if ($action === 'update_announcement') {
+        $validation = Validator::validate($_POST, [
+            'id'        => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Announcement ID'],
+            'title'     => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 1000, 'label' => 'Announcement Text'],
+            'link_url'  => ['type' => 'url_or_path', 'required' => false, 'max_len' => 255, 'default' => '', 'label' => 'Link URL'],
+            'is_active' => ['type' => 'int', 'required' => false, 'min' => 0, 'max' => 1, 'default' => 1, 'label' => 'Status']
+        ]);
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=announcements');
+            exit;
+        }
+
+        $v = $validation['data'];
+        $res = update_announcement_item($v['id'], $v['title'], $v['link_url'], $v['is_active']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=announcements');
+        exit;
+    }
+
+    if ($action === 'delete_announcement' || $action === 'delete_scrollbar') {
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Announcement ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=announcements');
+            exit;
+        }
+
+        $res = delete_announcement_item($validation['data']['id']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=announcements');
+        exit;
+    }
+
+    if ($action === 'toggle_announcement_status') {
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Announcement ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=announcements');
+            exit;
+        }
+
+        $res = toggle_announcement_item_status($validation['data']['id']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=announcements');
+        exit;
+    }
+
+    if ($action === 'toggle_announcement_bar') {
+        $res = toggle_announcement_bar_visibility();
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=announcements');
+        exit;
+    }
+
+    // --- DEPARTMENT MANAGEMENT ACTIONS ---
+    if ($action === 'add_department') {
+        $validation = Validator::validate($_POST, [
+            'dept_code'        => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 50, 'regex' => '/^[A-Za-z0-9\-\s&]+$/', 'label' => 'Department Code'],
+            'name'             => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 255, 'label' => 'Department Name'],
+            'degree_level'     => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => 'B.Tech', 'label' => 'Degree Level'],
+            'intake'           => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '60 Seats', 'label' => 'Intake'],
+            'duration'         => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '4 Years', 'label' => 'Duration'],
+            'established_year' => ['type' => 'int', 'required' => false, 'min' => 1950, 'max' => 2030, 'default' => 2008, 'label' => 'Established Year'],
+            'icon_class'       => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'fas fa-graduation-cap', 'label' => 'Icon Class'],
+            'theme_class'      => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => 'theme-cse', 'label' => 'Theme Class'],
+            'description'      => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Description'],
+            'vision'           => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Vision'],
+            'mission'          => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Mission'],
+            'page_url'         => ['type' => 'string', 'required' => false, 'max_len' => 255, 'default' => '', 'label' => 'Page URL'],
+            'display_order'    => ['type' => 'int', 'required' => false, 'default' => 0, 'label' => 'Display Order'],
+        ]);
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=departments');
+            exit;
+        }
+
+        $v = $validation['data'];
+        $res = add_department($v['dept_code'], $v['name'], '', $v['degree_level'], $v['intake'], $v['duration'], $v['established_year'], $v['icon_class'], $v['theme_class'], $v['description'], $v['vision'], $v['mission'], $v['page_url'], $v['display_order']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=departments');
+        exit;
+    }
+
+    if ($action === 'update_department') {
+        $validation = Validator::validate($_POST, [
+            'id'               => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Department ID'],
+            'dept_code'        => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 50, 'regex' => '/^[A-Za-z0-9\-\s&]+$/', 'label' => 'Department Code'],
+            'name'             => ['type' => 'string', 'required' => true, 'min_len' => 3, 'max_len' => 255, 'label' => 'Department Name'],
+            'degree_level'     => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => 'B.Tech', 'label' => 'Degree Level'],
+            'intake'           => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '60 Seats', 'label' => 'Intake'],
+            'duration'         => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '4 Years', 'label' => 'Duration'],
+            'established_year' => ['type' => 'int', 'required' => false, 'min' => 1950, 'max' => 2030, 'default' => 2008, 'label' => 'Established Year'],
+            'icon_class'       => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'fas fa-graduation-cap', 'label' => 'Icon Class'],
+            'theme_class'      => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => 'theme-cse', 'label' => 'Theme Class'],
+            'description'      => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Description'],
+            'vision'           => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Vision'],
+            'mission'          => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Mission'],
+            'page_url'         => ['type' => 'string', 'required' => false, 'max_len' => 255, 'default' => '', 'label' => 'Page URL'],
+            'display_order'    => ['type' => 'int', 'required' => false, 'default' => 0, 'label' => 'Display Order'],
+            'is_active'        => ['type' => 'boolean', 'required' => false, 'default' => 1, 'label' => 'Active Status'],
+        ]);
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=departments');
+            exit;
+        }
+
+        $v = $validation['data'];
+        $res = update_department($v['id'], $v['dept_code'], $v['name'], '', $v['degree_level'], $v['intake'], $v['duration'], $v['established_year'], $v['icon_class'], $v['theme_class'], $v['description'], $v['vision'], $v['mission'], $v['page_url'], $v['display_order'], $v['is_active']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=departments');
+        exit;
+    }
+
+    if ($action === 'delete_department') {
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Department ID']
+        ]);
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ../admin/dashboard.php?tab=departments');
+            exit;
+        }
+
+        $res = delete_department($validation['data']['id']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=departments');
+        exit;
+    }
+
+    // --- FACULTY MANAGEMENT ACTIONS ---
+    if ($action === 'add_faculty') {
+        $validation = Validator::validate($_POST, [
+            'full_name'     => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 150, 'label' => 'Faculty Name'],
+            'dept_code'     => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 50, 'label' => 'Department Code'],
+            'designation'   => ['type' => 'string', 'required' => false, 'max_len' => 150, 'default' => 'Assistant Professor', 'label' => 'Designation Title'],
+            'role_category' => ['type' => 'string', 'required' => true, 'enum' => array_keys(TCEK_FACULTY_ROLES), 'label' => 'Role Category'],
+            'is_hod'        => ['type' => 'boolean', 'required' => false, 'default' => 0, 'label' => 'HOD Status'],
+            'is_rnd'        => ['type' => 'boolean', 'required' => false, 'default' => 0, 'label' => 'R&D Status'],
+            'qualification' => ['type' => 'string', 'required' => false, 'max_len' => 150, 'default' => 'M.Tech', 'label' => 'Qualification'],
+            'jntuh_reg_id'  => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'N/A', 'label' => 'JNTUH Reg. ID'],
+            'experience'    => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '5+ Years', 'label' => 'Experience'],
+            'email'         => ['type' => 'email', 'required' => false, 'default' => '', 'label' => 'Email Address'],
+            'phone'         => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '', 'label' => 'Phone Number'],
+            'bio'           => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Biography'],
+            'display_order' => ['type' => 'int', 'required' => false, 'default' => 0, 'label' => 'Display Order'],
+        ]);
+
+        $redirect_dept = trim($_POST['dept_code'] ?? '');
+        $redirect_url = '../admin/dashboard.php?tab=faculty' . ($redirect_dept ? '&dept=' . urlencode($redirect_dept) : '');
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ' . $redirect_url);
+            exit;
+        }
+
+        $v = $validation['data'];
+        $photo_path = null;
+        if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
+            $up = process_file_upload($_FILES['profile_image'], $v['full_name'] . ' Profile Photo', 'staff', 'Faculty profile image');
+            if ($up['success']) {
+                $photo_path = $up['data']['file_path'];
+            }
+        }
+
+        $res = add_faculty_member($v['full_name'], $v['dept_code'], $v['designation'], $v['role_category'], $v['is_hod'], $v['is_rnd'], $v['qualification'], $v['jntuh_reg_id'], $v['experience'], $v['email'], $v['phone'], $photo_path, $v['bio'], $v['display_order']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ' . $redirect_url);
+        exit;
+    }
+
+    if ($action === 'update_faculty') {
+        $validation = Validator::validate($_POST, [
+            'id'            => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Faculty ID'],
+            'full_name'     => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 150, 'label' => 'Faculty Name'],
+            'dept_code'     => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 50, 'label' => 'Department Code'],
+            'designation'   => ['type' => 'string', 'required' => false, 'max_len' => 150, 'default' => 'Assistant Professor', 'label' => 'Designation Title'],
+            'role_category' => ['type' => 'string', 'required' => true, 'enum' => array_keys(TCEK_FACULTY_ROLES), 'label' => 'Role Category'],
+            'is_hod'        => ['type' => 'boolean', 'required' => false, 'default' => 0, 'label' => 'HOD Status'],
+            'is_rnd'        => ['type' => 'boolean', 'required' => false, 'default' => 0, 'label' => 'R&D Status'],
+            'qualification' => ['type' => 'string', 'required' => false, 'max_len' => 150, 'default' => 'M.Tech', 'label' => 'Qualification'],
+            'jntuh_reg_id'  => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'N/A', 'label' => 'JNTUH Reg. ID'],
+            'experience'    => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '5+ Years', 'label' => 'Experience'],
+            'email'         => ['type' => 'email', 'required' => false, 'default' => '', 'label' => 'Email Address'],
+            'phone'         => ['type' => 'string', 'required' => false, 'max_len' => 50, 'default' => '', 'label' => 'Phone Number'],
+            'bio'           => ['type' => 'string', 'required' => false, 'max_len' => 5000, 'default' => '', 'label' => 'Biography'],
+            'display_order' => ['type' => 'int', 'required' => false, 'default' => 0, 'label' => 'Display Order'],
+            'is_active'     => ['type' => 'boolean', 'required' => false, 'default' => 1, 'label' => 'Active Status'],
+        ]);
+
+        $redirect_dept = trim($_POST['dept_code'] ?? '');
+        $redirect_url = '../admin/dashboard.php?tab=faculty' . ($redirect_dept ? '&dept=' . urlencode($redirect_dept) : '');
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ' . $redirect_url);
+            exit;
+        }
+
+        $v = $validation['data'];
+        $photo_path = null;
+        if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
+            $up = process_file_upload($_FILES['profile_image'], $v['full_name'] . ' Profile Photo', 'staff', 'Faculty profile image');
+            if ($up['success']) {
+                $photo_path = $up['data']['file_path'];
+            }
+        }
+
+        $res = update_faculty_member($v['id'], $v['full_name'], $v['dept_code'], $v['designation'], $v['role_category'], $v['is_hod'], $v['is_rnd'], $v['qualification'], $v['jntuh_reg_id'], $v['experience'], $v['email'], $v['phone'], $photo_path, $v['bio'], $v['display_order'], $v['is_active']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ' . $redirect_url);
+        exit;
+    }
+
+    if ($action === 'delete_faculty') {
+        $validation = Validator::validate($_POST, [
+            'id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Faculty ID']
+        ]);
+        $redirect_dept = trim($_POST['dept_code'] ?? '');
+        $redirect_url = '../admin/dashboard.php?tab=faculty' . ($redirect_dept ? '&dept=' . urlencode($redirect_dept) : '');
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ' . $redirect_url);
+            exit;
+        }
+
+        $res = delete_faculty_member($validation['data']['id']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ' . $redirect_url);
+        exit;
+    }
+
+    if ($action === 'assign_hod') {
+        $validation = Validator::validate($_POST, [
+            'faculty_id' => ['type' => 'int', 'required' => true, 'min' => 1, 'label' => 'Faculty Member'],
+            'dept_code'  => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 50, 'label' => 'Department Code'],
+        ]);
+        $redirect_dept = trim($_POST['dept_code'] ?? '');
+        $redirect_url = '../admin/dashboard.php?tab=faculty' . ($redirect_dept ? '&dept=' . urlencode($redirect_dept) : '');
+
+        if (!$validation['valid']) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = reset($validation['errors']);
+            header('Location: ' . $redirect_url);
+            exit;
+        }
+
+        $v = $validation['data'];
+        $res = assign_department_hod($v['dept_code'], $v['faculty_id']);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ' . $redirect_url);
+        exit;
+    }
+
+    if ($action === 'export_faculty_excel') {
+        export_faculty_excel($_POST);
         exit;
     }
 }

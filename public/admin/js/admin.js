@@ -3,8 +3,9 @@
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Mobile Sidebar Toggle
+    // 1. Mobile & Desktop Sidebar Toggles
     const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+    const btnCollapseSidebar = document.getElementById('btnCollapseSidebar');
     const adminSidebar = document.getElementById('adminSidebar');
 
     if (btnToggleSidebar && adminSidebar) {
@@ -19,6 +20,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     adminSidebar.classList.remove('open');
                 }
             }
+        });
+    }
+
+    if (btnCollapseSidebar && adminSidebar) {
+        btnCollapseSidebar.addEventListener('click', () => {
+            adminSidebar.classList.toggle('collapsed');
         });
     }
 

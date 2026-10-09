@@ -1,22 +1,31 @@
 <?php
 /**
- * File Upload Handler for Trinity College of Engineering & Technology
- * Handles storage of actual files in GoDaddy storage (uploads/images, uploads/pdfs, uploads/videos)
- * and metadata recording in MySQL database.
+ * Hardened File Upload Handler for Trinity College of Engineering & Technology
+ * Enforces:
+ * - Strict input validation against explicit schema
+ * - MIME type and Magic-Byte content inspection (PHP fileinfo, getimagesize, header checks)
+ * - Extension allowlist & blocking of double extensions / hidden scripts
+ * - Configurable file size limits per category
+ * - Isolated, randomized server filenames (preventing path traversal)
+ * - Safe error handling (no path or DB leaks)
+ * - Rate limiting on upload attempts
  */
 
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+if (session_status() === PHP_SESSION_NONE && !headers_sent()) {
+    @session_start();
 }
 
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/security/RateLimiter.php';
+require_once __DIR__ . '/security/Validator.php';
+require_once __DIR__ . '/security/ErrorHandler.php';
 
-// Web root directory for uploads (public/ or public_html/)
+// Web root directory for uploads
 define('UPLOAD_BASE_DIR', realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR . 'uploads');
 
 /**
- * Handle file upload, save to disk, and save record in MySQL
+ * Handle file upload with comprehensive validation and content inspection
  * 
  * @param array $file $_FILES['input_name']
  * @param string $title Friendly title/label
@@ -24,86 +33,198 @@ define('UPLOAD_BASE_DIR', realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR . 'upl
  * @param string $description Optional description
  * @return array ['success' => bool, 'message' => string, 'data' => array|null]
  */
-function process_file_upload($file, $title = '', $category = 'general', $description = '') {
+function process_file_upload($file, $title = '', $category = 'general', $description = ''): array {
     global $pdo;
 
-    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
-        $error_codes = [
-            UPLOAD_ERR_INI_SIZE   => 'File exceeds upload_max_filesize directive in php.ini.',
-            UPLOAD_ERR_FORM_SIZE  => 'File exceeds MAX_FILE_SIZE directive in HTML form.',
-            UPLOAD_ERR_PARTIAL    => 'File was only partially uploaded.',
-            UPLOAD_ERR_NO_FILE    => 'No file was uploaded.',
-            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary upload directory.',
-            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk.',
-            UPLOAD_ERR_EXTENSION  => 'A PHP extension stopped the file upload.'
+    // 1. Rate Limiting Check on Uploads
+    $rateCheck = RateLimiter::checkAuthenticatedLimit();
+    if (!$rateCheck['allowed']) {
+        return [
+            'success' => false,
+            'message' => "Too many upload requests. Please wait {$rateCheck['retry_after']} seconds.",
+            'data'    => null
         ];
-        $msg = $error_codes[$file['error']] ?? 'Upload error occurred.';
+    }
+
+    // 2. Validate Metadata Inputs against Strict Schema
+    $metaValidation = Validator::validate(
+        ['title' => $title, 'category' => $category, 'description' => $description],
+        [
+            'title'       => ['type' => 'string', 'required' => false, 'max_len' => 255, 'default' => ''],
+            'category'    => ['type' => 'string', 'required' => false, 'max_len' => 100, 'default' => 'general'],
+            'description' => ['type' => 'string', 'required' => false, 'max_len' => 3000, 'default' => ''],
+        ]
+    );
+
+    if (!$metaValidation['valid']) {
+        $firstErr = reset($metaValidation['errors']);
+        return ['success' => false, 'message' => "Input validation failed: {$firstErr}", 'data' => null];
+    }
+
+    $title       = $metaValidation['data']['title'];
+    $category    = $metaValidation['data']['category'];
+    $description = $metaValidation['data']['description'];
+
+    // 3. Verify Basic Upload Status
+    if (!isset($file) || !is_array($file) || ($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+        $error_codes = [
+            UPLOAD_ERR_INI_SIZE   => 'The uploaded file exceeds the server maximum upload limit.',
+            UPLOAD_ERR_FORM_SIZE  => 'The uploaded file exceeds the form MAX_FILE_SIZE limit.',
+            UPLOAD_ERR_PARTIAL    => 'The file was only partially uploaded.',
+            UPLOAD_ERR_NO_FILE    => 'No file was selected for upload.',
+            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder on server.',
+            UPLOAD_ERR_CANT_WRITE => 'Failed to write upload to server disk.',
+            UPLOAD_ERR_EXTENSION  => 'A server extension blocked the file upload.'
+        ];
+        $errorCode = $file['error'] ?? UPLOAD_ERR_NO_FILE;
+        $msg = $error_codes[$errorCode] ?? 'An error occurred during file upload.';
         return ['success' => false, 'message' => $msg, 'data' => null];
     }
 
-    $orig_name = basename($file['name']);
+    $orig_name = basename((string)$file['name']);
     $file_size = (int)$file['size'];
-    $file_tmp  = $file['tmp_name'];
-    $extension = strtolower(pathinfo($orig_name, PATHINFO_EXTENSION));
+    $file_tmp  = (string)$file['tmp_name'];
 
-    // Security check: Block dangerous extensions
-    $forbidden = ['php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'phps', 'pht', 'phar', 'inc', 'exe', 'bat', 'sh', 'py', 'pl', 'cgi', 'js', 'html', 'htm'];
-    if (in_array($extension, $forbidden)) {
-        return ['success' => false, 'message' => 'Security Error: Executable or script files are not allowed.', 'data' => null];
+    // Load security settings
+    $secConfig = file_exists(__DIR__ . '/config/security.php') ? require __DIR__ . '/config/security.php' : [];
+    $disallowedExts = $secConfig['uploads']['disallowed_extensions'] ?? [
+        'php', 'phtml', 'php3', 'php4', 'php5', 'php7', 'php8', 'phps', 'pht', 'phar',
+        'inc', 'exe', 'bat', 'cmd', 'sh', 'bash', 'py', 'pl', 'cgi', 'js', 'html', 'htm'
+    ];
+
+    // 4. Double-Extension & Dangerous Name Check (performed first)
+    $nameParts = explode('.', strtolower($orig_name));
+    foreach ($nameParts as $part) {
+        if (in_array(trim($part), $disallowedExts, true)) {
+            ErrorHandler::log('SECURITY', "Rejected upload containing dangerous extension token: {$orig_name}");
+            return ['success' => false, 'message' => 'Security Error: Executable or script files are strictly prohibited.', 'data' => null];
+        }
     }
 
-    // Determine category folder and file type
-    $allowed_images = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'];
+    if (!is_uploaded_file($file_tmp) && php_sapi_name() !== 'cli') {
+        ErrorHandler::log('SECURITY', "Possible file upload forgery attempt detected for file: {$orig_name}");
+        return ['success' => false, 'message' => 'Invalid upload source.', 'data' => null];
+    }
+
+    $extension = end($nameParts);
+
+    // 5. Categorize and Validate Extension Allowlist
+    $allowed_images = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     $allowed_pdfs   = ['pdf'];
     $allowed_docs   = ['docx', 'doc'];
     $allowed_videos = ['mp4', 'webm', 'ogg', 'mov', 'mkv'];
 
-    $sub_folder = 'others';
-    $file_type  = 'other';
+    $sub_folder = '';
+    $file_type  = '';
 
-    if (in_array($extension, $allowed_images)) {
+    if (in_array($extension, $allowed_images, true)) {
         $sub_folder = 'images';
         $file_type  = 'image';
-    } elseif (in_array($extension, $allowed_pdfs)) {
+    } elseif (in_array($extension, $allowed_pdfs, true)) {
         $sub_folder = 'pdfs';
         $file_type  = 'pdf';
-    } elseif (in_array($extension, $allowed_docs)) {
+    } elseif (in_array($extension, $allowed_docs, true)) {
         $sub_folder = 'documents';
         $file_type  = 'docx';
-    } elseif (in_array($extension, $allowed_videos)) {
+    } elseif (in_array($extension, $allowed_videos, true)) {
         $sub_folder = 'videos';
         $file_type  = 'video';
     } else {
-        return ['success' => false, 'message' => "Invalid file extension '.$extension'. Allowed: PDF, DOCX/DOC, Images (JPG, PNG, WEBP, GIF), Videos (MP4, WEBM).", 'data' => null];
+        return [
+            'success' => false,
+            'message' => "Unsupported file extension '.{$extension}'. Allowed formats: PDF, DOCX, JPG, PNG, WEBP, GIF, MP4, WEBM.",
+            'data'    => null
+        ];
     }
 
-    // Target folder on GoDaddy storage
-    $target_dir = UPLOAD_BASE_DIR . DIRECTORY_SEPARATOR . $sub_folder;
-    if (!is_dir($target_dir)) {
-        if (!@mkdir($target_dir, 0755, true)) {
-            return ['success' => false, 'message' => "Unable to create upload directory '$sub_folder'. Check folder permissions.", 'data' => null];
+    // 6. Enforce Configurable Category Size Limits
+    $maxSize = $secConfig['uploads']['max_sizes'][$file_type] ?? (25 * 1024 * 1024);
+    if ($file_size > $maxSize) {
+        $maxMB = round($maxSize / (1024 * 1024), 1);
+        return [
+            'success' => false,
+            'message' => "File size exceeds the maximum allowed limit of {$maxMB}MB for {$file_type} files.",
+            'data'    => null
+        ];
+    }
+
+    // 7. Server-Side Content Inspection (MIME type verification via PHP fileinfo OOP)
+    $detectedMime = false;
+    if (class_exists('finfo')) {
+        $finfoObj = new finfo(FILEINFO_MIME_TYPE);
+        $detectedMime = $finfoObj->file($file_tmp);
+    } elseif (function_exists('mime_content_type')) {
+        $detectedMime = mime_content_type($file_tmp);
+    }
+
+    if (!$detectedMime) {
+        return ['success' => false, 'message' => 'Unable to determine the file content type.', 'data' => null];
+    }
+
+    $allowedMimes = $secConfig['uploads']['allowed_mimes'][$file_type] ?? [];
+    if (!array_key_exists($detectedMime, $allowedMimes)) {
+        ErrorHandler::log('SECURITY', "MIME mismatch: File {$orig_name} claimed {$extension} but inspected as {$detectedMime}");
+        return [
+            'success' => false,
+            'message' => 'Security Error: File content does not match its claimed file type.',
+            'data'    => null
+        ];
+    }
+
+    // 8. Deep Magic-Byte / Structure Content Validation
+    if ($file_type === 'image') {
+        // Verify valid image header and dimensions using getimagesize
+        $imgSize = @getimagesize($file_tmp);
+        if ($imgSize === false || $imgSize[0] <= 0 || $imgSize[1] <= 0) {
+            ErrorHandler::log('SECURITY', "Corrupted or spoofed image upload attempt: {$orig_name}");
+            return ['success' => false, 'message' => 'Security Error: Uploaded image file is invalid or corrupted.', 'data' => null];
+        }
+    } elseif ($file_type === 'pdf') {
+        // PDF Magic Bytes: First 5 bytes MUST be %PDF-
+        $pdfHeader = @file_get_contents($file_tmp, false, null, 0, 5);
+        if ($pdfHeader !== '%PDF-') {
+            ErrorHandler::log('SECURITY', "Spoofed PDF upload attempt: {$orig_name}");
+            return ['success' => false, 'message' => 'Security Error: Uploaded PDF is invalid or malformed.', 'data' => null];
+        }
+    } elseif ($file_type === 'docx') {
+        // DOCX is a PK ZIP container: First 4 bytes MUST be PK\x03\x04
+        $zipHeader = @file_get_contents($file_tmp, false, null, 0, 4);
+        if ($zipHeader !== "\x50\x4B\x03\x04" && $extension === 'docx') {
+            ErrorHandler::log('SECURITY', "Spoofed DOCX upload attempt: {$orig_name}");
+            return ['success' => false, 'message' => 'Security Error: Uploaded document is invalid or malformed.', 'data' => null];
         }
     }
 
-    // Generate safe, unique file name
-    $clean_basename = preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($orig_name, PATHINFO_FILENAME));
-    $clean_basename = substr($clean_basename, 0, 40);
-    $unique_name    = time() . '_' . mt_rand(1000, 9999) . '_' . $clean_basename . '.' . $extension;
-    $target_file    = $target_dir . DIRECTORY_SEPARATOR . $unique_name;
-
-    // Move file to GoDaddy storage folder
-    if (!move_uploaded_file($file_tmp, $target_file)) {
-        return ['success' => false, 'message' => 'Failed to save file to server storage.', 'data' => null];
+    // 9. Prepare Target Storage Directory
+    $target_dir = UPLOAD_BASE_DIR . DIRECTORY_SEPARATOR . $sub_folder;
+    if (!is_dir($target_dir)) {
+        if (!@mkdir($target_dir, 0755, true)) {
+            ErrorHandler::log('ERROR', "Unable to create upload directory: {$target_dir}");
+            return ['success' => false, 'message' => 'Storage directory is unavailable. Please check server permissions.', 'data' => null];
+        }
     }
 
-    // Path relative to web root (e.g., uploads/pdfs/123456_notice.pdf)
+    // 10. Generate Isolated, Cryptographically Random Filename (Prevent Path Traversal)
+    $randomHex    = bin2hex(random_bytes(16));
+    $unique_name  = time() . '_' . $randomHex . '.' . $extension;
+    $target_file  = $target_dir . DIRECTORY_SEPARATOR . $unique_name;
+
+    // Move file to storage
+    if (!move_uploaded_file($file_tmp, $target_file)) {
+        ErrorHandler::log('ERROR', "Failed to move uploaded file {$file_tmp} to {$target_file}");
+        return ['success' => false, 'message' => 'Failed to store file on server.', 'data' => null];
+    }
+
+    // Set safe permissions on uploaded file (read-only for web server, not executable)
+    @chmod($target_file, 0644);
+
     $relative_path = 'uploads/' . $sub_folder . '/' . $unique_name;
-    $title = !empty(trim($title)) ? trim($title) : pathinfo($orig_name, PATHINFO_FILENAME);
+    $displayTitle = !empty($title) ? $title : pathinfo($orig_name, PATHINFO_FILENAME);
     $uploaded_by = $_SESSION['tcek_admin_username'] ?? 'tcek';
 
     $record_id = null;
 
-    // Store file metadata in MySQL
+    // 11. Store file metadata in MySQL
     if ($pdo instanceof PDO) {
         try {
             $stmt = $pdo->prepare("
@@ -111,7 +232,7 @@ function process_file_upload($file, $title = '', $category = 'general', $descrip
                 VALUES (:title, :file_name, :file_path, :file_type, :file_size, :category, :description, :uploaded_by, NOW())
             ");
             $stmt->execute([
-                ':title'       => $title,
+                ':title'       => $displayTitle,
                 ':file_name'   => $unique_name,
                 ':file_path'   => $relative_path,
                 ':file_type'   => $file_type,
@@ -120,38 +241,45 @@ function process_file_upload($file, $title = '', $category = 'general', $descrip
                 ':description' => $description,
                 ':uploaded_by' => $uploaded_by
             ]);
-            $record_id = $pdo->lastInsertId();
+            $record_id = (int)$pdo->lastInsertId();
         } catch (PDOException $e) {
-            error_log("DB insert failed for uploaded file: " . $e->getMessage());
+            ErrorHandler::log('ERROR', 'DB insert failed for uploaded file record', $e);
         }
     }
 
+    log_activity('Uploaded', 'Uploads', $displayTitle, "Uploaded {$file_type} file", $record_id);
+
     return [
-        'success'   => true,
-        'message'   => 'File uploaded successfully!',
-        'data'      => [
-            'id'           => $record_id,
-            'title'        => $title,
-            'file_name'    => $unique_name,
-            'file_path'    => $relative_path,
-            'file_type'    => $file_type,
-            'file_size'    => $file_size,
-            'category'     => $category
+        'success' => true,
+        'message' => 'File uploaded and verified successfully!',
+        'data'    => [
+            'id'        => $record_id,
+            'title'     => $displayTitle,
+            'file_name' => $unique_name,
+            'file_path' => $relative_path,
+            'file_type' => $file_type,
+            'file_size' => $file_size,
+            'category'  => $category
         ]
     ];
 }
 
 /**
- * Delete a file from disk and remove its MySQL registry record
+ * Delete a file safely from disk and remove its MySQL registry record
  * 
  * @param int $id Upload ID in MySQL
  * @return array ['success' => bool, 'message' => string]
  */
-function delete_uploaded_file($id) {
+function delete_uploaded_file($id): array {
     global $pdo;
 
+    $id = (int)$id;
+    if ($id <= 0) {
+        return ['success' => false, 'message' => 'Invalid file ID specified.'];
+    }
+
     if (!($pdo instanceof PDO)) {
-        return ['success' => false, 'message' => 'Database not connected.'];
+        return ['success' => false, 'message' => 'Database connection unavailable.'];
     }
 
     try {
@@ -163,19 +291,25 @@ function delete_uploaded_file($id) {
             return ['success' => false, 'message' => 'File record not found.'];
         }
 
-        // Remove from disk
-        $full_path = realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $row['file_path']);
-        if (file_exists($full_path) && is_file($full_path)) {
-            @unlink($full_path);
+        // Prevent path traversal by strictly validating relative path
+        $cleanRelPath = str_replace(['..', '\\'], ['', '/'], $row['file_path']);
+        $full_path = realpath(__DIR__ . '/..') . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $cleanRelPath);
+
+        // Verify the resolved path is strictly within the uploads directory
+        $uploadsBase = realpath(UPLOAD_BASE_DIR);
+        if ($uploadsBase && str_starts_with(realpath(dirname($full_path)) ?: '', $uploadsBase)) {
+            if (file_exists($full_path) && is_file($full_path)) {
+                @unlink($full_path);
+            }
         }
 
         // Delete from DB
         $del = $pdo->prepare("DELETE FROM uploads WHERE id = :id");
         $del->execute([':id' => $id]);
 
-        return ['success' => true, 'message' => 'File and record deleted successfully.'];
+        return ['success' => true, 'message' => 'File record deleted successfully.'];
     } catch (PDOException $e) {
-        return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        return ErrorHandler::safeError($e, 'Unable to delete the requested file at this time.');
     }
 }
 
@@ -185,18 +319,19 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action']) && 
 
     // Verify CSRF
     if (!isset($_POST['csrf_token']) || !verify_csrf_token($_POST['csrf_token'])) {
-        $resp = ['success' => false, 'message' => 'Invalid security token (CSRF). Please reload the page.'];
+        $resp = ['success' => false, 'message' => 'Invalid security token (CSRF mismatch). Please reload the page.'];
+        http_response_code(403);
     } else {
-        $file = $_FILES['file'] ?? null;
-        $title = $_POST['title'] ?? '';
-        $category = $_POST['category'] ?? 'general';
+        $file        = $_FILES['file'] ?? null;
+        $title       = $_POST['title'] ?? '';
+        $category    = $_POST['category'] ?? 'general';
         $description = $_POST['description'] ?? '';
 
         $resp = process_file_upload($file, $title, $category, $description);
     }
 
-    // Check if client expects JSON
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest' || isset($_POST['ajax'])) {
+    // Return JSON if AJAX requested
+    if ((!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') || isset($_POST['ajax'])) {
         header('Content-Type: application/json');
         echo json_encode($resp);
         exit;

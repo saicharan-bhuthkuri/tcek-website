@@ -23,7 +23,7 @@ $flash_type = $_SESSION['flash_type'] ?? 'info';
 unset($_SESSION['flash_msg'], $_SESSION['flash_type']);
 
 // Allowed Tabs
-$allowed_tabs = ['overview', 'users', 'workshops', 'events', 'event_files', 'news', 'circulars', 'notifications', 'scrollbar', 'activity_logs'];
+$allowed_tabs = ['overview', 'users', 'workshops', 'events', 'event_files', 'news', 'circulars', 'notifications', 'announcements', 'scrollbar', 'activity_logs', 'departments', 'faculty'];
 
 // Active Tab
 $current_tab = $_GET['tab'] ?? 'overview';
@@ -33,6 +33,9 @@ if (!in_array($current_tab, $allowed_tabs)) {
 if ($current_tab === 'circulars') {
     $current_tab = 'notifications';
 }
+if ($current_tab === 'scrollbar') {
+    $current_tab = 'announcements';
+}
 
 // Protect Admin-Only Tabs
 if (in_array($current_tab, ['activity_logs', 'users']) && !$is_admin) {
@@ -41,20 +44,93 @@ if (in_array($current_tab, ['activity_logs', 'users']) && !$is_admin) {
     $flash_type = 'danger';
 }
 
-// Filters for Activity Logs
-$log_module_filter = $_GET['log_module'] ?? 'all';
-$log_action_filter = $_GET['log_action'] ?? 'all';
+// Pagination & Filters Configuration (10 records per page by default)
+$current_page = max(1, (int)($_GET['page'] ?? 1));
+$per_page     = 10;
 
-// Fetch Data for the 8 Curated Modules
-$notifications  = get_notifications(50);
-$events         = get_events(50);
-$all_event_media = function_exists('get_all_event_media') ? get_all_event_media(100) : [];
-$workshops_list = get_workshops(50);
-$news_list      = get_news(50);
-$scrollbar_list = get_scrollbar_items(30);
-$activity_logs  = $is_admin ? get_activity_logs($log_module_filter, $log_action_filter, 100) : [];
-$users_list     = $is_admin ? get_users(50) : [];
-$all_uploads    = get_all_uploads(null, 100);
+// Module-specific filter & search parameters
+$workshop_search      = trim($_GET['workshop_search'] ?? ($_GET['search'] ?? ''));
+$workshop_cat         = trim($_GET['category'] ?? 'all');
+$events_search        = trim($_GET['events_search'] ?? ($_GET['search'] ?? ''));
+$event_file_search    = trim($_GET['file_search'] ?? ($_GET['search'] ?? ''));
+$event_filter_id      = !empty($_GET['event_id']) ? (int)$_GET['event_id'] : null;
+$news_search          = trim($_GET['news_search'] ?? ($_GET['search'] ?? ''));
+$notifications_search = trim($_GET['cir_search'] ?? ($_GET['search'] ?? ''));
+$log_module_filter    = $_GET['log_module'] ?? 'all';
+$log_action_filter    = $_GET['log_action'] ?? 'all';
+$log_search           = trim($_GET['log_search'] ?? ($_GET['search'] ?? ''));
+
+// Department & Faculty specific parameters
+$dept_search          = trim($_GET['dept_search'] ?? ($_GET['search'] ?? ''));
+$faculty_dept_filter  = trim($_GET['dept'] ?? ($_GET['department'] ?? 'all'));
+$faculty_search       = trim($_GET['faculty_search'] ?? ($_GET['search'] ?? ''));
+$faculty_role_filter  = trim($_GET['role'] ?? ($_GET['role_category'] ?? 'all'));
+$faculty_hod_filter   = trim($_GET['is_hod'] ?? 'all');
+$faculty_rnd_filter   = trim($_GET['is_rnd'] ?? 'all');
+$faculty_sort_by      = trim($_GET['sort_by'] ?? 'order');
+$faculty_sort_dir     = trim($_GET['sort_dir'] ?? 'asc');
+
+// Fetch Paginated Datasets for Modules
+$workshops_pagination     = get_workshops_paginated($current_page, $per_page, $workshop_search, $workshop_cat);
+$events_pagination        = get_events_paginated($current_page, $per_page, $events_search);
+$event_files_pagination   = get_event_media_paginated($current_page, $per_page, $event_file_search, $event_filter_id);
+$news_pagination          = get_news_paginated($current_page, $per_page, $news_search);
+$notifications_pagination = get_notifications_paginated($current_page, $per_page, $notifications_search);
+$activity_logs_pagination = $is_admin ? get_activity_logs_paginated($current_page, $per_page, $log_module_filter, $log_action_filter, $log_search) : build_pagination_meta(0, 1, $per_page);
+
+// Departments & Faculty Datasets
+$departments_pagination = get_departments_paginated($current_page, $per_page, $dept_search);
+$departments_list       = $departments_pagination['items'];
+$total_departments      = $departments_pagination['total'];
+
+$faculty_filters = [
+    'department'    => $faculty_dept_filter,
+    'search'        => $faculty_search,
+    'role_category' => $faculty_role_filter,
+    'is_hod'        => $faculty_hod_filter,
+    'is_rnd'        => $faculty_rnd_filter,
+    'sort_by'       => $faculty_sort_by,
+    'sort_dir'      => $faculty_sort_dir
+];
+$faculty_pagination = get_faculty_paginated($current_page, $per_page, $faculty_filters);
+$faculty_list       = $faculty_pagination['items'];
+$total_faculty      = $faculty_pagination['total'];
+$all_depts_list     = get_departments(false);
+
+// Active page slice items
+$workshops_list  = $workshops_pagination['items'];
+$events          = $events_pagination['items'];
+$all_event_media = $event_files_pagination['items'];
+$news_list       = $news_pagination['items'];
+$notifications   = $notifications_pagination['items'];
+$activity_logs   = $activity_logs_pagination['items'];
+
+// Full event list for modals (e.g. event media dropdown)
+$all_events_options = get_events(200);
+
+// Auxiliary lists
+require_once __DIR__ . '/../backend/announcements_crud.php';
+$announcements_data  = get_announcement_data();
+$ann_text            = $announcements_data['announcement_text'] ?? '';
+$ann_link            = $announcements_data['link_url'] ?? '';
+$ann_speed           = max(10, min(300, (int)($announcements_data['scrolling_speed'] ?? 60)));
+$ann_last_updated    = $announcements_data['last_updated'] ?? date('d F Y');
+$is_ann_enabled      = !empty($announcements_data['is_enabled']);
+$show_ann_updated    = !empty($announcements_data['show_last_updated']);
+$ann_settings        = $announcements_data['settings'] ?? [];
+$ann_items           = $announcements_data['items'] ?? [];
+$total_announcements = $is_ann_enabled ? 1 : 0;
+$scrollbar_list      = get_scrollbar_items(30);
+$users_list          = $is_admin ? get_users(50) : [];
+$all_uploads         = get_all_uploads(null, 100);
+
+// Accurate totals for metric cards & header counters
+$total_workshops     = $workshops_pagination['total'];
+$total_events        = $events_pagination['total'];
+$total_event_media   = $event_files_pagination['total'];
+$total_news          = $news_pagination['total'];
+$total_notifications = $notifications_pagination['total'];
+$total_activity_logs = $activity_logs_pagination['total'];
 
 if (!function_exists('format_file_size')) {
     function format_file_size($bytes) {
@@ -82,8 +158,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Console - Trinity College of Engineering &amp; Technology</title>
-    <!-- Fonts & Icons matching index.php -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Main College Website Stylesheet -->
     <link rel="stylesheet" href="../css/style.css">
@@ -156,11 +231,6 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                         </a>
                     <?php endif; ?>
 
-                    <!-- 3. Workshops & Tasks -->
-                    <a href="?tab=workshops" class="menu-item <?php echo $current_tab === 'workshops' ? 'active' : ''; ?>">
-                        <i class="fas fa-laptop-code"></i>
-                        <span>Workshops &amp; Tasks</span>
-                    </a>
 
                     <!-- 4. Events -->
                     <a href="?tab=events" class="menu-item <?php echo $current_tab === 'events' ? 'active' : ''; ?>">
@@ -186,7 +256,30 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                         <span>Circulars &amp; Notifications</span>
                     </a>
 
-                    <!-- 8. Activity Logs -->
+                    <!-- 8. Top Announcement Bar -->
+                    <a href="?tab=announcements" class="menu-item <?php echo $current_tab === 'announcements' ? 'active' : ''; ?>">
+                        <i class="fas fa-bullhorn"></i>
+                        <span>Announcement Bar</span>
+                        <?php if (!empty($ann_settings['is_enabled'])): ?>
+                            <span style="margin-left:auto; width:8px; height:8px; border-radius:50%; background:#00b894; display:inline-block;" title="Live on website"></span>
+                        <?php else: ?>
+                            <span style="margin-left:auto; width:8px; height:8px; border-radius:50%; background:#94a3b8; display:inline-block;" title="Hidden / Disabled"></span>
+                        <?php endif; ?>
+                    </a>
+
+                    <!-- 8. Departments Management -->
+                    <a href="?tab=departments" class="menu-item <?php echo $current_tab === 'departments' ? 'active' : ''; ?>">
+                        <i class="fas fa-sitemap"></i>
+                        <span>Departments</span>
+                    </a>
+
+                    <!-- 9. Faculty Management -->
+                    <a href="?tab=faculty" class="menu-item <?php echo $current_tab === 'faculty' ? 'active' : ''; ?>">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                        <span>Faculty Directory</span>
+                    </a>
+
+                    <!-- 10. Activity Logs -->
                     <?php if ($is_admin): ?>
                         <a href="?tab=activity_logs" class="menu-item <?php echo $current_tab === 'activity_logs' ? 'active' : ''; ?>">
                             <i class="fas fa-history"></i>
@@ -253,7 +346,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <span class="metric-label-image2">WORKSHOPS &amp; TASKS</span>
                                 <div class="metric-icon-circle icon-emerald-pastel"><i class="fas fa-laptop-code"></i></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo count($workshops_list); ?></div>
+                            <div class="metric-value-image2"><?php echo $total_workshops; ?></div>
                         </div>
 
                         <!-- Card 4: NO. OF EVENTS -->
@@ -262,7 +355,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <span class="metric-label-image2">NO. OF EVENTS</span>
                                 <div class="metric-icon-circle icon-red-pastel"><i class="far fa-calendar-alt"></i></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo count($events); ?></div>
+                            <div class="metric-value-image2"><?php echo $total_events; ?></div>
                         </div>
 
                         <!-- Card 5: NEWS -->
@@ -271,7 +364,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <span class="metric-label-image2">NEWS</span>
                                 <div class="metric-icon-circle icon-teal-pastel"><i class="far fa-newspaper"></i></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo count($news_list); ?></div>
+                            <div class="metric-value-image2"><?php echo $total_news; ?></div>
                         </div>
 
                         <!-- Card 6: CIRCULARS & NOTIFICATIONS -->
@@ -280,7 +373,25 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <span class="metric-label-image2">CIRCULARS &amp; NOTIFICATIONS</span>
                                 <div class="metric-icon-circle icon-orange-pastel"><i class="far fa-bell"></i></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo count($notifications); ?></div>
+                            <div class="metric-value-image2"><?php echo $total_notifications; ?></div>
+                        </div>
+
+                        <!-- Card 7: DEPARTMENTS -->
+                        <div class="metric-card-image2" onclick="window.location.href='?tab=departments'" style="cursor:pointer;" title="Click to view Departments">
+                            <div class="metric-card-top">
+                                <span class="metric-label-image2">DEPARTMENTS</span>
+                                <div class="metric-icon-circle" style="background:#ecfdf5; color:#00b894;"><i class="fas fa-sitemap"></i></div>
+                            </div>
+                            <div class="metric-value-image2"><?php echo $total_departments; ?></div>
+                        </div>
+
+                        <!-- Card 8: FACULTY MEMBERS -->
+                        <div class="metric-card-image2" onclick="window.location.href='?tab=faculty'" style="cursor:pointer;" title="Click to view Faculty Directory">
+                            <div class="metric-card-top">
+                                <span class="metric-label-image2">FACULTY MEMBERS</span>
+                                <div class="metric-icon-circle" style="background:#eff6ff; color:#2563eb;"><i class="fas fa-chalkboard-teacher"></i></div>
+                            </div>
+                            <div class="metric-value-image2"><?php echo $total_faculty; ?></div>
                         </div>
                     </div>
 
@@ -482,16 +593,24 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                     <!-- Filter Bar -->
                     <div class="action-filter-bar-image2">
                         <div class="filter-left-group">
-                            <div class="search-box-pill">
-                                <i class="fas fa-search"></i>
-                                <input type="text" class="search-pill-input" placeholder="Search workshop title, instructor, or lab..." onkeyup="filterGenericTable('workshopsTable', this.value)">
-                            </div>
-                            <select class="filter-pill-select" onchange="filterBranchTable(this.value)">
-                                <option value="all">All Domains</option>
-                                <option value="AI / ML">AI / ML</option>
-                                <option value="Web Dev">Web Dev</option>
-                                <option value="Embedded">Embedded / IoT</option>
-                            </select>
+                            <form method="GET" action="dashboard.php" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
+                                <input type="hidden" name="tab" value="workshops">
+                                <div class="search-box-pill">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" name="workshop_search" class="search-pill-input" placeholder="Search workshop title, instructor, or lab..." value="<?php echo htmlspecialchars($workshop_search); ?>" onkeyup="filterGenericTable('workshopsTable', this.value)">
+                                </div>
+                                <select name="category" class="filter-pill-select" onchange="this.form.submit()">
+                                    <option value="all">All Domains</option>
+                                    <option value="AI / ML" <?php echo $workshop_cat === 'AI / ML' ? 'selected' : ''; ?>>AI / ML</option>
+                                    <option value="Web Dev" <?php echo $workshop_cat === 'Web Dev' ? 'selected' : ''; ?>>Web Dev</option>
+                                    <option value="Embedded" <?php echo ($workshop_cat === 'Embedded' || $workshop_cat === 'Embedded / IoT') ? 'selected' : ''; ?>>Embedded / IoT</option>
+                                </select>
+                                <?php if (!empty($workshop_search) || ($workshop_cat !== 'all' && !empty($workshop_cat))): ?>
+                                    <a href="?tab=workshops" style="font-size:12px; color:#ef4444; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                                        <i class="fas fa-times-circle"></i> Reset
+                                    </a>
+                                <?php endif; ?>
+                            </form>
                         </div>
                         <div class="filter-right-actions">
                             <button type="button" class="btn-emerald-pill" onclick="openModal('modalWorkshop')">
@@ -514,45 +633,55 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 </tr>
                             </thead>
                             <tbody>
-                                <?php foreach ($workshops_list as $w): ?>
-                                    <tr class="data-row" data-branch="<?php echo htmlspecialchars($w['category']); ?>">
-                                        <td>
-                                            <div class="item-main-title"><?php echo htmlspecialchars($w['title']); ?></div>
-                                            <div class="item-sub-text">Category: <?php echo htmlspecialchars($w['category']); ?></div>
-                                        </td>
-                                        <td>
-                                            <div style="font-weight:600; color:#1e293b;"><?php echo htmlspecialchars($w['instructor'] ?? 'Faculty Mentor'); ?></div>
-                                            <div class="item-sub-text">CSE / ECE / AIML</div>
-                                        </td>
-                                        <td>
-                                            <div style="color:#334155; font-weight:500;"><?php echo htmlspecialchars($w['venue']); ?></div>
-                                        </td>
-                                        <td>
-                                            <div style="font-weight:600; color:#0f172a;"><?php echo htmlspecialchars($w['event_date']); ?></div>
-                                        </td>
-                                        <td>
-                                            <?php if (($w['status'] ?? '') === 'ACTIVE'): ?>
-                                                <span class="status-pill-dot status-active">&bull; ACTIVE</span>
-                                            <?php else: ?>
-                                                <span class="status-pill-dot status-pending">&bull; UPCOMING</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <div class="action-icons-wrap">
-                                                <button type="button" class="btn-icon-circle btn-icon-check"><i class="fas fa-check"></i></button>
-                                                <button type="button" class="btn-icon-circle btn-icon-edit" onclick="openModal('modalWorkshop')"><i class="fas fa-pencil-alt"></i></button>
-                                                <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this workshop?');" style="display:inline;">
-                                                    <input type="hidden" name="action" value="delete_workshop">
-                                                    <input type="hidden" name="id" value="<?php echo $w['id']; ?>">
-                                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                    <button type="submit" class="btn-icon-circle btn-icon-trash"><i class="fas fa-trash-alt"></i></button>
-                                                </form>
-                                            </div>
+                                <?php if (empty($workshops_list)): ?>
+                                    <tr>
+                                        <td colspan="6" style="text-align:center; padding:36px; color:#94a3b8;">
+                                            <i class="fas fa-laptop-code" style="font-size:32px; margin-bottom:8px; display:block; color:#cbd5e1;"></i>
+                                            No workshops or tasks found. Click <strong>“Add Workshop / Task”</strong> above to create one.
                                         </td>
                                     </tr>
-                                <?php endforeach; ?>
+                                <?php else: ?>
+                                    <?php foreach ($workshops_list as $w): ?>
+                                        <tr class="data-row" data-branch="<?php echo htmlspecialchars($w['category']); ?>">
+                                            <td>
+                                                <div class="item-main-title"><?php echo htmlspecialchars($w['title']); ?></div>
+                                                <div class="item-sub-text">Category: <?php echo htmlspecialchars($w['category']); ?></div>
+                                            </td>
+                                            <td>
+                                                <div style="font-weight:600; color:#1e293b;"><?php echo htmlspecialchars($w['instructor'] ?? 'Faculty Mentor'); ?></div>
+                                                <div class="item-sub-text">CSE / ECE / AIML</div>
+                                            </td>
+                                            <td>
+                                                <div style="color:#334155; font-weight:500;"><?php echo htmlspecialchars($w['venue']); ?></div>
+                                            </td>
+                                            <td>
+                                                <div style="font-weight:600; color:#0f172a;"><?php echo htmlspecialchars($w['event_date']); ?></div>
+                                            </td>
+                                            <td>
+                                                <?php if (($w['status'] ?? '') === 'ACTIVE'): ?>
+                                                    <span class="status-pill-dot status-active">&bull; ACTIVE</span>
+                                                <?php else: ?>
+                                                    <span class="status-pill-dot status-pending">&bull; UPCOMING</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <div class="action-icons-wrap">
+                                                    <button type="button" class="btn-icon-circle btn-icon-check"><i class="fas fa-check"></i></button>
+                                                    <button type="button" class="btn-icon-circle btn-icon-edit" onclick="openModal('modalWorkshop')"><i class="fas fa-pencil-alt"></i></button>
+                                                    <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this workshop?');" style="display:inline;">
+                                                        <input type="hidden" name="action" value="delete_workshop">
+                                                        <input type="hidden" name="id" value="<?php echo $w['id']; ?>">
+                                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                        <button type="submit" class="btn-icon-circle btn-icon-trash"><i class="fas fa-trash-alt"></i></button>
+                                                    </form>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
+                        <?php echo render_pagination_bar($workshops_pagination); ?>
                     </div>
                 </div>
             <?php endif; ?>
@@ -572,7 +701,14 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <p>Create and manage scheduled college events, fests, and celebrations</p>
                             </div>
                         </div>
-                        <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center;">
+                        <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                            <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                <input type="hidden" name="tab" value="events">
+                                <div class="search-box-pill" style="margin:0;">
+                                    <i class="fas fa-search"></i>
+                                    <input type="text" name="events_search" value="<?php echo htmlspecialchars($events_search); ?>" class="search-pill-input" placeholder="Search events..." onchange="this.form.submit()">
+                                </div>
+                            </form>
                             <a href="?tab=event_files" class="btn-outline-pill" style="text-decoration:none; font-size:12.5px; font-weight:600;">
                                 <i class="fas fa-photo-video"></i> Go to Event Files
                             </a>
@@ -597,7 +733,11 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     <tr>
                                         <td colspan="4" style="text-align:center; padding:36px; color:#94a3b8;">
                                             <i class="far fa-calendar-times" style="font-size:32px; margin-bottom:8px; display:block;"></i>
-                                            No events scheduled yet. Click <strong>“Create Event”</strong> above to add one.
+                                            <?php if (!empty($events_search)): ?>
+                                                No events found matching "<?php echo htmlspecialchars($events_search); ?>". <a href="?tab=events" style="color:#00b894; font-weight:600;">Clear search</a>
+                                            <?php else: ?>
+                                                No events scheduled yet. Click <strong>“Create Event”</strong> above to add one.
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php else: ?>
@@ -610,7 +750,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                                     <?php $mCount = count($ev['media_items'] ?? []); ?>
                                                     <?php if ($mCount > 0): ?>
                                                         <a href="?tab=event_files&event_id=<?php echo $ev['id']; ?>" style="color:#059669; font-weight:600; text-decoration:none; background:#ecfdf5; padding:1px 7px; border-radius:999px;">
-                                                            <i class="fas fa-paperclip"></i> <?php echo $mCount; ?> file<?php echo $mCount > 1 ? 's' : ''; ?>
+                                                             <i class="fas fa-paperclip"></i> <?php echo $mCount; ?> file<?php echo $mCount > 1 ? 's' : ''; ?>
                                                         </a>
                                                     <?php endif; ?>
                                                 </div>
@@ -652,6 +792,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                        <?php echo render_pagination_bar($events_pagination); ?>
                     </div>
                 </div>
             <?php endif; ?>
@@ -668,12 +809,12 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <p>Upload images or videos directly linked to an event &bull; Automatically displayed on the public website</p>
                             </div>
                         </div>
-                        <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center;">
+                        <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
                             <button type="button" class="btn-emerald-pill" onclick="openModal('modalEventMedia')">
                                 <i class="fas fa-cloud-upload-alt"></i> Upload Event File
                             </button>
                             <span class="linked-event-pill" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size:12.5px; padding:7px 14px;">
-                                <i class="fas fa-photo-video"></i> <?php echo count($all_event_media); ?> Total Files
+                                <i class="fas fa-photo-video"></i> <?php echo $total_event_media; ?> Total Files
                             </span>
                         </div>
                     </div>
@@ -686,20 +827,33 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     <i class="fas fa-photo-video" style="color:#00b894;"></i> Uploaded Event Files
                                 </h3>
                                 <span style="background:#f1f5f9; color:#475569; font-size:12px; font-weight:700; padding:2px 10px; border-radius:999px;">
-                                    <?php echo count($all_event_media); ?> Files
+                                    <?php echo $total_event_media; ?> Files
                                 </span>
                             </div>
 
                             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                                <div class="search-box-pill" style="margin:0;">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="eventFileSearchInput" class="search-pill-input" placeholder="Search event file..." onkeyup="filterEventFilesTable(this.value)">
-                                </div>
+                                <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                    <input type="hidden" name="tab" value="event_files">
+                                    <?php if ($event_filter_id): ?>
+                                        <input type="hidden" name="event_id" value="<?php echo $event_filter_id; ?>">
+                                    <?php endif; ?>
+                                    <div class="search-box-pill" style="margin:0;">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" name="file_search" id="eventFileSearchInput" value="<?php echo htmlspecialchars($event_file_search); ?>" class="search-pill-input" placeholder="Search event file..." onchange="this.form.submit()">
+                                    </div>
+                                </form>
                                 <button type="button" class="btn-emerald-pill" onclick="openModal('modalEventMedia')" style="padding:7px 18px; font-size:12.5px;">
                                     <i class="fas fa-cloud-upload-alt"></i> Upload Event File
                                 </button>
                             </div>
                         </div>
+
+                        <?php if ($event_filter_id): ?>
+                            <div style="margin-bottom:14px; background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:8px 14px; border-radius:10px; font-size:12.5px; display:flex; align-items:center; justify-content:space-between;">
+                                <span><i class="fas fa-filter"></i> Filtering files for Event ID #<?php echo $event_filter_id; ?></span>
+                                <a href="?tab=event_files" style="color:#2563eb; font-weight:700; text-decoration:none;">Show All Files &times;</a>
+                            </div>
+                        <?php endif; ?>
 
                         <table class="table-image2" id="eventFilesTable">
                             <thead>
@@ -716,7 +870,11 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     <tr>
                                         <td colspan="5" style="text-align:center; padding:36px; color:#94a3b8;">
                                             <i class="fas fa-photo-video" style="font-size:32px; margin-bottom:8px; display:block; color:#cbd5e1;"></i>
-                                            No event files uploaded yet. Click <strong>“Upload Event File”</strong> above to add files.
+                                            <?php if (!empty($event_file_search) || !empty($event_filter_id)): ?>
+                                                No event files found matching your filters. <a href="?tab=event_files" style="color:#00b894; font-weight:600;">Clear filters</a>
+                                            <?php else: ?>
+                                                No event files uploaded yet. Click <strong>“Upload Event File”</strong> above to add files.
+                                            <?php endif; ?>
                                         </td>
                                     </tr>
                                 <?php else: ?>
@@ -773,6 +931,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <?php endif; ?>
                             </tbody>
                         </table>
+                        <?php echo render_pagination_bar($event_files_pagination); ?>
                     </div>
                 </div>
             <?php endif; ?>
@@ -798,7 +957,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <i class="fas fa-newspaper"></i> Upload News
                             </button>
                             <span class="events-count-badge">
-                                <i class="fas fa-newspaper"></i> <?php echo count($news_list); ?> Published Articles
+                                <i class="fas fa-newspaper"></i> <?php echo $total_news; ?> Published Articles
                             </span>
                         </div>
                     </div>
@@ -814,12 +973,15 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 </div>
                             </div>
                             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                                <div class="search-box-pill" style="margin:0;">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="newsSearchInput" class="search-pill-input" placeholder="Search news title..." onkeyup="filterNewsTable(this.value)">
-                                </div>
+                                <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                    <input type="hidden" name="tab" value="news">
+                                    <div class="search-box-pill" style="margin:0;">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" name="news_search" id="newsSearchInput" value="<?php echo htmlspecialchars($news_search); ?>" class="search-pill-input" placeholder="Search news title..." onchange="this.form.submit()">
+                                    </div>
+                                </form>
                                 <span class="events-count-badge">
-                                    <i class="fas fa-newspaper"></i> <?php echo count($news_list); ?> News Items
+                                    <i class="fas fa-newspaper"></i> <?php echo $total_news; ?> News Items
                                 </span>
                                 <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadNews')" style="padding:7px 18px; font-size:12.5px;">
                                     <i class="fas fa-newspaper"></i> Upload News
@@ -833,7 +995,13 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     <i class="fas fa-newspaper"></i>
                                 </div>
                                 <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Newspaper News Uploaded Yet</h4>
-                                <p style="margin: 0; color: #64748b; font-size: 13px;">Click <strong>"Upload News"</strong> above to publish your first newspaper clipping image.</p>
+                                <p style="margin: 0; color: #64748b; font-size: 13px;">
+                                    <?php if (!empty($news_search)): ?>
+                                        No articles matching "<?php echo htmlspecialchars($news_search); ?>". <a href="?tab=news" style="color:#00b894; font-weight:600;">Clear search</a>
+                                    <?php else: ?>
+                                        Click <strong>"Upload News"</strong> above to publish your first newspaper clipping image.
+                                    <?php endif; ?>
+                                </p>
                             </div>
                         <?php else: ?>
                             <div class="table-card-image2" style="border:none; border-radius:0; box-shadow:none;">
@@ -849,10 +1017,10 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     </thead>
                                     <tbody>
                                         <?php foreach ($news_list as $nws): 
-                                            $raw_img = !empty($nws['image_path']) ? $nws['image_path'] : 'assets/Gallery/paper1.jpg';
-                                            $thumb_src = '../' . ltrim($raw_img, '/');
-                                            $formatted_date = !empty($nws['publish_date']) ? date('M d, Y', strtotime($nws['publish_date'])) : '—';
-                                            $clean_desc = $nws['description'] ?? ($nws['summary'] ?? '');
+                                             $raw_img = !empty($nws['image_path']) ? $nws['image_path'] : 'assets/Gallery/paper1.jpg';
+                                             $thumb_src = '../' . ltrim($raw_img, '/');
+                                             $formatted_date = !empty($nws['publish_date']) ? date('M d, Y', strtotime($nws['publish_date'])) : '—';
+                                             $clean_desc = $nws['description'] ?? ($nws['summary'] ?? '');
                                         ?>
                                             <tr>
                                                 <!-- Newspaper Image -->
@@ -925,6 +1093,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     </tbody>
                                 </table>
                             </div>
+                            <?php echo render_pagination_bar($news_pagination); ?>
                         <?php endif; ?>
                     </div>
                 </div>
@@ -964,12 +1133,15 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                             </div>
 
                             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                                <div class="search-box-pill" style="margin:0;">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="circularSearchInput" class="search-pill-input" placeholder="Search circular title..." onkeyup="filterCircularsTable(this.value)">
-                                </div>
+                                <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                    <input type="hidden" name="tab" value="notifications">
+                                    <div class="search-box-pill" style="margin:0;">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" name="cir_search" id="circularSearchInput" value="<?php echo htmlspecialchars($notifications_search); ?>" class="search-pill-input" placeholder="Search circular title..." onchange="this.form.submit()">
+                                    </div>
+                                </form>
                                 <span class="events-count-badge">
-                                    <i class="fas fa-file-invoice"></i> <?php echo count($notifications); ?> Circulars
+                                    <i class="fas fa-file-invoice"></i> <?php echo $total_notifications; ?> Circulars
                                 </span>
                                 <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadCircular')" style="padding:7px 18px; font-size:12.5px;">
                                     <i class="fas fa-cloud-upload-alt"></i> Upload Circular
@@ -982,8 +1154,14 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <div style="width: 60px; height: 60px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;">
                                     <i class="fas fa-folder-open"></i>
                                 </div>
-                                <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Circulars Uploaded Yet</h4>
-                                <p style="margin: 0 auto; max-width: 440px; color: #64748b; font-size: 13px;">Click <strong>"Upload Circular"</strong> above to publish your first official college notice or exam schedule.</p>
+                                <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Circulars Found</h4>
+                                <p style="margin: 0 auto; max-width: 440px; color: #64748b; font-size: 13px;">
+                                    <?php if (!empty($notifications_search)): ?>
+                                        No circulars matching "<?php echo htmlspecialchars($notifications_search); ?>". <a href="?tab=notifications" style="color:#00b894; font-weight:600;">Clear search</a>
+                                    <?php else: ?>
+                                        Click <strong>"Upload Circular"</strong> above to publish your first official college notice or exam schedule.
+                                    <?php endif; ?>
+                                </p>
                             </div>
                         <?php else: ?>
                             <div class="table-card-image2" style="border:none; border-radius:0; box-shadow:none;">
@@ -1102,84 +1280,239 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     </tbody>
                                 </table>
                             </div>
+                            <?php echo render_pagination_bar($notifications_pagination); ?>
                         <?php endif; ?>
                     </div>
                 </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
-            <!-- TAB 7: SCROLLBAR (Marquee Ticker Controls for index.php) -->
+            <!-- TAB 7: ANNOUNCEMENT BAR (Top Website Scrolling Marquee Ticker) -->
             <!-- ============================================================== -->
-            <?php if ($current_tab === 'scrollbar'): ?>
+            <!-- ============================================================== -->
+            <!-- TAB 7: TOP ANNOUNCEMENT BAR (Single Main Scrolling Announcement) -->
+            <!-- ============================================================== -->
+            <?php if ($current_tab === 'announcements' || $current_tab === 'scrollbar'): ?>
                 <div class="tab-pane active">
                     <div class="pane-header-image2">
                         <div class="pane-title-group">
                             <div class="pane-text">
-                                <h2>Homepage Scrollbar (Marquee Ticker)</h2>
-                                <p>Manage live scrolling ticker announcements running on Trinity College Homepage</p>
+                                <h2>Top Announcement Bar Management</h2>
+                                <p>Manage the single main scrolling announcement displayed at the top of the college website</p>
                             </div>
                         </div>
-                        <div class="pane-actions-right">
-                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalScrollbar')">
-                                <i class="fas fa-plus"></i> Add Scrollbar Ticker
-                            </button>
+                        <div class="pane-actions-right" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                            <!-- Instant Toggle Bar Button -->
+                            <form action="../backend/crud.php" method="POST" style="display:inline; margin:0;">
+                                <input type="hidden" name="action" value="toggle_announcement_bar">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                <button type="submit" class="<?php echo $is_ann_enabled ? 'btn-emerald-pill' : 'btn-outline-pill'; ?>" style="font-size:13px;" title="Click to instantly toggle visibility on website">
+                                    <i class="fas fa-power-off"></i> <?php echo $is_ann_enabled ? 'Bar Active (Enabled)' : 'Bar Hidden (Disabled)'; ?>
+                                </button>
+                            </form>
+                            <a href="../index.php" target="_blank" class="btn-outline-pill" style="font-size:13px; text-decoration:none;">
+                                <i class="fas fa-external-link-alt"></i> View Live Site
+                            </a>
                         </div>
                     </div>
 
                     <!-- Live Ticker Preview Card -->
-                    <div class="form-card-light" style="padding:16px 20px; margin-bottom:20px; background:#ffffff;">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
-                            <span style="font-size:12px; font-weight:700; color:#008f72; letter-spacing:0.5px;">
-                                <i class="fas fa-broadcast-tower"></i> LIVE STREAMING TICKER ON INDEX.PHP:
-                            </span>
-                            <span class="status-pill-dot status-active">&bull; RUNNING</span>
+                    <div class="form-card-light" style="padding:18px 22px; margin-bottom:24px; background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 4px 16px rgba(15,23,42,0.03);">
+                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                            <div style="display:flex; align-items:center; gap:8px;">
+                                <span class="pulse-indicator" style="background:#00b894; box-shadow:0 0 0 3px rgba(0,184,148,0.25);"></span>
+                                <span style="font-size:12px; font-weight:700; color:#008f72; letter-spacing:0.5px;">
+                                    <i class="fas fa-bullhorn"></i> LIVE TICKER PREVIEW:
+                                </span>
+                                <span id="previewStatusBadge" class="status-pill-dot <?php echo $is_ann_enabled ? 'status-active' : 'status-paused'; ?>">
+                                    &bull; <?php echo $is_ann_enabled ? 'LIVE ON WEBSITE' : 'CURRENTLY DISABLED (HIDDEN)'; ?>
+                                </span>
+                            </div>
+                            <div style="display:flex; align-items:center; gap:8px; font-size:12.5px;">
+                                <button type="button" id="btnToggleMotion" class="speed-preset-chip" onclick="toggleTickerMotion()">
+                                    <i class="fas fa-pause"></i> <span>Pause Motion</span>
+                                </button>
+                                <span class="speed-preset-chip" style="cursor:default;">
+                                    <i class="fas fa-tachometer-alt" style="color:#00b894;"></i> Speed: <strong id="previewSpeedChip"><?php echo $ann_speed; ?>s</strong>
+                                </span>
+                                <span class="speed-preset-chip" style="cursor:default;">
+                                    <i class="far fa-calendar-check" style="color:#00b894;"></i> <strong id="previewDateChip"><?php echo htmlspecialchars($ann_last_updated); ?></strong>
+                                </span>
+                            </div>
                         </div>
-                        <div style="background:#00b894; color:#ffffff; padding:10px 18px; border-radius:10px; font-size:13.5px; font-weight:600; overflow:hidden; white-space:nowrap;">
-                            <span>⚡ We Proudly Announce That We Got JNTUH &amp; UGC AUTONOMOUS Status for Five Years &bull; NAAC Accredited &bull; Admissions Open 2024-25 | Helpline: 7396903383</span>
+
+                        <!-- Exact Replica of Top Green Bar -->
+                        <div class="news-ticker" style="--ticker-speed: <?php echo $ann_speed; ?>s; border-radius:10px; box-shadow:0 2px 10px rgba(0,184,148,0.18);">
+                            <div class="ticker-bar-container">
+                                <div class="ticker-meta-side" id="previewMetaSide" style="<?php echo $show_ann_updated ? '' : 'display:none;'; ?>">
+                                    <span class="ticker-live-badge"><i class="fas fa-bullhorn"></i> ANNOUNCEMENT</span>
+                                    <span class="ticker-meta-divider">&bull;</span>
+                                    <span class="ticker-updated-badge"><i class="far fa-calendar-check"></i> Last Updated: <span id="badgeDateText"><?php echo htmlspecialchars($ann_last_updated); ?></span></span>
+                                </div>
+                                <div class="ticker-flow-track">
+                                    <div id="dashLiveTickerContent" class="ticker-content" style="animation-duration: <?php echo $ann_speed; ?>s;">
+                                        <span id="previewTickerTextWrap"><?php echo get_announcement_ticker_html($announcements_data, true); ?></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#94a3b8; flex-wrap:wrap; gap:8px;">
+                            <span><i class="fas fa-info-circle" style="color:#00b894;"></i> Hover over preview to pause. Edits typed below reflect instantly in this preview before saving.</span>
+                            <a href="../index.php" target="_blank" style="color:#00b894; font-weight:600; text-decoration:none;"><i class="fas fa-external-link-alt"></i> View Live Site</a>
                         </div>
                     </div>
 
-                    <div class="table-card-image2">
-                        <table class="table-image2">
-                            <thead>
-                                <tr>
-                                    <th>MARQUEE TICKER TEXT</th>
-                                    <th>PUBLISHED DATE</th>
-                                    <th>EXTERNAL URL</th>
-                                    <th>STATUS</th>
-                                    <th>ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($scrollbar_list as $sb): ?>
-                                    <tr>
-                                        <td>
-                                            <div class="item-main-title"><?php echo htmlspecialchars($sb['title']); ?></div>
-                                            <div class="item-sub-text"><?php echo htmlspecialchars($sb['description'] ?: 'Homepage marquee display active'); ?></div>
-                                        </td>
-                                        <td>
-                                            <div style="font-weight:600; color:#0f172a;"><?php echo htmlspecialchars($sb['publish_date']); ?></div>
-                                        </td>
-                                        <td>
-                                            <code><?php echo htmlspecialchars($sb['link_url'] ?: 'index.php'); ?></code>
-                                        </td>
-                                        <td><span class="status-pill-dot status-active">&bull; SCROLLING</span></td>
-                                        <td>
-                                            <div class="action-icons-wrap">
-                                                <button type="button" class="btn-icon-circle btn-icon-check"><i class="fas fa-check"></i></button>
-                                                <button type="button" class="btn-icon-circle btn-icon-edit" onclick="openModal('modalScrollbar')"><i class="fas fa-pencil-alt"></i></button>
-                                                <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Remove this ticker?');" style="display:inline;">
-                                                    <input type="hidden" name="action" value="delete_scrollbar">
-                                                    <input type="hidden" name="id" value="<?php echo $sb['id']; ?>">
-                                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                    <button type="submit" class="btn-icon-circle btn-icon-trash"><i class="fas fa-trash-alt"></i></button>
-                                                </form>
+                    <!-- Single Main Announcement Management Card -->
+                    <div class="form-card-light" style="padding:24px; margin-bottom:24px; background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 4px 16px rgba(15,23,42,0.03);">
+                        <div style="margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                            <div>
+                                <h3 style="font-size:16px; font-weight:700; color:#0f172a; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
+                                    <i class="fas fa-edit" style="color:#00b894;"></i> Main Announcement Editor
+                                </h3>
+                                <p style="font-size:13px; color:#64748b; margin:0;">Configure the single scrolling announcement, visibility toggle, speed, and date without touching code.</p>
+                            </div>
+                            <span class="status-pill-dot status-active" style="font-size:11.5px;">
+                                <i class="fas fa-shield-alt"></i> Single Announcement Mode
+                            </span>
+                        </div>
+
+                        <form action="../backend/crud.php" method="POST" id="formMainAnnouncement">
+                            <input type="hidden" name="action" value="save_main_announcement">
+                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+
+                            <!-- 1. The Single Input Field for the Main Announcement -->
+                            <div class="form-group" style="margin-bottom:20px;">
+                                <label style="font-size:13.5px; font-weight:700; color:#0f172a; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                                    <span><i class="fas fa-bullhorn" style="color:#00b894;"></i> Announcement Message *</span>
+                                    <span style="font-size:12px; font-weight:500; color:#64748b;">Single message scrolling on website</span>
+                                </label>
+                                <textarea name="announcement_text" id="announcement_text_input" rows="3" class="form-control" required placeholder="Enter the main announcement message to scroll on the website..." style="width:100%; border-radius:10px; font-size:13.5px; font-family:'Poppins', sans-serif; line-height:1.5; padding:12px 14px;" oninput="updateLivePreviewText(this.value)"><?php echo htmlspecialchars($ann_text); ?></textarea>
+                                <small style="font-size:12px; color:#64748b; margin-top:5px; display:block;">
+                                    <i class="fas fa-info-circle" style="color:#00b894;"></i> Updating this text directly replaces the current announcement on the live website.
+                                </small>
+                            </div>
+
+                            <!-- 2. Destination Link (Optional) -->
+                            <div class="form-group" style="margin-bottom:22px;">
+                                <label style="font-size:13px; font-weight:600; color:#334155; margin-bottom:6px; display:block;">
+                                    <i class="fas fa-link" style="color:#00b894;"></i> Destination Link URL (Optional)
+                                </label>
+                                <div style="position:relative;">
+                                    <i class="fas fa-globe" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px;"></i>
+                                    <input type="text" name="link_url" id="link_url_input" class="form-control" value="<?php echo htmlspecialchars($ann_link); ?>" placeholder="e.g. admission.php, circulars.php, or https://example.com" style="padding-left:38px; height:44px; border-radius:10px; font-size:13px;" oninput="updateLivePreviewLink(this.value)">
+                                </div>
+                                <small style="font-size:11.5px; color:#94a3b8; margin-top:4px; display:block;">
+                                    If provided, visitors clicking anywhere on the announcement will navigate to this page. Leave blank for text-only.
+                                </small>
+                            </div>
+
+                            <!-- 3. Two Columns: Enable/Disable Switch & Last Updated Date Options -->
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:18px; margin-bottom:22px;">
+                                <!-- Toggle 1: Enable / Disable Announcement Bar -->
+                                <div class="ui-toggle-card">
+                                    <div class="ui-toggle-label">
+                                        <div class="ui-toggle-title">
+                                            <i class="fas fa-power-off" style="color:#00b894;"></i> Enable Announcement Bar
+                                        </div>
+                                        <div class="ui-toggle-desc">
+                                            Show or completely hide the scrolling announcement bar across the website.
+                                        </div>
+                                        <div style="margin-top:6px;">
+                                            <span id="switchStatusLabel" class="status-pill-dot <?php echo $is_ann_enabled ? 'status-active' : 'status-paused'; ?>">
+                                                &bull; <?php echo $is_ann_enabled ? 'Enabled (Live on Website)' : 'Disabled (Hidden from Website)'; ?>
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <input type="hidden" name="is_enabled" value="0">
+                                    <label class="switch-box" style="margin:0;">
+                                        <input type="checkbox" name="is_enabled" value="1" id="switchBarEnabled" <?php echo $is_ann_enabled ? 'checked' : ''; ?> onchange="onStatusToggleChange(this)">
+                                        <span class="switch-slider"></span>
+                                    </label>
+                                </div>
+
+                                <!-- Toggle 2: "Last Updated" Date Display -->
+                                <div class="ui-toggle-card" style="flex-direction:column; align-items:stretch; gap:12px;">
+                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                                        <div class="ui-toggle-label">
+                                            <div class="ui-toggle-title">
+                                                <i class="far fa-calendar-check" style="color:#00b894;"></i> "Last Updated" Date Display
                                             </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
+                                            <div class="ui-toggle-desc">
+                                                Show or hide the "Last Updated" badge in the bar.
+                                            </div>
+                                        </div>
+                                        <input type="hidden" name="show_last_updated" value="0">
+                                        <label class="switch-box" style="margin:0;">
+                                            <input type="checkbox" name="show_last_updated" value="1" id="switchShowUpdated" <?php echo $show_ann_updated ? 'checked' : ''; ?> onchange="onBadgeToggleChange(this)">
+                                            <span class="switch-slider"></span>
+                                        </label>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <div style="position:relative; flex:1;">
+                                            <i class="far fa-calendar-alt" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px;"></i>
+                                            <input type="text" id="last_updated_input" name="last_updated" class="form-control" value="<?php echo htmlspecialchars($ann_last_updated); ?>" placeholder="e.g. 09 October 2026" required style="padding-left:34px; height:40px; font-size:13px; border-radius:10px;" oninput="onDateInputChange(this.value)">
+                                        </div>
+                                        <button type="button" class="btn-outline-pill" style="height:40px; padding:0 14px; font-size:12px; white-space:nowrap;" onclick="setTodayDate()" title="Set to today's date">
+                                            <i class="fas fa-bolt" style="color:#00b894;"></i> Today
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 4. Scrolling Speed Controller -->
+                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:18px 20px; margin-bottom:24px;">
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
+                                    <div>
+                                        <div style="font-size:13.5px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px;">
+                                            <i class="fas fa-tachometer-alt" style="color:#00b894;"></i> Scrolling Speed Controller
+                                        </div>
+                                        <div style="font-size:12px; color:#64748b; margin-top:2px;">
+                                            Duration in seconds for one full scroll cycle. Lower number scrolls faster.
+                                        </div>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:12px; font-weight:600; color:#475569;">Duration:</span>
+                                        <input type="number" id="scrolling_speed_input" name="scrolling_speed" class="form-control" min="10" max="300" value="<?php echo $ann_speed; ?>" required style="width:75px; height:36px; text-align:center; font-weight:700; font-size:14px; border-radius:8px;" oninput="syncSpeedInput(this.value)">
+                                        <span style="font-size:13px; font-weight:600; color:#64748b;">seconds</span>
+                                    </div>
+                                </div>
+
+                                <div style="display:flex; flex-direction:column; gap:12px;">
+                                    <div style="display:flex; align-items:center; gap:14px;">
+                                        <span style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Faster</span>
+                                        <input type="range" id="scrolling_speed_slider" min="15" max="150" value="<?php echo $ann_speed; ?>" class="speed-slider-control" oninput="syncSpeedSlider(this.value)">
+                                        <span style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Slower</span>
+                                    </div>
+
+                                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                                        <span style="font-size:12px; font-weight:600; color:#64748b; margin-right:4px;">Presets:</span>
+                                        <button type="button" class="speed-preset-chip <?php echo ($ann_speed == 25) ? 'active' : ''; ?>" onclick="selectSpeedPreset(25, this)">
+                                            <i class="fas fa-bolt"></i> Fast (25s)
+                                        </button>
+                                        <button type="button" class="speed-preset-chip <?php echo ($ann_speed == 50) ? 'active' : ''; ?>" onclick="selectSpeedPreset(50, this)">
+                                            <i class="fas fa-tachometer-alt"></i> Normal (50s)
+                                        </button>
+                                        <button type="button" class="speed-preset-chip <?php echo ($ann_speed == 75) ? 'active' : ''; ?>" onclick="selectSpeedPreset(75, this)">
+                                            <i class="fas fa-wind"></i> Relaxed (75s)
+                                        </button>
+                                        <button type="button" class="speed-preset-chip <?php echo ($ann_speed == 100) ? 'active' : ''; ?>" onclick="selectSpeedPreset(100, this)">
+                                            <i class="fas fa-hourglass-half"></i> Slow (100s)
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 5. Save Changes Action Bar -->
+                            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; padding-top:4px;">
+                                <div style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:#64748b;">
+                                    <i class="fas fa-check-circle" style="color:#00b894;"></i>
+                                    <span>Changes will automatically update the website's top scrolling bar immediately.</span>
+                                </div>
+                                <button type="submit" class="btn-emerald-pill" style="padding:12px 32px; font-size:14px; font-weight:600; box-shadow:0 4px 14px rgba(0, 184, 148, 0.35);">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             <?php endif; ?>
@@ -1215,12 +1548,17 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                             </div>
 
                             <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                                <div class="search-box-pill" style="margin:0;">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" id="logSearchInput" class="search-pill-input" placeholder="Search admin, record, or action..." onkeyup="filterLogsTable(this.value)">
-                                </div>
+                                <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                    <input type="hidden" name="tab" value="activity_logs">
+                                    <?php if ($log_module_filter !== 'all'): ?><input type="hidden" name="log_module" value="<?php echo htmlspecialchars($log_module_filter); ?>"><?php endif; ?>
+                                    <?php if ($log_action_filter !== 'all'): ?><input type="hidden" name="log_action" value="<?php echo htmlspecialchars($log_action_filter); ?>"><?php endif; ?>
+                                    <div class="search-box-pill" style="margin:0;">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" name="log_search" id="logSearchInput" value="<?php echo htmlspecialchars($log_search); ?>" class="search-pill-input" placeholder="Search admin, record, or action..." onchange="this.form.submit()">
+                                    </div>
+                                </form>
                                 <span class="events-count-badge">
-                                    <i class="fas fa-clipboard-list"></i> <?php echo count($activity_logs); ?> Log Entries
+                                    <i class="fas fa-clipboard-list"></i> <?php echo $total_activity_logs; ?> Log Entries
                                 </span>
                             </div>
                         </div>
@@ -1229,6 +1567,9 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                         <div style="padding:14px 24px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
                             <form method="GET" action="dashboard.php" class="log-filter-groups" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:0;">
                                 <input type="hidden" name="tab" value="activity_logs">
+                                <?php if (!empty($log_search)): ?>
+                                    <input type="hidden" name="log_search" value="<?php echo htmlspecialchars($log_search); ?>">
+                                <?php endif; ?>
                                 
                                 <div style="display:flex; align-items:center; gap:8px;">
                                     <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Module:</span>
@@ -1253,7 +1594,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     </select>
                                 </div>
 
-                                <?php if ($log_module_filter !== 'all' || $log_action_filter !== 'all'): ?>
+                                <?php if ($log_module_filter !== 'all' || $log_action_filter !== 'all' || !empty($log_search)): ?>
                                     <a href="?tab=activity_logs" style="font-size:12px; color:#ef4444; text-decoration:none; font-weight:600; margin-left:4px; display:inline-flex; align-items:center; gap:4px;">
                                         <i class="fas fa-times-circle"></i> Reset Filters
                                     </a>
@@ -1261,7 +1602,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                             </form>
 
                             <div style="font-size:12.5px; color:#64748b;">
-                                Showing <strong><?php echo count($activity_logs); ?></strong> recorded actions
+                                Showing <strong><?php echo $activity_logs_pagination['start_index']; ?>–<?php echo $activity_logs_pagination['end_index']; ?></strong> of <strong><?php echo $total_activity_logs; ?></strong> recorded actions
                             </div>
                         </div>
 
@@ -1272,7 +1613,11 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 </div>
                                 <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Activity Logs Found</h4>
                                 <p style="margin: 0 auto; max-width: 440px; color: #64748b; font-size: 13px;">
-                                    There are currently no recorded administrative activities matching your selected filters.
+                                    <?php if (!empty($log_search) || $log_module_filter !== 'all' || $log_action_filter !== 'all'): ?>
+                                        There are no recorded activities matching your selected filters. <a href="?tab=activity_logs" style="color:#00b894; font-weight:600;">Reset filters</a>
+                                    <?php else: ?>
+                                        There are currently no recorded administrative activities.
+                                    <?php endif; ?>
                                 </p>
                             </div>
                         <?php else: ?>
@@ -1359,9 +1704,24 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     </tbody>
                                 </table>
                             </div>
+                            <?php echo render_pagination_bar($activity_logs_pagination); ?>
                         <?php endif; ?>
                     </div>
                 </div>
+            <?php endif; ?>
+
+            <!-- ============================================================== -->
+            <!-- 9. DEPARTMENTS MANAGEMENT TAB -->
+            <!-- ============================================================== -->
+            <?php if ($current_tab === 'departments'): ?>
+                <?php include __DIR__ . '/views/departments_tab.php'; ?>
+            <?php endif; ?>
+
+            <!-- ============================================================== -->
+            <!-- 10. FACULTY DIRECTORY & STAFF MANAGEMENT TAB -->
+            <!-- ============================================================== -->
+            <?php if ($current_tab === 'faculty'): ?>
+                <?php include __DIR__ . '/views/faculty_tab.php'; ?>
             <?php endif; ?>
 
         </main>
@@ -1370,6 +1730,8 @@ $initials = strtoupper(substr($admin_name, 0, 2));
     <!-- ============================================================== -->
     <!-- MODAL POP-UPS (Clean Light Theme) -->
     <!-- ============================================================== -->
+
+    <?php include __DIR__ . '/views/dept_faculty_modals.php'; ?>
 
     <!-- Modal Pop-up: Upload Official Circular -->
     <div class="modal-overlay" id="modalUploadCircular" onclick="handleBackdropClick(event, 'modalUploadCircular')">
@@ -1658,7 +2020,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <option value="">-- Choose an Event --</option>
                                 <?php 
                                 $preselected_eid = isset($_GET['event_id']) ? (int)$_GET['event_id'] : 0;
-                                foreach ($events as $evOption): 
+                                foreach ($all_events_options as $evOption): 
                                 ?>
                                     <option value="<?php echo $evOption['id']; ?>" <?php echo $preselected_eid === (int)$evOption['id'] ? 'selected' : ''; ?>>
                                         <?php echo htmlspecialchars($evOption['title']); ?> (<?php echo htmlspecialchars($evOption['event_date']); ?>)
@@ -1851,7 +2213,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                     <div class="form-group">
                         <label>Linked Event *</label>
                         <select name="event_id" id="edit_media_event_id" class="form-control" required>
-                            <?php foreach ($events as $evOption): ?>
+                            <?php foreach ($all_events_options as $evOption): ?>
                                 <option value="<?php echo $evOption['id']; ?>">
                                     <?php echo htmlspecialchars($evOption['title']); ?> (<?php echo htmlspecialchars($evOption['event_date']); ?>)
                                 </option>
@@ -2160,41 +2522,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
         </div>
     </div>
 
-    <!-- 5. Modal Pop-up: Add Scrollbar Marquee Ticker -->
-    <div class="modal-overlay" id="modalScrollbar" onclick="handleBackdropClick(event, 'modalScrollbar')">
-        <div class="modal-dialog">
-            <div class="modal-header">
-                <h3><i class="fas fa-scroll" style="color:#00b894;"></i> Add Scrollbar Marquee Announcement</h3>
-                <button type="button" class="modal-close-btn" onclick="closeModal('modalScrollbar')">&times;</button>
-            </div>
-            <form action="../backend/crud.php" method="POST">
-                <input type="hidden" name="action" value="add_scrollbar">
-                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
-                <div class="modal-body">
-                    <div class="form-group">
-                        <label>Scrolling Ticker Headline *</label>
-                        <input type="text" name="title" class="form-control" placeholder="e.g. Admissions Open 2024-25: B.Tech, Diploma &amp; MBA | Code: TCEK" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Detailed Ticker Subtitle / Contact</label>
-                        <textarea name="description" class="form-control" rows="2" placeholder="Helpline: 7396903383, 8522954369"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Clickable URL (Optional)</label>
-                        <input type="text" name="link_url" class="form-control" value="admission.php">
-                    </div>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn-outline-pill" onclick="closeModal('modalScrollbar')">Cancel</button>
-                    <button type="submit" class="btn-emerald-pill"><i class="fas fa-play"></i> Add to Live Scrollbar</button>
-                </div>
-            </form>
-        </div>
-    </div>
 
     <!-- 6. Modal Pop-up: Create User Account -->
     <div class="modal-overlay" id="modalUser" onclick="handleBackdropClick(event, 'modalUser')">
@@ -2270,6 +2598,144 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             if (event.target && event.target.id === modalId) {
                 closeModal(modalId);
             }
+        }
+
+        // ==============================================================
+        // TOP ANNOUNCEMENT BAR REAL-TIME CONTROLS
+        // ==============================================================
+        let isTickerMotionPaused = false;
+
+        function toggleTickerMotion() {
+            const ticker = document.getElementById('dashLiveTickerContent');
+            const btn = document.getElementById('btnToggleMotion');
+            if (!ticker || !btn) return;
+
+            isTickerMotionPaused = !isTickerMotionPaused;
+            if (isTickerMotionPaused) {
+                ticker.style.animationPlayState = 'paused';
+                btn.innerHTML = '<i class="fas fa-play"></i> <span>Resume Motion</span>';
+                btn.classList.add('active');
+            } else {
+                ticker.style.animationPlayState = 'running';
+                btn.innerHTML = '<i class="fas fa-pause"></i> <span>Pause Motion</span>';
+                btn.classList.remove('active');
+            }
+        }
+
+        function syncSpeedSlider(val) {
+            val = parseInt(val, 10);
+            if (isNaN(val) || val < 10) val = 10;
+            const numInput = document.getElementById('scrolling_speed_input');
+            if (numInput) numInput.value = val;
+            applySpeedChange(val);
+        }
+
+        function syncSpeedInput(val) {
+            val = parseInt(val, 10);
+            if (isNaN(val) || val < 10) val = 10;
+            const slider = document.getElementById('scrolling_speed_slider');
+            if (slider && val >= 15 && val <= 150) slider.value = val;
+            applySpeedChange(val);
+        }
+
+        function selectSpeedPreset(speed, btn) {
+            const numInput = document.getElementById('scrolling_speed_input');
+            const slider = document.getElementById('scrolling_speed_slider');
+            if (numInput) numInput.value = speed;
+            if (slider) slider.value = speed;
+            applySpeedChange(speed);
+        }
+
+        function applySpeedChange(speed) {
+            const chip = document.getElementById('previewSpeedChip');
+            if (chip) chip.innerText = speed + 's';
+
+            const ticker = document.getElementById('dashLiveTickerContent');
+            if (ticker) ticker.style.animationDuration = speed + 's';
+
+            // Highlight active preset chip if speed matches
+            document.querySelectorAll('.speed-preset-chip[onclick*="selectSpeedPreset"]').forEach(el => {
+                if (el.getAttribute('onclick').includes('(' + speed + ',')) {
+                    el.classList.add('active');
+                } else {
+                    el.classList.remove('active');
+                }
+            });
+        }
+
+        function onStatusToggleChange(checkbox) {
+            const isEnabled = checkbox.checked;
+            const statusLabel = document.getElementById('switchStatusLabel');
+            const previewBadge = document.getElementById('previewStatusBadge');
+
+            if (statusLabel) {
+                statusLabel.className = 'status-pill-dot ' + (isEnabled ? 'status-active' : 'status-paused');
+                statusLabel.innerHTML = '&bull; ' + (isEnabled ? 'Enabled (Live on Website)' : 'Disabled (Hidden from Website)');
+            }
+
+            if (previewBadge) {
+                previewBadge.className = 'status-pill-dot ' + (isEnabled ? 'status-active' : 'status-paused');
+                previewBadge.innerHTML = '&bull; ' + (isEnabled ? 'LIVE ON WEBSITE' : 'CURRENTLY DISABLED (HIDDEN)');
+            }
+        }
+
+        function onBadgeToggleChange(checkbox) {
+            const metaSide = document.getElementById('previewMetaSide');
+            if (metaSide) {
+                metaSide.style.display = checkbox.checked ? '' : 'none';
+            }
+        }
+
+        function onDateInputChange(val) {
+            val = val.trim();
+            const dateChip = document.getElementById('previewDateChip');
+            const badgeDate = document.getElementById('badgeDateText');
+            if (dateChip) dateChip.innerText = val || 'Not set';
+            if (badgeDate) badgeDate.innerText = val || 'Not set';
+        }
+
+        function setTodayDate() {
+            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const now = new Date();
+            const day = String(now.getDate()).padStart(2, '0');
+            const month = months[now.getMonth()];
+            const year = now.getFullYear();
+            const todayStr = `${day} ${month} ${year}`;
+
+            const input = document.getElementById('last_updated_input');
+            if (input) {
+                input.value = todayStr;
+                onDateInputChange(todayStr);
+            }
+        }
+
+        function updateLivePreviewText(text) {
+            const wrap = document.getElementById('previewTickerTextWrap');
+            if (!wrap) return;
+            const linkInput = document.getElementById('link_url_input');
+            const linkUrl = linkInput ? linkInput.value.trim() : '';
+
+            const safeText = text.trim() || 'Announcement text goes here...';
+            if (linkUrl) {
+                wrap.innerHTML = `<a href="${encodeURI(linkUrl)}" class="ticker-scroll-link">${escapeHtml(safeText)}</a>`;
+            } else {
+                wrap.innerHTML = `<span class="ticker-scroll-text">${escapeHtml(safeText)}</span>`;
+            }
+        }
+
+        function updateLivePreviewLink(linkUrl) {
+            const textInput = document.getElementById('announcement_text_input');
+            const text = textInput ? textInput.value : '';
+            updateLivePreviewText(text);
+        }
+
+        function escapeHtml(str) {
+            return str
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
         }
 
         // Close modal on Escape key

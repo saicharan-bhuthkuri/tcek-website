@@ -8,7 +8,6 @@ $page = 'rnd-rankings';
     <title>R&D Department Rankings - Trinity College of Engineering & Technology</title>
     <meta name="description" content="Official Research & Development (R&D) Department Rankings at Trinity College of Engineering and Technology (TCEK), Peddapalli. Departmental performance in research, publications, patents, NPTEL and IIC.">
     <?php include 'head.php'; ?>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body class="rnd-page-body">

@@ -306,18 +306,20 @@
 }
 
 .dept-nav-link.active {
-    background: linear-gradient(135deg, rgba(0, 184, 148, 0.12) 0%, rgba(9, 132, 227, 0.08) 100%);
-    color: #00876c;
+    background: #ecfdf5;
+    color: #059669;
     font-weight: 600;
-    border-color: rgba(0, 184, 148, 0.3);
+    border-color: #a7f3d0;
+    box-shadow: 0 2px 6px rgba(5, 150, 105, 0.08);
 }
 
 .dept-nav-link.active .dept-nav-link-left i {
-    color: #00b894;
+    color: #059669;
 }
 
 .dept-nav-link.active i.chevron {
-    color: #00b894;
+    color: #059669;
+    transform: translateX(2px);
 }
 
 /* Department Switcher List */
@@ -498,29 +500,48 @@
 }
 
 /* ==========================================================================
-   MAIN CONTENT AREA
+   MAIN CONTENT AREA - DEDICATED SINGLE-SECTION DISPLAY
    ========================================================================== */
 .dept-main-content {
     display: flex;
     flex-direction: column;
-    gap: 36px;
+    min-width: 0;
+    width: 100%;
 }
 
-/* Section Box */
+/* Section Box - Displayed Individually; Inactive Sections are Hidden */
 .dept-section-card {
+    display: none; /* Hide by default so multiple sections never show together */
     background: #ffffff;
     border: 1px solid #e2e8f0;
     border-radius: 16px;
-    padding: 36px;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.04);
-    scroll-margin-top: 100px;
+    padding: 38px 40px;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+    min-height: 500px;
+    position: relative;
+}
+
+.dept-section-card.active-section {
+    display: block !important;
+    animation: deptSectionFadeIn 0.22s ease forwards;
+}
+
+@keyframes deptSectionFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .dept-section-head {
     display: flex;
     align-items: center;
-    gap: 14px;
-    margin-bottom: 24px;
+    gap: 16px;
+    margin-bottom: 26px;
     padding-bottom: 18px;
     border-bottom: 2px solid #f1f5f9;
     position: relative;
@@ -537,8 +558,8 @@
 }
 
 .dept-section-icon-badge {
-    width: 44px;
-    height: 44px;
+    width: 46px;
+    height: 46px;
     border-radius: 12px;
     background: rgba(0, 184, 148, 0.12);
     color: #00b894;
@@ -550,10 +571,18 @@
 }
 
 .dept-section-head h2 {
-    font-size: 1.6rem;
+    font-size: 1.55rem;
     font-weight: 700;
-    color: #1e293b;
+    color: #0f172a;
     margin: 0;
+    line-height: 1.25;
+}
+
+.dept-section-sub {
+    font-size: 0.86rem;
+    color: #64748b;
+    margin-top: 4px;
+    font-weight: 500;
 }
 
 .dept-section-p {

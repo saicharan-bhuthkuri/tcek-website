@@ -1,0 +1,26 @@
+# Environment and Secret Files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Server & PHP Logs
+*.log
+error_log
+php_errors.log
+
+# Uploaded Files & Temporary Storage
+public/backend/storage/rate_limits/*
+!public/backend/storage/rate_limits/.gitkeep
+public/backend/storage/logs/*
+!public/backend/storage/logs/.gitkeep
+
+# IDE and OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Vendor & Packages
+vendor/
+node_modules/

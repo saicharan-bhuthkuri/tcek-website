@@ -11,7 +11,6 @@ $db_events = function_exists('get_events') ? get_events(10, false) : [];
     <title>Campus Events &amp; Fests - Trinity College of Engineering &amp; Technology</title>
     <meta name="description" content="Official Campus Mega Events at Trinity College of Engineering and Technology (TCEK), Peddapalli. Freshers Aarambh 2K26, College Sports Week, Flash Mob, and Cultural Celebrations.">
     <?php include 'head.php'; ?>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body class="rnd-page-body">

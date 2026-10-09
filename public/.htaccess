@@ -1,0 +1,20 @@
+# ==============================================================
+# TCEK Public Website Apache Configuration
+# ==============================================================
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteBase /
+
+    # Redirect legacy hardcoded department URLs to dynamic department portal
+    RewriteRule ^dept-([a-zA-Z0-9_-]+)\.php$ department.php?slug=$1 [R=301,L,QSA]
+</IfModule>
+
+# Prevent directory browsing
+Options -Indexes
+
+# Protect sensitive configuration files
+<FilesMatch "^\.">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
