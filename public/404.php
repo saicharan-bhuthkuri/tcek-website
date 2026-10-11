@@ -173,55 +173,153 @@ $customMsg = !empty($settings['global_404_custom_message'])
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
 
-        .quick-nav-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 18px;
-            text-align: left;
-            margin-top: 20px;
-        }
-
-        .quick-nav-item {
+        /* Developer Contact & Gmail Section */
+        .dev-contact-box {
             background: #ffffff;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 20px;
-            text-decoration: none !important;
-            transition: all 0.25s ease;
-            display: flex;
-            align-items: center;
-            gap: 14px;
+            border-radius: 18px;
+            padding: 34px 28px;
+            box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+            margin: 28px auto 0 auto;
+            max-width: 620px;
+            text-align: center;
+            position: relative;
         }
 
-        .quick-nav-item:hover {
-            border-color: #00b894;
-            transform: translateY(-3px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-        }
-
-        .quick-nav-icon {
-            width: 44px;
-            height: 44px;
-            border-radius: 10px;
-            background: rgba(0, 184, 148, 0.1);
-            color: #00b894;
+        .dev-contact-header {
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 18px;
-            flex-shrink: 0;
+            gap: 14px;
+            margin-bottom: 14px;
         }
 
-        .quick-nav-text strong {
-            display: block;
-            font-size: 14px;
+        .dev-avatar-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+        }
+
+        .dev-header-meta {
+            text-align: left;
+        }
+
+        .dev-header-meta .dev-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: #ede9fe;
+            color: #6366f1;
+            font-size: 11px;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 8px;
+            letter-spacing: 0.4px;
+            text-transform: uppercase;
+        }
+
+        .dev-header-meta .dev-name-title {
+            font-size: 17px;
+            font-weight: 800;
             color: #0f172a;
-            margin-bottom: 2px;
+            margin: 2px 0 0 0;
         }
 
-        .quick-nav-text span {
-            font-size: 12px;
-            color: #64748b;
+        .dev-contact-desc {
+            font-size: 14px;
+            color: #475569;
+            line-height: 1.6;
+            margin: 0 0 18px 0;
+        }
+
+        .dev-email-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #f8fafc;
+            border: 1px dashed #cbd5e1;
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 14px;
+            font-weight: 700;
+            color: #1e293b;
+            margin-bottom: 22px;
+        }
+
+        .dev-actions-grid {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn-gmail-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #ea4335;
+            color: #ffffff !important;
+            padding: 12px 22px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none !important;
+            box-shadow: 0 4px 14px rgba(234, 67, 53, 0.28);
+            transition: all 0.25s ease;
+        }
+
+        .btn-gmail-primary:hover {
+            background: #d93025;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(234, 67, 53, 0.38);
+        }
+
+        .btn-mailto-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: #0f172a;
+            color: #ffffff !important;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            text-decoration: none !important;
+            transition: all 0.25s ease;
+        }
+
+        .btn-mailto-secondary:hover {
+            background: #1e293b;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
+        }
+
+        .btn-copy-email {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            background: #f1f5f9;
+            color: #334155 !important;
+            border: 1px solid #cbd5e1;
+            padding: 12px 18px;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-copy-email:hover {
+            background: #e2e8f0;
+            color: #0f172a !important;
         }
     </style>
 </head>
@@ -239,54 +337,63 @@ $customMsg = !empty($settings['global_404_custom_message'])
             <h2 class="error-headline">Lost Your Way on Campus?</h2>
             <p class="error-desc"><?php echo htmlspecialchars($customMsg); ?></p>
 
-            <div class="error-btn-row">
-                <a href="index.php" class="btn-error-primary">
-                    <i class="fas fa-home"></i> Return to Homepage
-                </a>
-                <a href="departments.php" class="btn-error-secondary">
-                    <i class="fas fa-sitemap"></i> Academic Departments
-                </a>
-                <button type="button" onclick="window.history.back()" class="btn-error-secondary" style="cursor:pointer;">
-                    <i class="fas fa-arrow-left"></i> Go Back
-                </button>
-            </div>
-
-            <!-- Quick Shortcut Recommendations -->
-            <div class="quick-nav-cards">
-                <a href="admission.php" class="quick-nav-item">
-                    <div class="quick-nav-icon"><i class="fas fa-graduation-cap"></i></div>
-                    <div class="quick-nav-text">
-                        <strong>Admissions</strong>
-                        <span>B.Tech, Diploma &amp; MBA</span>
+            <!-- Contact Developer & Gmail Section -->
+            <div class="dev-contact-box">
+                <div class="dev-contact-header">
+                    <div class="dev-avatar-icon">
+                        <i class="fas fa-laptop-code"></i>
                     </div>
-                </a>
-
-                <a href="circulars.php" class="quick-nav-item">
-                    <div class="quick-nav-icon" style="background:rgba(99,102,241,0.1); color:#6366f1;"><i class="fas fa-bullhorn"></i></div>
-                    <div class="quick-nav-text">
-                        <strong>Circulars</strong>
-                        <span>Official Notices &amp; Timetables</span>
+                    <div class="dev-header-meta">
+                        <span class="dev-badge"><i class="fas fa-shield-alt"></i> SYSTEM DEVELOPER</span>
+                        <h3 class="dev-name-title">Charan</h3>
                     </div>
-                </a>
+                </div>
 
-                <a href="events.php" class="quick-nav-item">
-                    <div class="quick-nav-icon" style="background:rgba(245,158,11,0.1); color:#f59e0b;"><i class="fas fa-calendar-alt"></i></div>
-                    <div class="quick-nav-text">
-                        <strong>Campus Events</strong>
-                        <span>Festivals, Sports &amp; Media</span>
-                    </div>
-                </a>
+                <p class="dev-contact-desc">
+                    For system inquiries, website access questions, or technical support, please reach out directly to the authorized Developer.
+                </p>
 
-                <a href="contact.php" class="quick-nav-item">
-                    <div class="quick-nav-icon" style="background:rgba(14,165,233,0.1); color:#0ea5e9;"><i class="fas fa-headset"></i></div>
-                    <div class="quick-nav-text">
-                        <strong>Contact Desk</strong>
-                        <span>Peddapally Campus Helpline</span>
-                    </div>
-                </a>
+                <div class="dev-email-chip">
+                    <i class="fas fa-envelope" style="color:#ea4335;"></i>
+                    <span>saivortex.dev@gmail.com</span>
+                </div>
+
+                <div class="dev-actions-grid">
+                    <a href="https://mail.google.com/mail/?view=cm&fs=1&to=saivortex.dev@gmail.com&su=TCEK%20Website%20Inquiry%20/%20Support" target="_blank" rel="noopener noreferrer" class="btn-gmail-primary" title="Compose message in Gmail">
+                        <i class="fab fa-google"></i> Open in Gmail
+                    </a>
+                    <a href="mailto:saivortex.dev@gmail.com?subject=TCEK%20Website%20Inquiry%20/%20Support" class="btn-mailto-secondary" title="Open in default mail client">
+                        <i class="fas fa-paper-plane"></i> Send Email
+                    </a>
+                    <button type="button" onclick="copyDevEmail()" class="btn-copy-email" id="btnCopyEmail" title="Copy developer email address">
+                        <i class="fas fa-copy"></i> <span id="copyEmailLabel">Copy Email</span>
+                    </button>
+                    <button type="button" onclick="window.history.back()" class="btn-copy-email" style="background:#fff;" title="Go back to previous page">
+                        <i class="fas fa-arrow-left"></i> Go Back
+                    </button>
+                </div>
             </div>
         </div>
     </main>
+
+    <script>
+    function copyDevEmail() {
+        const email = 'saivortex.dev@gmail.com';
+        const label = document.getElementById('copyEmailLabel');
+        const btn = document.getElementById('btnCopyEmail');
+        
+        navigator.clipboard.writeText(email).then(() => {
+            if (label) label.innerText = 'Copied!';
+            if (btn) btn.style.borderColor = '#10b981';
+            setTimeout(() => {
+                if (label) label.innerText = 'Copy Email';
+                if (btn) btn.style.borderColor = '#cbd5e1';
+            }, 2000);
+        }).catch(() => {
+            prompt('Developer Email:', email);
+        });
+    }
+    </script>
 
     <?php include 'footer.php'; ?>
 </body>
