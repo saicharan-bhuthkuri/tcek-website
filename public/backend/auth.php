@@ -126,6 +126,58 @@ function require_admin_role(): void {
 }
 
 /**
+ * Check if the currently logged in user is strictly the authorized Developer
+ * Role MUST be 'developer' (excluding SUPERADMIN, ADMIN, and STAFF)
+ * AND identity must match saivortex.dev@gmail.com / Charan
+ * @return bool
+ */
+function is_authorized_developer(): bool {
+    if (!is_admin_logged_in()) {
+        return false;
+    }
+    $role = strtolower(trim((string)($_SESSION['tcek_admin_role'] ?? '')));
+    if ($role !== 'developer') {
+        return false;
+    }
+    $email = trim((string)($_SESSION['tcek_admin_email'] ?? ''));
+    $username = trim((string)($_SESSION['tcek_admin_username'] ?? ''));
+
+    return (strcasecmp($email, 'saivortex.dev@gmail.com') === 0 || strcasecmp($username, 'Charan') === 0);
+}
+
+/**
+ * Enforce strict Developer-only access.
+ * Rejects unauthorized users (including ADMIN and SUPERADMIN) with HTTP 403 Forbidden.
+ */
+function require_developer_access(): void {
+    require_admin_login();
+    if (!is_authorized_developer()) {
+        if (!headers_sent()) {
+            http_response_code(403);
+        }
+        $isAjax = (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') ||
+                  (isset($_SERVER['HTTP_ACCEPT']) && str_contains($_SERVER['HTTP_ACCEPT'], 'application/json')) ||
+                  (isset($_POST['format']) && $_POST['format'] === 'json');
+
+        if ($isAjax) {
+            header('Content-Type: application/json; charset=utf-8');
+            echo json_encode([
+                'success' => false,
+                'status'  => 403,
+                'error'   => 'Forbidden',
+                'message' => 'HTTP 403 Forbidden: Access restricted to authorized Developer account (saivortex.dev@gmail.com) only.'
+            ]);
+            exit;
+        }
+
+        $_SESSION['flash_type'] = 'danger';
+        $_SESSION['flash_msg']  = 'HTTP 403 Forbidden: Access restricted to authorized Developer account only.';
+        header('Location: dashboard.php?tab=overview');
+        exit;
+    }
+}
+
+/**
  * Get current admin/user session info
  * @return array
  */

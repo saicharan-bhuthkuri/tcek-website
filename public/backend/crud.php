@@ -18,6 +18,7 @@ require_once __DIR__ . '/departments_crud.php';
 require_once __DIR__ . '/announcements_crud.php';
 require_once __DIR__ . '/hero_crud.php';
 require_once __DIR__ . '/sync.php';
+require_once __DIR__ . '/settings_crud.php';
 
 if (!function_exists('mb_strimwidth')) {
     function mb_strimwidth($str, $start = 0, $width = 100, $trimmarker = '...') {
@@ -4248,6 +4249,29 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
 
     if ($action === 'export_faculty_excel') {
         export_faculty_excel($_POST);
+        exit;
+    }
+
+    // --- GLOBAL 404 ERROR PAGE SETTINGS ACTIONS (DEVELOPER ONLY) ---
+    if ($action === 'toggle_global_404' || $action === 'save_global_404_setting' || $action === 'update_global_404') {
+        // Enforce strict Developer account access: Rejects unauthorized requests with HTTP 403 Forbidden
+        require_developer_access();
+
+        $admin = get_current_admin();
+        if ($action === 'toggle_global_404') {
+            $current = get_global_404_status();
+            $new = $current ? 0 : 1;
+            $res = update_global_404_setting($new, $admin['email'] ?? 'saivortex.dev@gmail.com');
+        } else {
+            $is_enabled = (!empty($_POST['is_enabled']) && $_POST['is_enabled'] !== '0') ? 1 : 0;
+            $res = update_global_404_setting($is_enabled, $admin['email'] ?? 'saivortex.dev@gmail.com');
+        }
+
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+
+        $redirectTab = !empty($_POST['redirect_tab']) ? trim($_POST['redirect_tab']) : 'developer_settings';
+        header("Location: ../admin/dashboard.php?tab=" . urlencode($redirectTab));
         exit;
     }
 }

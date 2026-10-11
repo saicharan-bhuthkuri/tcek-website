@@ -10,6 +10,9 @@
     RewriteRule ^dept-([a-zA-Z0-9_-]+)\.php$ department.php?slug=$1 [R=301,L,QSA]
 </IfModule>
 
+# Custom 404 Error Document
+ErrorDocument 404 /404.php
+
 # Prevent directory browsing
 Options -Indexes
 

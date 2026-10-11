@@ -170,9 +170,23 @@ CREATE TABLE IF NOT EXISTS `uploads` (
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 8. System Settings Table (Global 404 Error Page, System Configuration)
+CREATE TABLE IF NOT EXISTS `system_settings` (
+  `setting_key` VARCHAR(100) NOT NULL PRIMARY KEY,
+  `setting_value` TEXT,
+  `updated_by` VARCHAR(100) DEFAULT 'Developer',
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- ==============================================================
 -- Initial Seed Data
 -- ==============================================================
+
+-- Initial System Settings
+INSERT INTO `system_settings` (`setting_key`, `setting_value`, `updated_by`)
+VALUES ('global_404_enabled', '1', 'saivortex.dev@gmail.com')
+ON DUPLICATE KEY UPDATE `setting_key` = `setting_key`;
+
 
 -- Default Administrator & Staff Users (Password: tcek@developer)
 INSERT INTO `users` (`username`, `password`, `full_name`, `email`, `role`, `is_active`)

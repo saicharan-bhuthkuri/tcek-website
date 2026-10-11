@@ -16,6 +16,9 @@ $admin = get_current_admin();
 $csrf_token = get_csrf_token();
 $db_connected = isDbConnected();
 $is_admin = is_admin_role();
+$is_developer = function_exists('is_authorized_developer') && is_authorized_developer();
+$system_settings_data = function_exists('load_system_settings') ? load_system_settings() : [];
+$is_404_global_on = function_exists('get_global_404_status') ? get_global_404_status() : true;
 
 // Handle Flash Messages
 $flash_msg = $_SESSION['flash_msg'] ?? null;
@@ -24,9 +27,25 @@ unset($_SESSION['flash_msg'], $_SESSION['flash_type']);
 
 // Allowed Tabs
 $allowed_tabs = ['overview', 'users', 'workshops', 'events', 'event_files', 'news', 'circulars', 'notifications', 'announcements', 'scrollbar', 'activity_logs', 'departments', 'faculty', 'hero', 'hero_slider', 'rnd', 'rnd_rankings'];
+if ($is_developer) {
+    $allowed_tabs[] = 'developer_settings';
+}
 
 // Active Tab
 $current_tab = $_GET['tab'] ?? 'overview';
+
+// Enforce Developer-Only Tab: strictly reject non-developer access with HTTP 403 Forbidden
+if (in_array($current_tab, ['developer_settings', 'settings'])) {
+    if (!$is_developer) {
+        http_response_code(403);
+        $current_tab = 'overview';
+        $flash_msg = 'HTTP 403 Forbidden: Only the authorized Developer account (saivortex.dev@gmail.com) can access Global 404 Error Page Settings.';
+        $flash_type = 'danger';
+    } else {
+        $current_tab = 'developer_settings';
+    }
+}
+
 if (!in_array($current_tab, $allowed_tabs)) {
     $current_tab = 'overview';
 }
@@ -343,6 +362,18 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                             <span>Activity Logs</span>
                         </a>
                     <?php endif; ?>
+
+                    <!-- SECTION 6: DEVELOPER CONTROLS (STRICTLY SAIVORTEX.DEV@GMAIL.COM) -->
+                    <?php if ($is_developer): ?>
+                        <div class="sidebar-section-header" style="color:#6366f1;">Developer Controls</div>
+
+                        <!-- 404 Error Page Settings -->
+                        <a href="?tab=developer_settings" class="menu-item <?php echo $current_tab === 'developer_settings' ? 'active' : ''; ?>">
+                            <i class="fas fa-compass" style="color:#6366f1;"></i>
+                            <span>404 Error Page</span>
+                            <span class="menu-badge" style="background:#ede9fe; color:#6366f1; font-weight:700;">DEV</span>
+                        </a>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -465,6 +496,34 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                 <div class="metric-value-image2"><?php echo $total_rnd_rankings; ?></div>
                             </div>
                         </div>
+
+                        <?php if ($is_developer): ?>
+                            <!-- Developer Exclusive Control Hub in Overview (Strictly Hidden from Admin & Superadmin) -->
+                            <div style="margin-top:24px; background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px 24px; box-shadow:0 4px 15px rgba(15,23,42,0.03); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px;">
+                                <div style="display:flex; align-items:center; gap:14px;">
+                                    <div style="width:44px; height:44px; border-radius:12px; background:#ede9fe; color:#6366f1; display:flex; align-items:center; justify-content:center; font-size:18px;">
+                                        <i class="fas fa-compass"></i>
+                                    </div>
+                                    <div>
+                                        <div style="display:flex; align-items:center; gap:8px;">
+                                            <h4 style="font-size:15px; font-weight:800; color:#0f172a; margin:0;">Global 404 Error Page System</h4>
+                                            <span style="font-size:10px; font-weight:800; padding:2px 6px; border-radius:6px; background:#ede9fe; color:#6366f1;">DEV EXCLUSIVE</span>
+                                        </div>
+                                        <p style="font-size:12.5px; color:#64748b; margin:2px 0 0 0;">
+                                            Status: <strong><?php echo $is_404_global_on ? '<span style="color:#16a34a;">● ACTIVE (ON)</span>' : '<span style="color:#64748b;">○ DISABLED (OFF)</span>'; ?></strong> &bull; Controlled exclusively by saivortex.dev@gmail.com
+                                        </p>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <a href="../404.php" target="_blank" class="btn-outline-pill" style="font-size:12px; font-weight:700; color:#64748b; border-color:#cbd5e1;">
+                                        <i class="fas fa-external-link-alt"></i> Preview 404
+                                    </a>
+                                    <a href="?tab=developer_settings" class="btn-emerald-pill" style="font-size:12px; font-weight:700; background:#6366f1; border-color:#6366f1; color:#fff;">
+                                        <i class="fas fa-sliders-h"></i> Manage 404 Setting
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endif; ?>
                     </div>
             <?php endif; ?>
 
@@ -2039,6 +2098,13 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             <!-- ============================================================== -->
             <?php if ($current_tab === 'rnd_rankings' || $current_tab === 'rnd'): ?>
                     <?php include __DIR__ . '/views/rnd_rankings_tab.php'; ?>
+            <?php endif; ?>
+
+            <!-- ============================================================== -->
+            <!-- 12. GLOBAL 404 ERROR PAGE SETTINGS TAB (DEVELOPER ONLY) -->
+            <!-- ============================================================== -->
+            <?php if ($current_tab === 'developer_settings' && $is_developer): ?>
+                    <?php include __DIR__ . '/views/developer_settings_tab.php'; ?>
             <?php endif; ?>
 
         </main>
