@@ -17,33 +17,8 @@ $settings = load_system_settings();
 $customMsg = !empty($settings['global_404_custom_message']) 
     ? $settings['global_404_custom_message'] 
     : 'The page you are looking for might have been removed, had its name changed, or is temporarily unavailable.';
-
-// If global 404 setting is toggled OFF by Developer, output standard default response
-if (!$is404CustomEnabled) {
-    header('Content-Type: text/html; charset=utf-8');
-    ?>
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>404 Not Found</title>
-        <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #fff; color: #222; margin: 40px auto; max-width: 650px; padding: 20px; line-height: 1.6; }
-            h1 { font-size: 24px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
-            p { color: #555; }
-        </style>
-    </head>
-    <body>
-        <h1>Not Found</h1>
-        <p>The requested URL <?php echo htmlspecialchars($_SERVER['REQUEST_URI'] ?? ''); ?> was not found on this server.</p>
-        <hr>
-        <p style="font-size: 12px; color: #888;">Trinity College Web Server at Port <?php echo htmlspecialchars((string)($_SERVER['SERVER_PORT'] ?? '80')); ?></p>
-    </body>
-    </html>
-    <?php
-    exit;
-}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

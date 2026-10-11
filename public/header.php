@@ -1,3 +1,10 @@
+<?php
+// Central Server-Side Guard: Global Frontend 404 Mode (Defense in Depth)
+if (file_exists(__DIR__ . '/backend/frontend_guard.php')) {
+    require_once __DIR__ . '/backend/frontend_guard.php';
+    check_and_enforce_frontend_404_mode();
+}
+?>
 <!-- Top Header -->
 <header class="main-header">
     <div class="header-container">

@@ -135,14 +135,23 @@ function is_authorized_developer(): bool {
     if (!is_admin_logged_in()) {
         return false;
     }
-    $role = strtolower(trim((string)($_SESSION['tcek_admin_role'] ?? '')));
-    if ($role !== 'developer') {
-        return false;
-    }
+
     $email = trim((string)($_SESSION['tcek_admin_email'] ?? ''));
     $username = trim((string)($_SESSION['tcek_admin_username'] ?? ''));
 
-    return (strcasecmp($email, 'saivortex.dev@gmail.com') === 0 || strcasecmp($username, 'Charan') === 0);
+    // Check if the current authenticated account matches Developer identity
+    $isDeveloperAccount = is_protected_account(['email' => $email, 'username' => $username])
+        || (strcasecmp($email, 'saivortex.dev@gmail.com') === 0)
+        || (strcasecmp($username, 'Charan') === 0);
+
+    if (!$isDeveloperAccount) {
+        return false;
+    }
+
+    // Automatically sync active session role to developer for root developer
+    $_SESSION['tcek_admin_role'] = 'developer';
+
+    return true;
 }
 
 /**
@@ -184,11 +193,16 @@ function require_developer_access(): void {
 function get_current_admin(): array {
     $email = $_SESSION['tcek_admin_email'] ?? 'saivortex.dev@gmail.com';
     $username = $_SESSION['tcek_admin_username'] ?? 'Charan';
-    $role = $_SESSION['tcek_admin_role'] ?? 'developer';
-    $isProtected = is_protected_account(['email' => $email, 'username' => $username]);
+    $isProtected = is_protected_account(['email' => $email, 'username' => $username])
+        || (strcasecmp($email, 'saivortex.dev@gmail.com') === 0)
+        || (strcasecmp($username, 'Charan') === 0);
+
     if ($isProtected) {
-        $role = 'developer';
+        $_SESSION['tcek_admin_role'] = 'developer';
     }
+
+    $role = $_SESSION['tcek_admin_role'] ?? ($isProtected ? 'developer' : 'admin');
+
     return [
         'id'           => $_SESSION['tcek_admin_id'] ?? null,
         'username'     => $username,

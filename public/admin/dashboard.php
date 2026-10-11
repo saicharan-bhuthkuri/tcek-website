@@ -242,6 +242,12 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                 <i class="fas fa-external-link-alt"></i>
                 <span>Live Website</span>
             </a>
+            <?php if ($is_developer): ?>
+                <a href="?tab=developer_settings" class="topbar-action-btn" title="Global 404 Error Page Settings" style="background:#ede9fe; color:#6366f1; border-color:#c7d2fe; font-weight:700;">
+                    <i class="fas fa-compass" style="color:#6366f1;"></i>
+                    <span>404 Error Page</span>
+                </a>
+            <?php endif; ?>
             <div class="admin-user-pill">
                 <i class="fas fa-user-circle" style="color:#6366f1;"></i>
                 <span><?php echo htmlspecialchars($admin['full_name']); ?></span>
@@ -539,7 +545,12 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                     <p>Role-Based System Access Control Active</p>
                                 </div>
                             </div>
-                            <div class="pane-actions-right">
+                            <div class="pane-actions-right" style="display:flex; align-items:center; gap:10px;">
+                                <?php if ($is_developer): ?>
+                                    <a href="?tab=developer_settings" class="btn-outline-pill" style="border-color:#c7d2fe; color:#6366f1; background:#f5f3ff; font-weight:700; text-decoration:none;">
+                                        <i class="fas fa-compass"></i> 404 Error Page Settings
+                                    </a>
+                                <?php endif; ?>
                                 <button type="button" class="btn-emerald-pill" onclick="openModal('modalUser')">
                                     <i class="fas fa-user-plus"></i> Create User
                                 </button>

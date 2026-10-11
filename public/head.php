@@ -1,4 +1,10 @@
 <?php
+// Central Server-Side Guard: Global Frontend 404 Mode
+if (file_exists(__DIR__ . '/backend/frontend_guard.php')) {
+    require_once __DIR__ . '/backend/frontend_guard.php';
+    check_and_enforce_frontend_404_mode();
+}
+
 // Enforce public endpoint rate limiting
 if (file_exists(__DIR__ . '/backend/security/RateLimiter.php')) {
     require_once __DIR__ . '/backend/security/RateLimiter.php';

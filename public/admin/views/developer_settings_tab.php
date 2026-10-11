@@ -19,7 +19,115 @@ $settings = function_exists('load_system_settings') ? load_system_settings() : [
 $is_404_on = !empty($settings['global_404_enabled']);
 $updated_time = $settings['updated_at'] ?? date('Y-m-d H:i:s');
 $updated_by = $settings['updated_by'] ?? 'saivortex.dev@gmail.com';
+$csrf_token = !empty($csrf_token) ? $csrf_token : (function_exists('get_csrf_token') ? get_csrf_token() : '');
 ?>
+
+<style>
+/* Developer Toggle Switch & State Card */
+.dev-toggle-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+}
+
+.dev-switch {
+    position: relative;
+    display: inline-block;
+    width: 56px;
+    height: 30px;
+    margin: 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.dev-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.dev-slider {
+    position: absolute;
+    inset: 0;
+    background-color: #cbd5e1;
+    border-radius: 30px;
+    transition: background-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.dev-slider:before {
+    position: absolute;
+    content: "";
+    height: 24px;
+    width: 24px;
+    left: 3px;
+    top: 3px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.2), 0 1px 2px rgba(15, 23, 42, 0.1);
+    transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease;
+}
+
+.dev-switch input:checked + .dev-slider {
+    background-color: #10b981;
+    box-shadow: 0 0 14px rgba(16, 185, 129, 0.35);
+}
+
+.dev-switch input:checked + .dev-slider:before {
+    transform: translateX(26px);
+}
+
+.dev-switch:hover .dev-slider {
+    filter: brightness(0.97);
+}
+
+.dev-switch:hover input:checked + .dev-slider {
+    filter: brightness(1.05);
+}
+
+/* Feedback Status Pill */
+.dev-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: -0.1px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.dev-status-pill.is-active {
+    background: #ecfdf5;
+    color: #059669;
+    border: 1px solid #a7f3d0;
+}
+
+.dev-status-pill.is-inactive {
+    background: #f1f5f9;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.dev-status-pill .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.dev-status-pill.is-active .status-dot {
+    background: #10b981;
+    box-shadow: 0 0 6px rgba(16, 185, 129, 0.8);
+}
+
+.dev-status-pill.is-inactive .status-dot {
+    background: #94a3b8;
+}
+</style>
 
 <div class="tab-pane active" id="tabDeveloperSettings">
     <!-- Header Area -->
@@ -76,25 +184,26 @@ $updated_by = $settings['updated_by'] ?? 'saivortex.dev@gmail.com';
                     </div>
                 </div>
                 <p style="font-size:13.5px; color:#475569; line-height:1.6; margin:12px 0 0 0;">
-                    When enabled, any missing URL, broken link, or non-existent resource automatically displays Trinity College's custom branded 404 page featuring institutional navigation, quick links, and responsive styling. When disabled, standard minimal server 404 headers are emitted.
+                    When enabled, every public frontend page (Homepage, About, Departments, Faculty, Events, News, Gallery, Contact, and all public routes) displays Trinity College's custom branded 404 page with an HTTP 404 Not Found header. When disabled, normal access to all valid frontend pages is restored immediately.
                 </p>
             </div>
 
             <!-- Interactive Toggle Control Switch -->
-            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:10px;">
+            <div class="dev-toggle-wrapper">
                 <form id="formToggle404" method="POST" action="../backend/crud.php" style="margin:0;">
                     <input type="hidden" name="action" value="toggle_global_404">
                     <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrf_token); ?>">
                     <input type="hidden" name="redirect_tab" value="developer_settings">
                     
-                    <label class="switch-box" style="width:58px; height:32px; margin:0; cursor:pointer;" title="Click to toggle Global 404 Error Page">
+                    <label class="dev-switch" title="Click to toggle Global 404 Error Page">
                         <input type="checkbox" id="switchGlobal404" <?php echo $is_404_on ? 'checked' : ''; ?> onchange="handle404ToggleChange(this)">
-                        <span class="switch-slider" style="border-radius:34px;"></span>
+                        <span class="dev-slider"></span>
                     </label>
                 </form>
 
-                <div id="toggleFeedbackMsg" style="font-size:11.5px; font-weight:700; color:<?php echo $is_404_on ? '#16a34a' : '#64748b'; ?>;">
-                    <?php echo $is_404_on ? 'Custom 404 is Serving Visitors' : 'Standard 404 Mode Active'; ?>
+                <div id="toggleFeedbackMsg" class="dev-status-pill <?php echo $is_404_on ? 'is-active' : 'is-inactive'; ?>">
+                    <span class="status-dot"></span>
+                    <span id="toggleFeedbackText"><?php echo $is_404_on ? 'Custom 404 is Serving Visitors' : 'Standard 404 Mode Active'; ?></span>
                 </div>
             </div>
         </div>
@@ -142,14 +251,20 @@ function handle404ToggleChange(checkbox) {
     const isChecked = checkbox.checked ? 1 : 0;
     const badge = document.getElementById('badge404Status');
     const feedback = document.getElementById('toggleFeedbackMsg');
+    const feedbackText = document.getElementById('toggleFeedbackText');
     const updatedAt = document.getElementById('text404UpdatedAt');
     const form = document.getElementById('formToggle404');
     const csrfToken = "<?php echo htmlspecialchars($csrf_token); ?>";
 
     // Immediate optimistic UI feedback
-    if (feedback) {
-        feedback.innerText = isChecked ? 'Enabling Custom 404...' : 'Disabling Custom 404...';
-        feedback.style.color = '#6366f1';
+    if (feedback && feedbackText) {
+        if (isChecked) {
+            feedback.className = 'dev-status-pill is-active';
+            feedbackText.innerText = 'Custom 404 is Serving Visitors';
+        } else {
+            feedback.className = 'dev-status-pill is-inactive';
+            feedbackText.innerText = 'Standard 404 Mode Active';
+        }
     }
 
     const formData = new FormData();
@@ -188,16 +303,10 @@ function handle404ToggleChange(checkbox) {
                     badge.style.borderColor = '#e2e8f0';
                 }
             }
-            if (feedback) {
-                feedback.innerText = isChecked ? 'Custom 404 is Serving Visitors' : 'Standard 404 Mode Active';
-                feedback.style.color = isChecked ? '#16a34a' : '#64748b';
-            }
             if (updatedAt) {
-                const now = new Date();
                 updatedAt.innerHTML = '<i class="far fa-clock" style="color:#94a3b8;"></i> Just now';
             }
         } else {
-            // Fallback to standard form submit if JSON didn't return success
             form.submit();
         }
     })
