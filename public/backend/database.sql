@@ -246,5 +246,26 @@ VALUES
 (9, 'MSME Hackathon 6.0: Nurturing Youth Innovation Across 6 Thematic Sectors', 'assets/Gallery/paper9.jpg', '2026-08-22', 'Namasthe Telangana: Engineering innovators pitched scalable business and technical models in healthcare, defense, and green technology.', 'Namasthe Telangana', 'PUBLISHED'),
 (10, 'Tremendous Response to MSME Hackathon 6.0 with Up to ₹15 Lakhs Grant', 'assets/Gallery/paper10.jpg', '2026-08-18', 'Andhra Prabha: Record number of participants submitted technological business solutions for government incubation funding.', 'Andhra Prabha', 'PUBLISHED'),
 (11, 'MSME Idea Hackathon 6.0 Successfully Conducted at Trinity Campus', 'assets/Gallery/paper11.jpg', '2026-08-15', 'Eenadu Daily: College leadership and industry experts evaluated student pitches during the nationwide entrepreneurship program.', 'Eenadu Daily', 'PUBLISHED')
-ON DUPLICATE KEY UPDATE `title` = VALUES(`title`);
-
+-- 9. R&D Department Rankings Table (Dynamic Quarterly Results, Achievements & History)
+CREATE TABLE IF NOT EXISTS `rnd_rankings` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `academic_year` VARCHAR(20) NOT NULL,
+  `quarter` VARCHAR(10) NOT NULL,
+  `quarter_label` VARCHAR(100) DEFAULT NULL,
+  `department` VARCHAR(50) NOT NULL,
+  `department_name` VARCHAR(150) NOT NULL,
+  `rank` INT NOT NULL DEFAULT 1,
+  `award_category` VARCHAR(100) DEFAULT NULL,
+  `award_badge` VARCHAR(100) DEFAULT NULL,
+  `description` TEXT DEFAULT NULL,
+  `achievements` TEXT DEFAULT NULL,
+  `criteria_tags` TEXT DEFAULT NULL,
+  `status` ENUM('published', 'archived', 'draft') NOT NULL DEFAULT 'published',
+  `publication_date` DATE DEFAULT NULL,
+  `score` DECIMAL(5,2) DEFAULT NULL,
+  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_period` (`academic_year`, `quarter`),
+  INDEX `idx_dept` (`department`),
+  INDEX `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

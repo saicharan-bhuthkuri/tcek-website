@@ -89,13 +89,23 @@
                             $icon   = htmlspecialchars($d['icon_class'] ?? 'fas fa-graduation-cap');
                             $hodName= !empty($d['hod_name']) ? htmlspecialchars($d['hod_name']) : null;
                             $isActive = !empty($d['is_active']);
+                            $deptLogo = !empty($d['dept_logo']) ? $d['dept_logo'] : (!empty($d['banner_image']) ? $d['banner_image'] : (!empty($d['logo']) ? $d['logo'] : ''));
                             ?>
                             <tr>
                                 <td>
-                                    <div style="display:inline-flex; align-items:center; gap:8px;">
-                                        <span style="display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:8px; background:#ecfdf5; color:#00b894; font-size:14px;">
-                                            <i class="<?php echo $icon; ?>"></i>
-                                        </span>
+                                    <div style="display:inline-flex; align-items:center; gap:10px;">
+                                        <?php if (!empty($deptLogo)): ?>
+                                            <div style="width:36px; height:36px; border-radius:8px; border:1px solid #e2e8f0; background:#ffffff; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; padding:2px;">
+                                                <img src="../<?php echo htmlspecialchars(ltrim($deptLogo, '/')); ?>" alt="<?php echo $dCode; ?>" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.onerror=null; this.parentElement.style.display='none'; if(this.parentElement.nextElementSibling) this.parentElement.nextElementSibling.style.display='inline-flex';">
+                                            </div>
+                                            <span style="display:none; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#ecfdf5; color:#00b894; font-size:14px; flex-shrink:0;">
+                                                <i class="<?php echo $icon; ?>"></i>
+                                            </span>
+                                        <?php else: ?>
+                                            <span style="display:inline-flex; align-items:center; justify-content:center; width:36px; height:36px; border-radius:8px; background:#ecfdf5; color:#00b894; font-size:14px; flex-shrink:0;">
+                                                <i class="<?php echo $icon; ?>"></i>
+                                            </span>
+                                        <?php endif; ?>
                                         <strong style="font-size:13.5px; color:#0f172a;"><?php echo $dCode; ?></strong>
                                     </div>
                                 </td>

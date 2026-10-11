@@ -17,3 +17,5 @@ if (file_exists(__DIR__ . '/backend/security/RateLimiter.php')) {
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <meta name="google-site-verification" content="fyPYBMa7M8fenxfEgxl8JdZHFZmQbqEBGeL7pagy2Ew" />
+<!-- Real-Time Website Synchronization Engine -->
+<script src="js/live-sync.js?v=<?php echo file_exists(__DIR__ . '/js/live-sync.js') ? filemtime(__DIR__ . '/js/live-sync.js') : '1'; ?>"></script>

@@ -16,6 +16,8 @@ require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/upload.php';
 require_once __DIR__ . '/departments_crud.php';
 require_once __DIR__ . '/announcements_crud.php';
+require_once __DIR__ . '/hero_crud.php';
+require_once __DIR__ . '/sync.php';
 
 if (!function_exists('mb_strimwidth')) {
     function mb_strimwidth($str, $start = 0, $width = 100, $trimmarker = '...') {
@@ -458,205 +460,303 @@ function get_activity_logs_count($module = null, $action = null) {
 // 2. USERS MANAGEMENT
 // ==============================================================
 
+function get_users_store_file() {
+    return __DIR__ . '/config/users_data.json';
+}
+
+function load_users_from_store() {
+    $file = get_users_store_file();
+    if (file_exists($file)) {
+        $json = @file_get_contents($file);
+        if ($json) {
+            $data = json_decode($json, true);
+            if (is_array($data) && !empty($data)) return $data;
+        }
+    }
+    return [
+        ['id' => 1, 'username' => 'tcek', 'full_name' => 'Charan (Lead Developer)', 'email' => 'tcekrdcell@gmail.com', 'role' => 'admin', 'is_active' => 1, 'created_at' => '2026-10-01 09:00:00'],
+        ['id' => 2, 'username' => 'admin_academic', 'full_name' => 'Dr. A. K. Vootla (Academic Dean)', 'email' => 'academic@tcek.ac.in', 'role' => 'admin', 'is_active' => 1, 'created_at' => '2026-10-02 10:15:00']
+    ];
+}
+
+function save_users_to_store($users) {
+    $file = get_users_store_file();
+    $saved = @file_put_contents($file, json_encode(array_values($users), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    if ($saved && function_exists('record_content_update')) {
+        record_content_update('users');
+    }
+    return $saved;
+}
+
 function get_users($limit = 50) {
     global $pdo;
-    $default_users = [
-        [
-            'id' => 1,
-            'username' => 'tcek',
-            'full_name' => 'Charan (Lead Developer)',
-            'email' => 'tcekrdcell@gmail.com',
-            'role' => 'admin',
-            'is_active' => 1,
-            'created_at' => '2026-10-01 09:00:00'
-        ],
-        [
-            'id' => 2,
-            'username' => 'admin_academic',
-            'full_name' => 'Dr. A. K. Vootla (Academic Dean)',
-            'email' => 'academic@tcek.ac.in',
-            'role' => 'admin',
-            'is_active' => 1,
-            'created_at' => '2026-10-02 10:15:00'
-        ],
-        [
-            'id' => 3,
-            'username' => 'exam_incharge',
-            'full_name' => 'Controller of Examinations (CoE)',
-            'email' => 'exams@tcek.ac.in',
-            'role' => 'staff',
-            'is_active' => 1,
-            'created_at' => '2026-10-03 11:30:00'
-        ],
-        [
-            'id' => 4,
-            'username' => 'tpo_officer',
-            'full_name' => 'Training & Placement Cell',
-            'email' => 'placements@tcek.ac.in',
-            'role' => 'staff',
-            'is_active' => 1,
-            'created_at' => '2026-10-04 14:00:00'
-        ],
-        [
-            'id' => 5,
-            'username' => 'admissions_coord',
-            'full_name' => 'Admissions & Counseling Desk',
-            'email' => 'admissions@tcek.ac.in',
-            'role' => 'staff',
-            'is_active' => 1,
-            'created_at' => '2026-10-05 16:45:00'
-        ]
-    ];
-
-    if (!($pdo instanceof PDO)) {
-        return $default_users;
+    if ($pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->prepare("SELECT id, username, full_name, email, role, is_active, created_at, updated_at FROM users ORDER BY id ASC LIMIT :limit");
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            $res = $stmt->fetchAll();
+            if (!empty($res)) return $res;
+        } catch (PDOException $e) {}
     }
-
-    try {
-        $stmt = $pdo->prepare("SELECT id, username, full_name, email, role, is_active, created_at, updated_at FROM users ORDER BY id ASC LIMIT :limit");
-        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-        $stmt->execute();
-        $res = $stmt->fetchAll();
-        if (empty($res)) {
-            // Seed default admin in database using environment configuration
-            $seedPass = env('DEFAULT_ADMIN_PASSWORD', 'tcek@developer');
-            $hash = password_hash($seedPass, PASSWORD_BCRYPT);
-            try {
-                $ins = $pdo->prepare("INSERT INTO users (username, password, full_name, email, role, is_active, created_at) VALUES ('tcek', :p, 'Charan (Lead Developer)', 'tcekrdcell@gmail.com', 'admin', 1, NOW())");
-                $ins->execute([':p' => $hash]);
-                $stmt->execute();
-                $recheck = $stmt->fetchAll();
-                if (!empty($recheck)) return $recheck;
-            } catch (Exception $e2) {}
-            return $default_users;
-        }
-        return $res;
-    } catch (PDOException $e) {
-        return $default_users;
-    }
+    $all = load_users_from_store();
+    return array_slice($all, 0, (int)$limit);
 }
 
 function add_user($username, $password, $full_name, $email, $role = 'staff') {
     global $pdo;
-    if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
+    $username  = trim($username);
+    $full_name = trim($full_name);
+    $email     = trim($email);
+    $role      = trim($role);
+    $hash      = password_hash(trim($password), PASSWORD_BCRYPT);
 
-    try {
-        $hash = password_hash(trim($password), PASSWORD_BCRYPT);
-        $stmt = $pdo->prepare("
-            INSERT INTO users (username, password, full_name, email, role, is_active, created_at)
-            VALUES (:u, :p, :f, :e, :r, 1, NOW())
-        ");
-        $stmt->execute([
-            ':u' => trim($username),
-            ':p' => $hash,
-            ':f' => trim($full_name),
-            ':e' => trim($email),
-            ':r' => $role
-        ]);
-        $id = $pdo->lastInsertId();
-        log_activity('Added', 'Users', $username, "Created user with role '{$role}'", $id);
-        return ['success' => true, 'message' => 'User created successfully!'];
-    } catch (PDOException $e) {
-        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+    $new_id = null;
+    if ($pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO users (username, password, full_name, email, role, is_active, created_at)
+                VALUES (:u, :p, :f, :e, :r, 1, NOW())
+            ");
+            $stmt->execute([
+                ':u' => $username,
+                ':p' => $hash,
+                ':f' => $full_name,
+                ':e' => $email,
+                ':r' => $role
+            ]);
+            $new_id = (int)$pdo->lastInsertId();
+        } catch (PDOException $e) {
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+        }
     }
+
+    $all = load_users_from_store();
+    if (!$new_id) {
+        $max = 0;
+        foreach ($all as $u) {
+            if ((int)($u['id'] ?? 0) > $max) $max = (int)$u['id'];
+        }
+        $new_id = $max + 1;
+    }
+
+    $all[] = [
+        'id'         => $new_id,
+        'username'   => $username,
+        'password'   => $hash,
+        'full_name'  => $full_name,
+        'email'      => $email,
+        'role'       => $role,
+        'is_active'  => 1,
+        'created_at' => date('Y-m-d H:i:s')
+    ];
+    save_users_to_store($all);
+
+    log_activity('Added', 'Users', $username, "Created user with role '{$role}'", $new_id);
+    if (function_exists('record_content_update')) {
+        record_content_update('users');
+    }
+    return ['success' => true, 'message' => 'User created successfully!'];
 }
 
 function delete_user($id) {
     global $pdo;
-    if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
+    $id = (int)$id;
+    $uName = 'User #' . $id;
 
-    try {
-        $st = $pdo->prepare("SELECT username FROM users WHERE id = :id");
-        $st->execute([':id' => $id]);
-        $row = $st->fetch();
-        $uName = $row ? $row['username'] : 'User #' . $id;
+    if ($pdo instanceof PDO) {
+        try {
+            $st = $pdo->prepare("SELECT username FROM users WHERE id = :id");
+            $st->execute([':id' => $id]);
+            $row = $st->fetch();
+            if ($row) $uName = $row['username'];
 
-        $stmt = $pdo->prepare("DELETE FROM users WHERE id = :id");
-        $stmt->execute([':id' => $id]);
-        log_activity('Deleted', 'Users', $uName, "Deleted user record", $id);
-        return ['success' => true, 'message' => 'User removed successfully.'];
-    } catch (PDOException $e) {
-        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+            $stmt = $pdo->prepare("DELETE FROM users WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+        } catch (PDOException $e) {
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+        }
     }
+
+    $all = load_users_from_store();
+    $all = array_filter($all, function($u) use ($id, &$uName) {
+        if ((int)($u['id'] ?? 0) === $id) {
+            $uName = $u['username'] ?? ('User #' . $id);
+            return false;
+        }
+        return true;
+    });
+    save_users_to_store($all);
+
+    log_activity('Deleted', 'Users', $uName, "Deleted user record", $id);
+    if (function_exists('record_content_update')) {
+        record_content_update('users');
+    }
+    return ['success' => true, 'message' => 'User removed successfully.'];
 }
 
 // ==============================================================
 // 3. GALLERY (IMAGES & VIDEOS)
 // ==============================================================
 
+function get_gallery_store_file() {
+    return __DIR__ . '/config/gallery_data.json';
+}
+
+function load_gallery_from_store() {
+    $file = get_gallery_store_file();
+    if (file_exists($file)) {
+        $json = @file_get_contents($file);
+        if ($json) {
+            $data = json_decode($json, true);
+            if (is_array($data) && !empty($data)) return $data;
+        }
+    }
+    return [];
+}
+
+function save_gallery_to_store($items) {
+    $file = get_gallery_store_file();
+    $saved = @file_put_contents($file, json_encode(array_values($items), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    if ($saved && function_exists('record_content_update')) {
+        record_content_update('gallery');
+    }
+    return $saved;
+}
+
 function get_gallery_items($media_type = null, $category = null, $limit = 60) {
     global $pdo;
-    if (!($pdo instanceof PDO)) return [];
+    if ($pdo instanceof PDO) {
+        try {
+            $conditions = [];
+            $params = [];
 
-    try {
-        $conditions = [];
-        $params = [];
+            if ($media_type && in_array($media_type, ['image', 'video'])) {
+                $conditions[] = "media_type = :media_type";
+                $params[':media_type'] = $media_type;
+            }
 
-        if ($media_type && in_array($media_type, ['image', 'video'])) {
-            $conditions[] = "media_type = :media_type";
-            $params[':media_type'] = $media_type;
-        }
+            if ($category && in_array($category, ['events', 'campus', 'milestones', 'press'])) {
+                $conditions[] = "category = :category";
+                $params[':category'] = $category;
+            }
 
-        if ($category && in_array($category, ['events', 'campus', 'milestones', 'press'])) {
-            $conditions[] = "category = :category";
-            $params[':category'] = $category;
-        }
-
-        $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
-        $stmt = $pdo->prepare("SELECT * FROM gallery {$whereClause} ORDER BY id DESC LIMIT :limit");
-        foreach ($params as $k => $v) {
-            $stmt->bindValue($k, $v);
-        }
-        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll();
-    } catch (PDOException $e) {
-        return [];
+            $whereClause = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
+            $stmt = $pdo->prepare("SELECT * FROM gallery {$whereClause} ORDER BY id DESC LIMIT :limit");
+            foreach ($params as $k => $v) {
+                $stmt->bindValue($k, $v);
+            }
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            $res = $stmt->fetchAll();
+            if (!empty($res)) return $res;
+        } catch (PDOException $e) {}
     }
+
+    $all = load_gallery_from_store();
+    $filtered = [];
+    foreach ($all as $item) {
+        if ($media_type && ($item['media_type'] ?? '') !== $media_type) continue;
+        if ($category && ($item['category'] ?? '') !== $category) continue;
+        $filtered[] = $item;
+    }
+    usort($filtered, function($a, $b) {
+        return (int)($b['id'] ?? 0) <=> (int)($a['id'] ?? 0);
+    });
+    return array_slice($filtered, 0, (int)$limit);
 }
 
 function add_gallery_item($title, $media_type, $category, $file_path = null, $video_url = null, $description = null) {
     global $pdo;
-    if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
+    $title       = trim($title);
+    $media_type  = in_array($media_type, ['image', 'video']) ? $media_type : 'image';
+    $category    = in_array($category, ['events', 'campus', 'milestones', 'press']) ? $category : 'events';
+    $description = trim($description);
 
-    try {
-        $stmt = $pdo->prepare("
-            INSERT INTO gallery (title, media_type, category, file_path, video_url, description, created_at)
-            VALUES (:title, :media_type, :category, :file_path, :video_url, :description, NOW())
-        ");
-        $stmt->execute([
-            ':title'       => trim($title),
-            ':media_type'  => $media_type,
-            ':category'    => $category,
-            ':file_path'   => $file_path,
-            ':video_url'   => $video_url,
-            ':description' => trim($description)
-        ]);
-        $id = $pdo->lastInsertId();
-        log_activity('Added', 'Gallery', $title, "Added {$media_type} to '{$category}' category", $id);
-        return ['success' => true, 'message' => 'Gallery media added successfully!'];
-    } catch (PDOException $e) {
-        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+    $new_id = null;
+    if ($pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO gallery (title, media_type, category, file_path, video_url, description, created_at)
+                VALUES (:title, :media_type, :category, :file_path, :video_url, :description, NOW())
+            ");
+            $stmt->execute([
+                ':title'       => $title,
+                ':media_type'  => $media_type,
+                ':category'    => $category,
+                ':file_path'   => $file_path,
+                ':video_url'   => $video_url,
+                ':description' => $description
+            ]);
+            $new_id = (int)$pdo->lastInsertId();
+        } catch (PDOException $e) {
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+        }
     }
+
+    $all = load_gallery_from_store();
+    if (!$new_id) {
+        $max = 0;
+        foreach ($all as $g) {
+            if ((int)($g['id'] ?? 0) > $max) $max = (int)$g['id'];
+        }
+        $new_id = $max + 1;
+    }
+
+    $newItem = [
+        'id'          => $new_id,
+        'title'       => $title,
+        'media_type'  => $media_type,
+        'category'    => $category,
+        'file_path'   => $file_path,
+        'video_url'   => $video_url,
+        'description' => $description,
+        'created_at'  => date('Y-m-d H:i:s')
+    ];
+    array_unshift($all, $newItem);
+    save_gallery_to_store($all);
+
+    log_activity('Added', 'Gallery', $title, "Added {$media_type} to '{$category}' category", $new_id);
+    if (function_exists('record_content_update')) {
+        record_content_update('gallery');
+    }
+    return ['success' => true, 'message' => 'Gallery media added successfully!'];
 }
 
 function delete_gallery_item($id) {
     global $pdo;
-    if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
+    $id = (int)$id;
+    $title = 'Gallery Item #' . $id;
 
-    try {
-        $st = $pdo->prepare("SELECT title, media_type FROM gallery WHERE id = :id");
-        $st->execute([':id' => $id]);
-        $row = $st->fetch();
-        $title = $row ? $row['title'] : 'Gallery Item #' . $id;
+    if ($pdo instanceof PDO) {
+        try {
+            $st = $pdo->prepare("SELECT title, media_type FROM gallery WHERE id = :id");
+            $st->execute([':id' => $id]);
+            $row = $st->fetch();
+            if ($row) $title = $row['title'];
 
-        $stmt = $pdo->prepare("DELETE FROM gallery WHERE id = :id");
-        $stmt->execute([':id' => $id]);
-        log_activity('Deleted', 'Gallery', $title, "Deleted gallery record", $id);
-        return ['success' => true, 'message' => 'Gallery item deleted.'];
-    } catch (PDOException $e) {
-        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+            $stmt = $pdo->prepare("DELETE FROM gallery WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+        } catch (PDOException $e) {
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+        }
     }
+
+    $all = load_gallery_from_store();
+    $all = array_filter($all, function($g) use ($id, &$title) {
+        if ((int)($g['id'] ?? 0) === $id) {
+            $title = $g['title'] ?? ('Gallery Item #' . $id);
+            return false;
+        }
+        return true;
+    });
+    save_gallery_to_store($all);
+
+    log_activity('Deleted', 'Gallery', $title, "Deleted gallery record", $id);
+    if (function_exists('record_content_update')) {
+        record_content_update('gallery');
+    }
+    return ['success' => true, 'message' => 'Gallery item deleted.'];
 }
 
 // ==============================================================
@@ -848,7 +948,11 @@ function load_events_from_store() {
 
 function save_events_to_store($events) {
     $file = get_events_store_file();
-    return @file_put_contents($file, json_encode(array_values($events), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+    $saved = @file_put_contents($file, json_encode(array_values($events), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    if ($saved && function_exists('record_content_update')) {
+        record_content_update('events');
+    }
+    return $saved;
 }
 
 function get_events($limit = 50, $featured_only = false) {
@@ -1076,6 +1180,9 @@ function add_event($title, $event_date, $event_time = '10:00 AM', $description =
             ]);
             $id = $pdo->lastInsertId();
             log_activity('Added', 'Events', $title, "Created college event scheduled for {$event_date} ({$event_time})", $id);
+            if (function_exists('record_content_update')) {
+                record_content_update('events');
+            }
             return ['success' => true, 'message' => 'Event created successfully!', 'id' => $id];
         } catch (PDOException $e) {
             return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
@@ -1139,6 +1246,9 @@ function update_event($id, $title, $event_date, $event_time = '10:00 AM', $venue
             $stmt->execute($params);
 
             log_activity('Updated', 'Events', $title, "Updated event details", $id);
+            if (function_exists('record_content_update')) {
+                record_content_update('events');
+            }
             return ['success' => true, 'message' => 'Event updated successfully!'];
         } catch (PDOException $e) {
             return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
@@ -1226,6 +1336,10 @@ function add_event_media($event_id, $file, $media_title, $media_description = ''
             }
 
             log_activity('Uploaded', 'Events', $media_title, "Uploaded {$file_type} for Event #{$event_id}", $media_id);
+            if (function_exists('record_content_update')) {
+                record_content_update('event_media');
+                record_content_update('events');
+            }
             return ['success' => true, 'message' => 'Event details and media uploaded successfully!'];
         } catch (PDOException $e) {
             return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
@@ -1526,6 +1640,10 @@ function delete_event_media($media_id) {
                 $pdo->prepare("DELETE FROM event_media WHERE id = :id")->execute([':id' => $media_id]);
                 log_activity('Deleted', 'Events', $row['media_title'], "Deleted event media file", $media_id);
             }
+            if (function_exists('record_content_update')) {
+                record_content_update('event_media');
+                record_content_update('events');
+            }
             return ['success' => true, 'message' => 'Media file removed successfully.'];
         } catch (PDOException $e) {
             return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
@@ -1588,6 +1706,9 @@ function delete_event($id) {
             $pdo->prepare("DELETE FROM events WHERE id = :id")->execute([':id' => $id]);
 
             log_activity('Deleted', 'Events', $title, "Deleted event from schedule", $id);
+            if (function_exists('record_content_update')) {
+                record_content_update('events');
+            }
             return ['success' => true, 'message' => 'Event and its media deleted successfully.'];
         } catch (PDOException $e) {
             return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
@@ -1708,7 +1829,12 @@ function save_notifications_to_store($notifications) {
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
     }
-    return @file_put_contents($file, json_encode(array_values($notifications), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    $saved = @file_put_contents($file, json_encode(array_values($notifications), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    if ($saved && function_exists('record_content_update')) {
+        record_content_update('notifications');
+        record_content_update('circulars');
+    }
+    return $saved;
 }
 
 function get_notifications($limit = 50, $marquee_only = false) {
@@ -2238,53 +2364,51 @@ function get_all_uploads($type = null, $limit = 100) {
 // ==============================================================
 // 8. WORKSHOPS & TASKS
 // ==============================================================
-function get_workshops($limit = 50) {
-    global $pdo;
-    if (!($pdo instanceof PDO)) {
-        return [
-            ['id' => 1, 'title' => 'Generative AI & LLM Deployment Workshop', 'instructor' => 'Dr. A. K. Vootla', 'category' => 'AI / ML', 'event_date' => '2026-10-15', 'venue' => 'CSE Lab 3', 'status' => 'ACTIVE', 'description' => 'Hands-on development of full-stack AI applications with Python & PyTorch.'],
-            ['id' => 2, 'title' => 'Full-Stack Web Dev Sprint (HTML, PHP, MySQL)', 'instructor' => 'Charan (Lead Developer)', 'category' => 'Web Dev', 'event_date' => '2026-10-22', 'venue' => 'Seminar Hall A', 'status' => 'UPCOMING', 'description' => 'Live deployment to GoDaddy cPanel hosting, database triggers, and auth.'],
-            ['id' => 3, 'title' => 'IoT Smart Embedded Robotics Task', 'instructor' => 'Prof. S. Rao (ECE HoD)', 'category' => 'Embedded / IoT', 'event_date' => '2026-11-05', 'venue' => 'Robotics Studio', 'status' => 'UPCOMING', 'description' => 'Microcontroller sensors, Arduino, and ESP32 wireless telemetry.']
-        ];
-    }
-    try {
-        $pdo->exec("CREATE TABLE IF NOT EXISTS workshops (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            title VARCHAR(255) NOT NULL,
-            instructor VARCHAR(150) DEFAULT NULL,
-            category VARCHAR(100) DEFAULT 'Technical',
-            event_date DATE NOT NULL,
-            venue VARCHAR(255) DEFAULT 'TCEK Seminar Hall',
-            description TEXT DEFAULT NULL,
-            status VARCHAR(50) DEFAULT 'UPCOMING',
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
 
-        $stmt = $pdo->prepare("SELECT * FROM workshops ORDER BY event_date ASC, id DESC LIMIT :limit");
-        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
-        $stmt->execute();
-        $res = $stmt->fetchAll();
-        if (empty($res)) {
-            add_workshop('Generative AI & LLM Deployment Workshop', 'Dr. A. K. Vootla', 'AI / ML', '2026-10-15', 'CSE Lab 3', 'Hands-on development of full-stack AI applications.', 'ACTIVE');
-            add_workshop('Full-Stack Web Dev Sprint (PHP, MySQL)', 'Charan (Lead Developer)', 'Web Dev', '2026-10-22', 'Seminar Hall A', 'Live deployment to GoDaddy cPanel hosting.', 'UPCOMING');
-            $stmt->execute();
-            return $stmt->fetchAll();
-        }
-        return $res;
-    } catch (PDOException $e) {
-        return [];
-    }
+function get_workshops_store_file() {
+    return __DIR__ . '/config/workshops_data.json';
 }
 
-/**
- * Fetch paginated workshops with search and category filters
- *
- * @param int $page
- * @param int $per_page
- * @param string|null $search
- * @param string|null $category
- * @return array
- */
+function load_workshops_from_store() {
+    $file = get_workshops_store_file();
+    if (file_exists($file)) {
+        $json = @file_get_contents($file);
+        if ($json) {
+            $data = json_decode($json, true);
+            if (is_array($data) && !empty($data)) return $data;
+        }
+    }
+    return [
+        ['id' => 1, 'title' => 'Generative AI & LLM Deployment Workshop', 'instructor' => 'Dr. A. K. Vootla', 'category' => 'AI / ML', 'event_date' => '2026-10-15', 'venue' => 'CSE Lab 3', 'status' => 'ACTIVE', 'description' => 'Hands-on development of full-stack AI applications with Python & PyTorch.', 'created_at' => '2026-10-01 09:00:00'],
+        ['id' => 2, 'title' => 'Full-Stack Web Dev Sprint (PHP, MySQL)', 'instructor' => 'Charan (Lead Developer)', 'category' => 'Web Dev', 'event_date' => '2026-10-22', 'venue' => 'Seminar Hall A', 'status' => 'UPCOMING', 'description' => 'Live deployment to GoDaddy cPanel hosting, database triggers, and auth.', 'created_at' => '2026-10-02 10:15:00'],
+        ['id' => 3, 'title' => 'IoT Smart Embedded Robotics Task', 'instructor' => 'Prof. S. Rao (ECE HoD)', 'category' => 'Embedded / IoT', 'event_date' => '2026-11-05', 'venue' => 'Robotics Studio', 'status' => 'UPCOMING', 'description' => 'Microcontroller sensors, Arduino, and ESP32 wireless telemetry.', 'created_at' => '2026-10-03 11:30:00']
+    ];
+}
+
+function save_workshops_to_store($workshops) {
+    $file = get_workshops_store_file();
+    $saved = @file_put_contents($file, json_encode(array_values($workshops), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    if ($saved && function_exists('record_content_update')) {
+        record_content_update('workshops');
+    }
+    return $saved;
+}
+
+function get_workshops($limit = 50) {
+    global $pdo;
+    if ($pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->prepare("SELECT * FROM workshops ORDER BY event_date ASC, id DESC LIMIT :limit");
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->execute();
+            $res = $stmt->fetchAll();
+            if (!empty($res)) return $res;
+        } catch (PDOException $e) {}
+    }
+    $all = load_workshops_from_store();
+    return array_slice($all, 0, (int)$limit);
+}
+
 function get_workshops_paginated($page = 1, $per_page = 10, $search = null, $category = null) {
     global $pdo;
     $per_page = max(1, (int)$per_page);
@@ -2292,19 +2416,6 @@ function get_workshops_paginated($page = 1, $per_page = 10, $search = null, $cat
 
     if ($pdo instanceof PDO) {
         try {
-            // Ensure table exists
-            $pdo->exec("CREATE TABLE IF NOT EXISTS workshops (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                title VARCHAR(255) NOT NULL,
-                instructor VARCHAR(150) DEFAULT NULL,
-                category VARCHAR(100) DEFAULT 'Technical',
-                event_date DATE NOT NULL,
-                venue VARCHAR(255) DEFAULT 'TCEK Seminar Hall',
-                description TEXT DEFAULT NULL,
-                status VARCHAR(50) DEFAULT 'UPCOMING',
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;");
-
             $conditions = [];
             $params = [];
 
@@ -2318,8 +2429,6 @@ function get_workshops_paginated($page = 1, $per_page = 10, $search = null, $cat
             }
 
             $where = !empty($conditions) ? "WHERE " . implode(" AND ", $conditions) : "";
-
-            // Total count
             $cStmt = $pdo->prepare("SELECT COUNT(*) FROM workshops {$where}");
             foreach ($params as $k => $v) {
                 $cStmt->bindValue($k, $v);
@@ -2327,17 +2436,7 @@ function get_workshops_paginated($page = 1, $per_page = 10, $search = null, $cat
             $cStmt->execute();
             $total = (int)$cStmt->fetchColumn();
 
-            // Auto-seed if empty and no filters
-            if ($total === 0 && empty($conditions)) {
-                add_workshop('Generative AI & LLM Deployment Workshop', 'Dr. A. K. Vootla', 'AI / ML', '2026-10-15', 'CSE Lab 3', 'Hands-on development of full-stack AI applications.', 'ACTIVE');
-                add_workshop('Full-Stack Web Dev Sprint (PHP, MySQL)', 'Charan (Lead Developer)', 'Web Dev', '2026-10-22', 'Seminar Hall A', 'Live deployment to GoDaddy cPanel hosting.', 'UPCOMING');
-                $cStmt->execute();
-                $total = (int)$cStmt->fetchColumn();
-            }
-
             $meta = build_pagination_meta($total, $page, $per_page);
-
-            // Fetch records
             $stmt = $pdo->prepare("SELECT * FROM workshops {$where} ORDER BY event_date ASC, id DESC LIMIT :limit OFFSET :offset");
             foreach ($params as $k => $v) {
                 $stmt->bindValue($k, $v);
@@ -2347,22 +2446,15 @@ function get_workshops_paginated($page = 1, $per_page = 10, $search = null, $cat
             $stmt->execute();
             $meta['items'] = $stmt->fetchAll();
             return $meta;
-        } catch (PDOException $e) {
-            error_log("Workshops DB pagination failed: " . $e->getMessage());
-        }
+        } catch (PDOException $e) {}
     }
 
-    // Fallback store
-    $default_workshops = [
-        ['id' => 1, 'title' => 'Generative AI & LLM Deployment Workshop', 'instructor' => 'Dr. A. K. Vootla', 'category' => 'AI / ML', 'event_date' => '2026-10-15', 'venue' => 'CSE Lab 3', 'status' => 'ACTIVE', 'description' => 'Hands-on development of full-stack AI applications with Python & PyTorch.'],
-        ['id' => 2, 'title' => 'Full-Stack Web Dev Sprint (HTML, PHP, MySQL)', 'instructor' => 'Charan (Lead Developer)', 'category' => 'Web Dev', 'event_date' => '2026-10-22', 'venue' => 'Seminar Hall A', 'status' => 'UPCOMING', 'description' => 'Live deployment to GoDaddy cPanel hosting, database triggers, and auth.'],
-        ['id' => 3, 'title' => 'IoT Smart Embedded Robotics Task', 'instructor' => 'Prof. S. Rao (ECE HoD)', 'category' => 'Embedded / IoT', 'event_date' => '2026-11-05', 'venue' => 'Robotics Studio', 'status' => 'UPCOMING', 'description' => 'Microcontroller sensors, Arduino, and ESP32 wireless telemetry.']
-    ];
+    $all = load_workshops_from_store();
     $filtered = [];
-    foreach ($default_workshops as $w) {
+    foreach ($all as $w) {
         if (!empty($search)) {
             $s = strtolower(trim($search));
-            if (strpos(strtolower($w['title']), $s) === false &&
+            if (strpos(strtolower($w['title'] ?? ''), $s) === false &&
                 strpos(strtolower($w['instructor'] ?? ''), $s) === false &&
                 strpos(strtolower($w['venue'] ?? ''), $s) === false) {
                 continue;
@@ -2401,47 +2493,100 @@ function get_workshops_count($search = null, $category = null) {
             return (int)$stmt->fetchColumn();
         } catch (Throwable $e) {}
     }
-    return count(get_workshops(50));
+    return count(load_workshops_from_store());
 }
 
 function add_workshop($title, $instructor, $category, $event_date, $venue, $description, $status = 'UPCOMING') {
     global $pdo;
-    if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
-    try {
-        $stmt = $pdo->prepare("INSERT INTO workshops (title, instructor, category, event_date, venue, description, status, created_at) VALUES (:t, :i, :c, :d, :v, :desc, :st, NOW())");
-        $stmt->execute([
-            ':t'    => trim($title),
-            ':i'    => trim($instructor),
-            ':c'    => trim($category),
-            ':d'    => $event_date,
-            ':v'    => trim($venue),
-            ':desc' => trim($description),
-            ':st'   => trim($status)
-        ]);
-        $id = $pdo->lastInsertId();
-        log_activity('Added', 'Workshops', $title, "Created workshop/task in category '{$category}'", $id);
-        return ['success' => true, 'message' => 'Workshop / Task created successfully!'];
-    } catch (PDOException $e) {
-        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+    $title       = trim($title);
+    $instructor  = trim($instructor);
+    $category    = trim($category ?: 'Technical');
+    $venue       = trim($venue ?: 'TCEK Seminar Hall');
+    $description = trim($description);
+    $status      = trim($status ?: 'UPCOMING');
+
+    $new_id = null;
+    if ($pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO workshops (title, instructor, category, event_date, venue, description, status, created_at) VALUES (:t, :i, :c, :d, :v, :desc, :st, NOW())");
+            $stmt->execute([
+                ':t'    => $title,
+                ':i'    => $instructor,
+                ':c'    => $category,
+                ':d'    => $event_date,
+                ':v'    => $venue,
+                ':desc' => $description,
+                ':st'   => $status
+            ]);
+            $new_id = (int)$pdo->lastInsertId();
+        } catch (PDOException $e) {
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+        }
     }
+
+    $all = load_workshops_from_store();
+    if (!$new_id) {
+        $max = 0;
+        foreach ($all as $w) {
+            if ((int)($w['id'] ?? 0) > $max) $max = (int)$w['id'];
+        }
+        $new_id = $max + 1;
+    }
+
+    $all[] = [
+        'id'          => $new_id,
+        'title'       => $title,
+        'instructor'  => $instructor,
+        'category'    => $category,
+        'event_date'  => $event_date,
+        'venue'       => $venue,
+        'description' => $description,
+        'status'      => $status,
+        'created_at'  => date('Y-m-d H:i:s')
+    ];
+    save_workshops_to_store($all);
+
+    log_activity('Added', 'Workshops', $title, "Created workshop/task in category '{$category}'", $new_id);
+    if (function_exists('record_content_update')) {
+        record_content_update('workshops');
+    }
+    return ['success' => true, 'message' => 'Workshop / Task created successfully!'];
 }
 
 function delete_workshop($id) {
     global $pdo;
-    if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
-    try {
-        $st = $pdo->prepare("SELECT title FROM workshops WHERE id = :id");
-        $st->execute([':id' => $id]);
-        $row = $st->fetch();
-        $title = $row ? $row['title'] : 'Workshop #' . $id;
+    $id = (int)$id;
+    $title = 'Workshop #' . $id;
 
-        $stmt = $pdo->prepare("DELETE FROM workshops WHERE id = :id");
-        $stmt->execute([':id' => $id]);
-        log_activity('Deleted', 'Workshops', $title, "Deleted workshop record", $id);
-        return ['success' => true, 'message' => 'Workshop removed.'];
-    } catch (PDOException $e) {
-        return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+    if ($pdo instanceof PDO) {
+        try {
+            $st = $pdo->prepare("SELECT title FROM workshops WHERE id = :id");
+            $st->execute([':id' => $id]);
+            $row = $st->fetch();
+            if ($row) $title = $row['title'];
+
+            $stmt = $pdo->prepare("DELETE FROM workshops WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+        } catch (PDOException $e) {
+            return ErrorHandler::safeError($e, 'A database error occurred while processing your request.');
+        }
     }
+
+    $all = load_workshops_from_store();
+    $all = array_filter($all, function($w) use ($id, &$title) {
+        if ((int)($w['id'] ?? 0) === $id) {
+            $title = $w['title'] ?? ('Workshop #' . $id);
+            return false;
+        }
+        return true;
+    });
+    save_workshops_to_store($all);
+
+    log_activity('Deleted', 'Workshops', $title, "Deleted workshop record", $id);
+    if (function_exists('record_content_update')) {
+        record_content_update('workshops');
+    }
+    return ['success' => true, 'message' => 'Workshop removed.'];
 }
 
 // ==============================================================
@@ -2589,7 +2734,11 @@ function save_news_to_store($news) {
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
     }
-    return @file_put_contents($file, json_encode(array_values($news), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    $saved = @file_put_contents($file, json_encode(array_values($news), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    if ($saved && function_exists('record_content_update')) {
+        record_content_update('news');
+    }
+    return $saved;
 }
 
 function get_news($limit = 50) {
@@ -3628,6 +3777,157 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         exit;
     }
 
+    // --- HOMEPAGE HERO SLIDER ACTIONS ---
+    if ($action === 'save_hero_content') {
+        require_admin_login();
+        $fields = [
+            'title'            => trim($_POST['title'] ?? ''),
+            'subtitle'         => trim($_POST['subtitle'] ?? ''),
+            'badge_left_text'  => trim($_POST['badge_left_text'] ?? ''),
+            'badge_left_pulse' => (!empty($_POST['badge_left_pulse']) && $_POST['badge_left_pulse'] != '0') ? 1 : 0,
+            'badge_right_text' => trim($_POST['badge_right_text'] ?? ''),
+            'badge_right_icon' => trim($_POST['badge_right_icon'] ?? 'fas fa-certificate'),
+            'cta_text'         => trim($_POST['cta_text'] ?? ''),
+            'cta_link'         => trim($_POST['cta_link'] ?? ''),
+            'slide_interval'   => isset($_POST['slide_interval']) ? (int)$_POST['slide_interval'] : 3600
+        ];
+
+        if (empty($fields['title'])) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = 'Hero title cannot be empty.';
+            header('Location: ../admin/dashboard.php?tab=hero');
+            exit;
+        }
+
+        $res = update_hero_content($fields);
+        if (function_exists('logActivity')) {
+            logActivity('Updated', 'Hero Slider', 'Homepage Hero Content', 'Updated hero titles, badges, and CTA button');
+        }
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=hero');
+        exit;
+    }
+
+    if ($action === 'add_hero_slide') {
+        require_admin_login();
+        $title     = trim($_POST['title'] ?? '');
+        $is_active = (!empty($_POST['is_active']) && $_POST['is_active'] != '0') ? 1 : 0;
+        $file_path = trim($_POST['file_path'] ?? '');
+
+        // Handle uploaded file if present
+        if (!empty($_FILES['slide_file']) && $_FILES['slide_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadRes = process_file_upload($_FILES['slide_file'], $title ?: 'Hero Slide', 'hero', 'Homepage Hero Slide');
+            if ($uploadRes['success'] && !empty($uploadRes['data']['file_path'])) {
+                $file_path = $uploadRes['data']['file_path'];
+            } else {
+                $_SESSION['flash_type'] = 'danger';
+                $_SESSION['flash_msg']  = 'File upload error: ' . ($uploadRes['message'] ?? 'Could not upload file.');
+                header('Location: ../admin/dashboard.php?tab=hero');
+                exit;
+            }
+        }
+
+        if (empty($file_path)) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = 'Please provide an image/video file or enter a valid file path.';
+            header('Location: ../admin/dashboard.php?tab=hero');
+            exit;
+        }
+
+        $ext = strtolower(pathinfo($file_path, PATHINFO_EXTENSION));
+        $media_type = in_array($ext, ['mp4', 'webm', 'ogg', 'mov']) ? 'video' : 'image';
+
+        $res = add_hero_slide($file_path, $title, $media_type, $is_active);
+        if (function_exists('logActivity')) {
+            logActivity('Added', 'Hero Slider', $title ?: 'New Slide', 'Added new hero slide: ' . $file_path);
+        }
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=hero');
+        exit;
+    }
+
+    if ($action === 'edit_hero_slide') {
+        require_admin_login();
+        $id        = (int)($_POST['id'] ?? 0);
+        $title     = trim($_POST['title'] ?? '');
+        $is_active = (!empty($_POST['is_active']) && $_POST['is_active'] != '0') ? 1 : 0;
+        $file_path = trim($_POST['file_path'] ?? '');
+
+        if ($id <= 0) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = 'Invalid slide identifier.';
+            header('Location: ../admin/dashboard.php?tab=hero');
+            exit;
+        }
+
+        $updates = [
+            'title'     => $title,
+            'is_active' => $is_active
+        ];
+
+        // Handle replacement upload if user selected a new file
+        if (!empty($_FILES['slide_file']) && $_FILES['slide_file']['error'] === UPLOAD_ERR_OK) {
+            $uploadRes = process_file_upload($_FILES['slide_file'], $title ?: 'Hero Slide', 'hero', 'Homepage Hero Slide');
+            if ($uploadRes['success'] && !empty($uploadRes['data']['file_path'])) {
+                $updates['file_path'] = $uploadRes['data']['file_path'];
+            }
+        } elseif (!empty($file_path)) {
+            $updates['file_path'] = $file_path;
+        }
+
+        $res = update_hero_slide($id, $updates);
+        if (function_exists('logActivity')) {
+            logActivity('Updated', 'Hero Slider', 'Slide #' . $id, 'Modified hero slide details');
+        }
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=hero');
+        exit;
+    }
+
+    if ($action === 'delete_hero_slide') {
+        require_admin_login();
+        $id = (int)($_POST['id'] ?? 0);
+        if ($id <= 0) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = 'Invalid slide ID.';
+            header('Location: ../admin/dashboard.php?tab=hero');
+            exit;
+        }
+
+        $res = delete_hero_slide($id);
+        if (function_exists('logActivity')) {
+            logActivity('Deleted', 'Hero Slider', 'Slide #' . $id, 'Removed slide from hero carousel');
+        }
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=hero');
+        exit;
+    }
+
+    if ($action === 'toggle_hero_slide') {
+        require_admin_login();
+        $id = (int)($_POST['id'] ?? 0);
+        $res = toggle_hero_slide($id);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=hero');
+        exit;
+    }
+
+    if ($action === 'move_hero_slide') {
+        require_admin_login();
+        $id        = (int)($_POST['id'] ?? 0);
+        $direction = trim($_POST['direction'] ?? 'up');
+        $res = move_hero_slide($id, $direction);
+        $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
+        $_SESSION['flash_msg']  = $res['message'];
+        header('Location: ../admin/dashboard.php?tab=hero');
+        exit;
+    }
+
     // --- DEPARTMENT MANAGEMENT ACTIONS ---
     if ($action === 'add_department') {
         $validation = Validator::validate($_POST, [
@@ -3654,7 +3954,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         }
 
         $v = $validation['data'];
-        $res = add_department($v['dept_code'], $v['name'], '', $v['degree_level'], $v['intake'], $v['duration'], $v['established_year'], $v['icon_class'], $v['theme_class'], $v['description'], $v['vision'], $v['mission'], $v['page_url'], $v['display_order']);
+        $logo_path = !empty($_POST['banner_image']) ? trim($_POST['banner_image']) : null;
+        if (isset($_FILES['dept_logo']) && $_FILES['dept_logo']['error'] === UPLOAD_ERR_OK) {
+            $up = process_file_upload($_FILES['dept_logo'], $v['name'] . ' Logo', 'department', 'Department logo image');
+            if ($up['success']) {
+                $logo_path = $up['data']['file_path'];
+            }
+        }
+        $res = add_department($v['dept_code'], $v['name'], '', $v['degree_level'], $v['intake'], $v['duration'], $v['established_year'], $v['icon_class'], $v['theme_class'], $v['description'], $v['vision'], $v['mission'], $v['page_url'], $v['display_order'], $logo_path);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=departments');
@@ -3688,7 +3995,14 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         }
 
         $v = $validation['data'];
-        $res = update_department($v['id'], $v['dept_code'], $v['name'], '', $v['degree_level'], $v['intake'], $v['duration'], $v['established_year'], $v['icon_class'], $v['theme_class'], $v['description'], $v['vision'], $v['mission'], $v['page_url'], $v['display_order'], $v['is_active']);
+        $logo_path = isset($_POST['banner_image']) && trim($_POST['banner_image']) !== '' ? trim($_POST['banner_image']) : null;
+        if (isset($_FILES['dept_logo']) && $_FILES['dept_logo']['error'] === UPLOAD_ERR_OK) {
+            $up = process_file_upload($_FILES['dept_logo'], $v['name'] . ' Logo', 'department', 'Department logo image');
+            if ($up['success']) {
+                $logo_path = $up['data']['file_path'];
+            }
+        }
+        $res = update_department($v['id'], $v['dept_code'], $v['name'], '', $v['degree_level'], $v['intake'], $v['duration'], $v['established_year'], $v['icon_class'], $v['theme_class'], $v['description'], $v['vision'], $v['mission'], $v['page_url'], $v['display_order'], $v['is_active'], $logo_path);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=departments');

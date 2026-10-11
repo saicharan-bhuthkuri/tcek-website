@@ -198,7 +198,7 @@
         "id": 6,
         "dept_code": "H&S",
         "name": "Humanities & Sciences",
-        "slug": "hs",
+        "slug": "h-s",
         "degree_level": "B.Tech",
         "intake": "All Intake",
         "duration": "Foundation",
@@ -227,11 +227,14 @@
         ],
         "description": "Building strong scientific, mathematical, and communicative foundations for first-year engineering scholars.",
         "vision": "To establish strong scientific inquiry, mathematical rigor, and linguistic competence as the bedrock of engineering education.",
-        "mission": "1. Deliver rigorous foundational courses in Mathematics, Physics, Chemistry, and English.\n2. Foster interdisciplinary thinking and experimental curiosity.\n3. Build professional soft skills, critical thinking, and character.",
+        "mission": "1. Deliver rigorous foundational courses in Mathematics, Physics, Chemistry, and English.\r\n2. Foster interdisciplinary thinking and experimental curiosity.\r\n3. Build professional soft skills, critical thinking, and character.",
         "page_url": "department.php?slug=hs",
         "display_order": 6,
         "is_active": 1,
-        "created_at": "2026-10-09 05:24:11"
+        "created_at": "2026-10-09 05:24:11",
+        "dept_logo": "assets/courses/hs.jpg",
+        "logo": "assets/courses/hs.jpg",
+        "updated_at": "2026-10-11 12:22:19"
     },
     {
         "id": 7,

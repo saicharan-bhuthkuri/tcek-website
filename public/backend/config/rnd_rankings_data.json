@@ -1,0 +1,260 @@
+{
+    "settings": {
+        "latest_academic_year": "2025-26",
+        "latest_quarter": "Q4",
+        "auto_publish": true,
+        "last_updated": "2026-10-11 11:03:01"
+    },
+    "rankings": [
+        {
+            "id": 1,
+            "academic_year": "2025-26",
+            "quarter": "Q4",
+            "quarter_label": "JAN 2026 – MAR 2026",
+            "department": "AIML",
+            "department_name": "Artificial Intelligence & Machine Learning",
+            "rank": 1,
+            "award_category": "🥇 1st · Gold",
+            "award_badge": "🏆 Gold Champion",
+            "description": "Outstanding achievements in high-impact research, patent leads and NPTEL excellence.",
+            "achievements": [
+                "High-Impact Research Papers",
+                "Patents & Innovation Leads",
+                "NPTEL & IIC Star Rating"
+            ],
+            "criteria_tags": [
+                "Research & Innovation",
+                "Patents & IPR",
+                "Scopus & IEEE Publications",
+                "NPTEL Honors",
+                "IIC Initiatives"
+            ],
+            "status": "published",
+            "publication_date": "2026-03-31",
+            "score": 96.5,
+            "created_at": "2026-03-31 09:00:00",
+            "updated_at": "2026-03-31 09:00:00"
+        },
+        {
+            "id": 2,
+            "academic_year": "2025-26",
+            "quarter": "Q4",
+            "quarter_label": "JAN 2026 – MAR 2026",
+            "department": "CSE & CSM",
+            "department_name": "Computer Science & Engineering / CSM",
+            "rank": 2,
+            "award_category": "🥈 2nd · Bronze",
+            "award_badge": "🎖️ Bronze Honor",
+            "description": "Superb coding hackathon initiatives and international technical journal publications.",
+            "achievements": [
+                "Coding & Hackathon Projects",
+                "Technical Publications",
+                "Active IIC Engagement"
+            ],
+            "criteria_tags": [
+                "Research & Innovation",
+                "Patents & IPR",
+                "Scopus & IEEE Publications",
+                "NPTEL Honors",
+                "IIC Initiatives"
+            ],
+            "status": "published",
+            "publication_date": "2026-03-31",
+            "score": 92,
+            "created_at": "2026-03-31 09:00:00",
+            "updated_at": "2026-03-31 09:00:00"
+        },
+        {
+            "id": 3,
+            "academic_year": "2025-26",
+            "quarter": "Q4",
+            "quarter_label": "JAN 2026 – MAR 2026",
+            "department": "EEE",
+            "department_name": "Electrical & Electronics Engineering",
+            "rank": 3,
+            "award_category": "🥉 3rd · Bronze",
+            "award_badge": "🎖️ Bronze Honor",
+            "description": "Green energy innovations and faculty research publications in renewable technologies.",
+            "achievements": [
+                "Mini Hydel & Power Labs",
+                "Green Energy Innovations",
+                "Faculty Research Papers"
+            ],
+            "criteria_tags": [
+                "Research & Innovation",
+                "Patents & IPR",
+                "Scopus & IEEE Publications",
+                "NPTEL Honors",
+                "IIC Initiatives"
+            ],
+            "status": "published",
+            "publication_date": "2026-03-31",
+            "score": 88.5,
+            "created_at": "2026-03-31 09:00:00",
+            "updated_at": "2026-03-31 09:00:00"
+        },
+        {
+            "id": 4,
+            "academic_year": "2025-26",
+            "quarter": "Q4",
+            "quarter_label": "JAN 2026 – MAR 2026",
+            "department": "ECE",
+            "department_name": "Electronics & Communication Engineering",
+            "rank": 4,
+            "award_category": "🏅 4th · Emerging",
+            "award_badge": "🌱 Emerging",
+            "description": "Strong growth in IoT embedded systems and rising student NPTEL enrollments.",
+            "achievements": [
+                "Embedded & IoT Systems",
+                "Signal Processing Projects",
+                "Rising NPTEL Enrolments"
+            ],
+            "criteria_tags": [
+                "Research & Innovation",
+                "Patents & IPR",
+                "Scopus & IEEE Publications",
+                "NPTEL Honors",
+                "IIC Initiatives"
+            ],
+            "status": "published",
+            "publication_date": "2026-03-31",
+            "score": 84,
+            "created_at": "2026-03-31 09:00:00",
+            "updated_at": "2026-03-31 09:00:00"
+        },
+        {
+            "id": 5,
+            "academic_year": "2025-26",
+            "quarter": "Q4",
+            "quarter_label": "JAN 2026 – MAR 2026",
+            "department": "MBA",
+            "department_name": "Department of Management Studies",
+            "rank": 5,
+            "award_category": "🏅 5th · Emerging",
+            "award_badge": "🌱 Emerging",
+            "description": "Dynamic business incubation meets and entrepreneurial case study research.",
+            "achievements": [
+                "Business Case Studies",
+                "Entrepreneurship Cell",
+                "Startup Incubation Meets"
+            ],
+            "criteria_tags": [
+                "Research & Innovation",
+                "Patents & IPR",
+                "Scopus & IEEE Publications",
+                "NPTEL Honors",
+                "IIC Initiatives"
+            ],
+            "status": "published",
+            "publication_date": "2026-03-31",
+            "score": 81.5,
+            "created_at": "2026-03-31 09:00:00",
+            "updated_at": "2026-03-31 09:00:00"
+        },
+        {
+            "id": 6,
+            "academic_year": "2025-26",
+            "quarter": "Q3",
+            "quarter_label": "OCT 2025 – DEC 2025",
+            "department": "CSE & CSM",
+            "department_name": "Computer Science & Engineering / CSM",
+            "rank": 1,
+            "award_category": "🥇 1st · Gold",
+            "award_badge": "🏆 Gold Champion",
+            "description": "National hackathon champions and 5 Scopus journal indexed publications.",
+            "achievements": [
+                "National Hackathon Winners",
+                "5 Scopus Journal Publications",
+                "Top NPTEL Domain Certification"
+            ],
+            "criteria_tags": [
+                "Research & Innovation",
+                "Patents & IPR",
+                "Scopus & IEEE Publications"
+            ],
+            "status": "published",
+            "publication_date": "2025-12-31",
+            "score": 95,
+            "created_at": "2025-12-31 09:00:00",
+            "updated_at": "2025-12-31 09:00:00"
+        },
+        {
+            "id": 7,
+            "academic_year": "2025-26",
+            "quarter": "Q3",
+            "quarter_label": "OCT 2025 – DEC 2025",
+            "department": "AIML",
+            "department_name": "Artificial Intelligence & Machine Learning",
+            "rank": 2,
+            "award_category": "🥈 2nd · Silver",
+            "award_badge": "🥈 Silver Star",
+            "description": "Smart India Hackathon finalists and two published generative AI patents.",
+            "achievements": [
+                "AI/ML Innovation Hub Leads",
+                "2 Published Patents",
+                "Smart India Hackathon Finalists"
+            ],
+            "criteria_tags": [
+                "Research & Innovation",
+                "Patents & IPR"
+            ],
+            "status": "published",
+            "publication_date": "2025-12-31",
+            "score": 91.5,
+            "created_at": "2025-12-31 09:00:00",
+            "updated_at": "2025-12-31 09:00:00"
+        },
+        {
+            "id": 8,
+            "academic_year": "2025-26",
+            "quarter": "Q3",
+            "quarter_label": "OCT 2025 – DEC 2025",
+            "department": "ECE",
+            "department_name": "Electronics & Communication Engineering",
+            "rank": 3,
+            "award_category": "🥉 3rd · Bronze",
+            "award_badge": "🎖️ Bronze Honor",
+            "description": "IoT prototype demonstrations and IEEE VLSI workshop publications.",
+            "achievements": [
+                "IoT Prototype Demos",
+                "Faculty Research Grants",
+                "VLSI Workshop Publications"
+            ],
+            "criteria_tags": [
+                "Research & Innovation",
+                "Scopus & IEEE Publications"
+            ],
+            "status": "published",
+            "publication_date": "2025-12-31",
+            "score": 87,
+            "created_at": "2025-12-31 09:00:00",
+            "updated_at": "2025-12-31 09:00:00"
+        },
+        {
+            "id": 9,
+            "academic_year": "2025-26",
+            "quarter": "Q3",
+            "quarter_label": "OCT 2025 – DEC 2025",
+            "department": "EEE",
+            "department_name": "Electrical & Electronics Engineering",
+            "rank": 4,
+            "award_category": "🏅 4th · Emerging",
+            "award_badge": "🌱 Emerging",
+            "description": "Solar microgrid design publications and IEEE student branch drives.",
+            "achievements": [
+                "Smart Grid Energy Papers",
+                "IEEE Student Chapter Drives",
+                "Solar Lab Installations"
+            ],
+            "criteria_tags": [
+                "Research & Innovation",
+                "NPTEL Honors"
+            ],
+            "status": "published",
+            "publication_date": "2025-12-31",
+            "score": 83.5,
+            "created_at": "2025-12-31 09:00:00",
+            "updated_at": "2025-12-31 09:00:00"
+        }
+    ]
+}

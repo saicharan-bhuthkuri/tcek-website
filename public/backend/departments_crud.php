@@ -17,6 +17,8 @@ if (!defined('TCEK_FACULTY_ROLES')) {
     ]);
 }
 
+require_once __DIR__ . '/sync.php';
+
 /**
  * Return array of valid faculty role designations
  */
@@ -61,7 +63,12 @@ function save_departments_to_store($departments)
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
     }
-    return @file_put_contents($file, json_encode(array_values($departments), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    $saved = @file_put_contents($file, json_encode(array_values($departments), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    if ($saved && function_exists('record_content_update')) {
+        record_content_update('departments');
+        record_content_update('courses');
+    }
+    return $saved;
 }
 
 function load_staff_from_store()
@@ -86,7 +93,12 @@ function save_staff_to_store($staff)
     if (!is_dir($dir)) {
         @mkdir($dir, 0755, true);
     }
-    return @file_put_contents($file, json_encode(array_values($staff), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    $saved = @file_put_contents($file, json_encode(array_values($staff), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
+    if ($saved && function_exists('record_content_update')) {
+        record_content_update('faculty');
+        record_content_update('departments');
+    }
+    return $saved;
 }
 
 // ==============================================================
@@ -295,11 +307,11 @@ function count_department_faculty($dept_code)
 /**
  * Create a new department with uniqueness checks and activity logging
  */
-function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.Tech', $intake = '60 Seats', $duration = '4 Years', $established_year = 2008, $icon_class = 'fas fa-graduation-cap', $theme_class = 'theme-cse', $description = '', $vision = '', $mission = '', $page_url = '', $display_order = 0)
+function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.Tech', $intake = '60 Seats', $duration = '4 Years', $established_year = 2008, $icon_class = 'fas fa-graduation-cap', $theme_class = 'theme-cse', $description = '', $vision = '', $mission = '', $page_url = '', $display_order = 0, $banner_image = null)
 {
     global $pdo;
 
-    $banner_image = 'assets/courses/cse.png';
+    $default_banner = 'assets/courses/cse.png';
     $tags = [];
     $syllabus_url = 'assets/Dept/peos_psos.docx';
     $peos_url = 'assets/Dept/peos_psos.docx';
@@ -316,7 +328,7 @@ function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.T
         $established_year = $data['established_year'] ?? 2008;
         $icon_class = $data['icon_class'] ?? 'fas fa-graduation-cap';
         $theme_class = $data['theme_class'] ?? 'theme-cse';
-        $banner_image = $data['banner_image'] ?? 'assets/courses/cse.png';
+        $banner_image = $data['banner_image'] ?? $data['dept_logo'] ?? $data['logo'] ?? ($banner_image ?: $default_banner);
         $tags = $data['tags'] ?? [];
         $syllabus_url = $data['syllabus_url'] ?? 'assets/Dept/peos_psos.docx';
         $peos_url = $data['peos_url'] ?? 'assets/Dept/peos_psos.docx';
@@ -328,6 +340,8 @@ function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.T
         $mission = $data['mission'] ?? '';
         $page_url = $data['page_url'] ?? '';
         $display_order = $data['display_order'] ?? 0;
+    } else {
+        $banner_image = $banner_image ?: $default_banner;
     }
 
     $dept_code = strtoupper(trim((string) $dept_code));
@@ -378,6 +392,8 @@ function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.T
         'icon_class' => $icon_class ?: 'fas fa-graduation-cap',
         'theme_class' => $theme_class ?: 'theme-cse',
         'banner_image' => $banner_image ?: 'assets/courses/cse.png',
+        'dept_logo' => $banner_image ?: 'assets/courses/cse.png',
+        'logo' => $banner_image ?: 'assets/courses/cse.png',
         'tags' => is_array($tags) ? $tags : (empty($tags) ? [] : array_map('trim', explode(',', $tags))),
         'syllabus_url' => $syllabus_url ?: 'assets/Dept/peos_psos.docx',
         'peos_url' => $peos_url ?: 'assets/Dept/peos_psos.docx',
@@ -395,9 +411,9 @@ function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.T
     if ($pdo instanceof PDO) {
         try {
             $stmt = $pdo->prepare("INSERT INTO departments 
-                (dept_code, name, slug, degree_level, intake, duration, established_year, icon_class, theme_class, description, vision, mission, page_url, display_order, is_active, created_at)
+                (dept_code, name, slug, degree_level, intake, duration, established_year, icon_class, theme_class, banner_image, description, vision, mission, page_url, display_order, is_active, created_at)
                 VALUES 
-                (:dept_code, :name, :slug, :degree_level, :intake, :duration, :established_year, :icon_class, :theme_class, :description, :vision, :mission, :page_url, :display_order, 1, NOW())");
+                (:dept_code, :name, :slug, :degree_level, :intake, :duration, :established_year, :icon_class, :theme_class, :banner_image, :description, :vision, :mission, :page_url, :display_order, 1, NOW())");
             $stmt->execute([
                 ':dept_code' => $dept_code,
                 ':name' => $name,
@@ -408,6 +424,7 @@ function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.T
                 ':established_year' => $record['established_year'],
                 ':icon_class' => $record['icon_class'],
                 ':theme_class' => $record['theme_class'],
+                ':banner_image' => $record['banner_image'],
                 ':description' => $description,
                 ':vision' => $vision,
                 ':mission' => $mission,
@@ -431,12 +448,11 @@ function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.T
 /**
  * Update department details with uniqueness check
  */
-function update_department($id, $dept_code, $name = '', $slug = '', $degree_level = 'B.Tech', $intake = '60 Seats', $duration = '4 Years', $established_year = 2008, $icon_class = 'fas fa-graduation-cap', $theme_class = 'theme-cse', $description = '', $vision = '', $mission = '', $page_url = '', $display_order = 0, $is_active = 1)
+function update_department($id, $dept_code, $name = '', $slug = '', $degree_level = 'B.Tech', $intake = '60 Seats', $duration = '4 Years', $established_year = 2008, $icon_class = 'fas fa-graduation-cap', $theme_class = 'theme-cse', $description = '', $vision = '', $mission = '', $page_url = '', $display_order = 0, $is_active = 1, $banner_image = null)
 {
     global $pdo;
     $id = (int) $id;
 
-    $banner_image = null;
     $tags = null;
     $syllabus_url = null;
     $peos_url = null;
@@ -453,7 +469,7 @@ function update_department($id, $dept_code, $name = '', $slug = '', $degree_leve
         $established_year = $data['established_year'] ?? 2008;
         $icon_class = $data['icon_class'] ?? 'fas fa-graduation-cap';
         $theme_class = $data['theme_class'] ?? 'theme-cse';
-        $banner_image = $data['banner_image'] ?? null;
+        $banner_image = $data['banner_image'] ?? $data['dept_logo'] ?? $data['logo'] ?? ($banner_image ?: null);
         $tags = isset($data['tags']) ? (is_array($data['tags']) ? $data['tags'] : array_map('trim', explode(',', $data['tags']))) : null;
         $syllabus_url = $data['syllabus_url'] ?? null;
         $peos_url = $data['peos_url'] ?? null;
@@ -507,7 +523,7 @@ function update_department($id, $dept_code, $name = '', $slug = '', $degree_leve
 
     if ($pdo instanceof PDO) {
         try {
-            $stmt = $pdo->prepare("UPDATE departments SET
+            $update_sql = "UPDATE departments SET
                 dept_code = :dept_code,
                 name = :name,
                 slug = :slug,
@@ -522,10 +538,8 @@ function update_department($id, $dept_code, $name = '', $slug = '', $degree_leve
                 mission = :mission,
                 page_url = :page_url,
                 display_order = :display_order,
-                is_active = :is_active,
-                updated_at = NOW()
-                WHERE id = :id");
-            $stmt->execute([
+                is_active = :is_active";
+            $update_params = [
                 ':id' => $id,
                 ':dept_code' => $dept_code,
                 ':name' => $name,
@@ -542,7 +556,14 @@ function update_department($id, $dept_code, $name = '', $slug = '', $degree_leve
                 ':page_url' => $page_url,
                 ':display_order' => (int) $display_order,
                 ':is_active' => (int) $is_active
-            ]);
+            ];
+            if ($banner_image !== null) {
+                $update_sql .= ", banner_image = :banner_image";
+                $update_params[':banner_image'] = $banner_image;
+            }
+            $update_sql .= ", updated_at = NOW() WHERE id = :id";
+            $stmt = $pdo->prepare($update_sql);
+            $stmt->execute($update_params);
 
             // Sync faculty dept_code if department code changed
             if ($old_code && $old_code !== $dept_code) {
@@ -571,6 +592,8 @@ function update_department($id, $dept_code, $name = '', $slug = '', $degree_leve
     $all[$found_key]['is_active'] = (int) $is_active;
     if ($banner_image !== null) {
         $all[$found_key]['banner_image'] = $banner_image;
+        $all[$found_key]['dept_logo'] = $banner_image;
+        $all[$found_key]['logo'] = $banner_image;
     }
     if ($tags !== null) {
         $all[$found_key]['tags'] = $tags;

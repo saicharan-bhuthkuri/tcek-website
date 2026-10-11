@@ -18,12 +18,12 @@ $db_connected = isDbConnected();
 $is_admin = is_admin_role();
 
 // Handle Flash Messages
-$flash_msg  = $_SESSION['flash_msg'] ?? null;
+$flash_msg = $_SESSION['flash_msg'] ?? null;
 $flash_type = $_SESSION['flash_type'] ?? 'info';
 unset($_SESSION['flash_msg'], $_SESSION['flash_type']);
 
 // Allowed Tabs
-$allowed_tabs = ['overview', 'users', 'workshops', 'events', 'event_files', 'news', 'circulars', 'notifications', 'announcements', 'scrollbar', 'activity_logs', 'departments', 'faculty'];
+$allowed_tabs = ['overview', 'users', 'workshops', 'events', 'event_files', 'news', 'circulars', 'notifications', 'announcements', 'scrollbar', 'activity_logs', 'departments', 'faculty', 'hero', 'hero_slider', 'rnd', 'rnd_rankings'];
 
 // Active Tab
 $current_tab = $_GET['tab'] ?? 'overview';
@@ -36,114 +36,143 @@ if ($current_tab === 'circulars') {
 if ($current_tab === 'scrollbar') {
     $current_tab = 'announcements';
 }
+if ($current_tab === 'hero_slider') {
+    $current_tab = 'hero';
+}
+if ($current_tab === 'rnd') {
+    $current_tab = 'rnd_rankings';
+}
 
 // Protect Admin-Only Tabs
-if (in_array($current_tab, ['activity_logs', 'users']) && !$is_admin) {
+if (in_array($current_tab, ['activity_logs', 'users', 'hero']) && !$is_admin) {
     $current_tab = 'overview';
     $flash_msg = 'Access restricted to administrator role.';
     $flash_type = 'danger';
 }
 
 // Pagination & Filters Configuration (10 records per page by default)
-$current_page = max(1, (int)($_GET['page'] ?? 1));
-$per_page     = 10;
+$current_page = max(1, (int) ($_GET['page'] ?? 1));
+$per_page = 10;
 
 // Module-specific filter & search parameters
-$workshop_search      = trim($_GET['workshop_search'] ?? ($_GET['search'] ?? ''));
-$workshop_cat         = trim($_GET['category'] ?? 'all');
-$events_search        = trim($_GET['events_search'] ?? ($_GET['search'] ?? ''));
-$event_file_search    = trim($_GET['file_search'] ?? ($_GET['search'] ?? ''));
-$event_filter_id      = !empty($_GET['event_id']) ? (int)$_GET['event_id'] : null;
-$news_search          = trim($_GET['news_search'] ?? ($_GET['search'] ?? ''));
+$workshop_search = trim($_GET['workshop_search'] ?? ($_GET['search'] ?? ''));
+$workshop_cat = trim($_GET['category'] ?? 'all');
+$events_search = trim($_GET['events_search'] ?? ($_GET['search'] ?? ''));
+$event_file_search = trim($_GET['file_search'] ?? ($_GET['search'] ?? ''));
+$event_filter_id = !empty($_GET['event_id']) ? (int) $_GET['event_id'] : null;
+$news_search = trim($_GET['news_search'] ?? ($_GET['search'] ?? ''));
 $notifications_search = trim($_GET['cir_search'] ?? ($_GET['search'] ?? ''));
-$log_module_filter    = $_GET['log_module'] ?? 'all';
-$log_action_filter    = $_GET['log_action'] ?? 'all';
-$log_search           = trim($_GET['log_search'] ?? ($_GET['search'] ?? ''));
+$log_module_filter = $_GET['log_module'] ?? 'all';
+$log_action_filter = $_GET['log_action'] ?? 'all';
+$log_search = trim($_GET['log_search'] ?? ($_GET['search'] ?? ''));
 
 // Department & Faculty specific parameters
-$dept_search          = trim($_GET['dept_search'] ?? ($_GET['search'] ?? ''));
-$faculty_dept_filter  = trim($_GET['dept'] ?? ($_GET['department'] ?? 'all'));
-$faculty_search       = trim($_GET['faculty_search'] ?? ($_GET['search'] ?? ''));
-$faculty_role_filter  = trim($_GET['role'] ?? ($_GET['role_category'] ?? 'all'));
-$faculty_hod_filter   = trim($_GET['is_hod'] ?? 'all');
-$faculty_rnd_filter   = trim($_GET['is_rnd'] ?? 'all');
-$faculty_sort_by      = trim($_GET['sort_by'] ?? 'order');
-$faculty_sort_dir     = trim($_GET['sort_dir'] ?? 'asc');
+$dept_search = trim($_GET['dept_search'] ?? ($_GET['search'] ?? ''));
+$faculty_dept_filter = trim($_GET['dept'] ?? ($_GET['department'] ?? 'all'));
+$faculty_search = trim($_GET['faculty_search'] ?? ($_GET['search'] ?? ''));
+$faculty_role_filter = trim($_GET['role'] ?? ($_GET['role_category'] ?? 'all'));
+$faculty_hod_filter = trim($_GET['is_hod'] ?? 'all');
+$faculty_rnd_filter = trim($_GET['is_rnd'] ?? 'all');
+$faculty_sort_by = trim($_GET['sort_by'] ?? 'order');
+$faculty_sort_dir = trim($_GET['sort_dir'] ?? 'asc');
 
 // Fetch Paginated Datasets for Modules
-$workshops_pagination     = get_workshops_paginated($current_page, $per_page, $workshop_search, $workshop_cat);
-$events_pagination        = get_events_paginated($current_page, $per_page, $events_search);
-$event_files_pagination   = get_event_media_paginated($current_page, $per_page, $event_file_search, $event_filter_id);
-$news_pagination          = get_news_paginated($current_page, $per_page, $news_search);
+$workshops_pagination = get_workshops_paginated($current_page, $per_page, $workshop_search, $workshop_cat);
+$events_pagination = get_events_paginated($current_page, $per_page, $events_search);
+$event_files_pagination = get_event_media_paginated($current_page, $per_page, $event_file_search, $event_filter_id);
+$news_pagination = get_news_paginated($current_page, $per_page, $news_search);
 $notifications_pagination = get_notifications_paginated($current_page, $per_page, $notifications_search);
 $activity_logs_pagination = $is_admin ? get_activity_logs_paginated($current_page, $per_page, $log_module_filter, $log_action_filter, $log_search) : build_pagination_meta(0, 1, $per_page);
 
 // Departments & Faculty Datasets
 $departments_pagination = get_departments_paginated($current_page, $per_page, $dept_search);
-$departments_list       = $departments_pagination['items'];
-$total_departments      = $departments_pagination['total'];
+$departments_list = $departments_pagination['items'];
+$total_departments = $departments_pagination['total'];
 
 $faculty_filters = [
-    'department'    => $faculty_dept_filter,
-    'search'        => $faculty_search,
+    'department' => $faculty_dept_filter,
+    'search' => $faculty_search,
     'role_category' => $faculty_role_filter,
-    'is_hod'        => $faculty_hod_filter,
-    'is_rnd'        => $faculty_rnd_filter,
-    'sort_by'       => $faculty_sort_by,
-    'sort_dir'      => $faculty_sort_dir
+    'is_hod' => $faculty_hod_filter,
+    'is_rnd' => $faculty_rnd_filter,
+    'sort_by' => $faculty_sort_by,
+    'sort_dir' => $faculty_sort_dir
 ];
 $faculty_pagination = get_faculty_paginated($current_page, $per_page, $faculty_filters);
-$faculty_list       = $faculty_pagination['items'];
-$total_faculty      = $faculty_pagination['total'];
-$all_depts_list     = get_departments(false);
+$faculty_list = $faculty_pagination['items'];
+$total_faculty = $faculty_pagination['total'];
+$all_depts_list = get_departments(false);
 
 // Active page slice items
-$workshops_list  = $workshops_pagination['items'];
-$events          = $events_pagination['items'];
+$workshops_list = $workshops_pagination['items'];
+$events = $events_pagination['items'];
 $all_event_media = $event_files_pagination['items'];
-$news_list       = $news_pagination['items'];
-$notifications   = $notifications_pagination['items'];
-$activity_logs   = $activity_logs_pagination['items'];
+$news_list = $news_pagination['items'];
+$notifications = $notifications_pagination['items'];
+$activity_logs = $activity_logs_pagination['items'];
 
 // Full event list for modals (e.g. event media dropdown)
 $all_events_options = get_events(200);
 
 // Auxiliary lists
 require_once __DIR__ . '/../backend/announcements_crud.php';
-$announcements_data  = get_announcement_data();
-$ann_text            = $announcements_data['announcement_text'] ?? '';
-$ann_link            = $announcements_data['link_url'] ?? '';
-$ann_speed           = max(10, min(300, (int)($announcements_data['scrolling_speed'] ?? 60)));
-$ann_last_updated    = $announcements_data['last_updated'] ?? date('d F Y');
-$is_ann_enabled      = !empty($announcements_data['is_enabled']);
-$show_ann_updated    = !empty($announcements_data['show_last_updated']);
-$ann_settings        = $announcements_data['settings'] ?? [];
-$ann_items           = $announcements_data['items'] ?? [];
+$announcements_data = get_announcement_data();
+$ann_text = $announcements_data['announcement_text'] ?? '';
+$ann_link = $announcements_data['link_url'] ?? '';
+$ann_speed = max(10, min(300, (int) ($announcements_data['scrolling_speed'] ?? 60)));
+$ann_last_updated = $announcements_data['last_updated'] ?? date('d F Y');
+$is_ann_enabled = !empty($announcements_data['is_enabled']);
+$show_ann_updated = !empty($announcements_data['show_last_updated']);
+$ann_settings = $announcements_data['settings'] ?? [];
+$ann_items = $announcements_data['items'] ?? [];
 $total_announcements = $is_ann_enabled ? 1 : 0;
-$scrollbar_list      = get_scrollbar_items(30);
-$users_list          = $is_admin ? get_users(50) : [];
-$all_uploads         = get_all_uploads(null, 100);
+$scrollbar_list = get_scrollbar_items(30);
+
+require_once __DIR__ . '/../backend/hero_crud.php';
+$hero_data = load_hero_data();
+$hero_content = $hero_data['content'] ?? [];
+$hero_slides = $hero_data['slides'] ?? [];
+$total_hero_slides = count($hero_slides);
+
+$users_list = $is_admin ? get_users(50) : [];
+$all_uploads = get_all_uploads(null, 100);
+
+require_once __DIR__ . '/../backend/rnd_crud.php';
+$rnd_store = load_rnd_rankings_store();
+$all_rnd_rankings = $rnd_store['rankings'] ?? [];
+$rnd_periods_all = get_distinct_rnd_periods(false);
+$total_rnd_rankings = count($all_rnd_rankings);
+$rnd_filter_year = trim($_GET['filter_year'] ?? '');
+$rnd_filter_quarter = trim($_GET['filter_quarter'] ?? '');
+$rnd_filter_status = trim($_GET['filter_status'] ?? 'all');
+$rnd_search = trim($_GET['rnd_search'] ?? ($_GET['search'] ?? ''));
 
 // Accurate totals for metric cards & header counters
-$total_workshops     = $workshops_pagination['total'];
-$total_events        = $events_pagination['total'];
-$total_event_media   = $event_files_pagination['total'];
-$total_news          = $news_pagination['total'];
+$total_workshops = $workshops_pagination['total'];
+$total_events = $events_pagination['total'];
+$total_event_media = $event_files_pagination['total'];
+$total_news = $news_pagination['total'];
 $total_notifications = $notifications_pagination['total'];
 $total_activity_logs = $activity_logs_pagination['total'];
 
 if (!function_exists('format_file_size')) {
-    function format_file_size($bytes) {
-        if ($bytes >= 1073741824) return number_format($bytes / 1073741824, 2) . ' GB';
-        if ($bytes >= 1048576) return number_format($bytes / 1048576, 2) . ' MB';
-        if ($bytes >= 1024) return number_format($bytes / 1024, 2) . ' KB';
+    function format_file_size($bytes)
+    {
+        if ($bytes >= 1073741824)
+            return number_format($bytes / 1073741824, 2) . ' GB';
+        if ($bytes >= 1048576)
+            return number_format($bytes / 1048576, 2) . ' MB';
+        if ($bytes >= 1024)
+            return number_format($bytes / 1024, 2) . ' KB';
         return $bytes . ' B';
     }
 }
 
 if (!function_exists('format_log_time')) {
-    function format_log_time($timestamp) {
-        if (!$timestamp) return date('d-m-Y h:i A');
+    function format_log_time($timestamp)
+    {
+        if (!$timestamp)
+            return date('d-m-Y h:i A');
         return date('d-m-Y h:i A', strtotime($timestamp));
     }
 }
@@ -217,70 +246,98 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                 </div>
 
                 <div class="sidebar-menu">
-                    <!-- 1. Overview -->
+                    <!-- SECTION 1: MAIN -->
+                    <div class="sidebar-section-header">Main</div>
+
+                    <!-- Overview -->
                     <a href="?tab=overview" class="menu-item <?php echo $current_tab === 'overview' ? 'active' : ''; ?>">
                         <i class="fas fa-th-large"></i>
                         <span>Overview</span>
                     </a>
 
-                    <!-- 2. Users -->
+                    <!-- SECTION 2: HOMEPAGE & CONTENT -->
+                    <div class="sidebar-section-header">Homepage &amp; Content</div>
+
+                    <!-- Hero Slider -->
                     <?php if ($is_admin): ?>
-                        <a href="?tab=users" class="menu-item <?php echo $current_tab === 'users' ? 'active' : ''; ?>">
-                            <i class="fas fa-users-cog"></i>
-                            <span>Users</span>
+                        <a href="?tab=hero" class="menu-item <?php echo in_array($current_tab, ['hero', 'hero_slider']) ? 'active' : ''; ?>">
+                            <i class="fas fa-images"></i>
+                            <span>Hero Slider</span>
+                            <span class="menu-badge" style="background:rgba(0,184,148,0.12); color:var(--primary); font-weight:700;"><?php echo $total_hero_slides; ?></span>
                         </a>
                     <?php endif; ?>
 
-
-                    <!-- 4. Events -->
-                    <a href="?tab=events" class="menu-item <?php echo $current_tab === 'events' ? 'active' : ''; ?>">
-                        <i class="far fa-calendar-check"></i>
-                        <span>Events</span>
-                    </a>
-
-                    <!-- 5. Event Files -->
-                    <a href="?tab=event_files" class="menu-item <?php echo $current_tab === 'event_files' ? 'active' : ''; ?>">
-                        <i class="fas fa-photo-video"></i>
-                        <span>Event Files</span>
-                    </a>
-
-                    <!-- 6. News -->
-                    <a href="?tab=news" class="menu-item <?php echo $current_tab === 'news' ? 'active' : ''; ?>">
-                        <i class="far fa-newspaper"></i>
-                        <span>News</span>
-                    </a>
-
-                    <!-- 7. Circulars & Notifications -->
-                    <a href="?tab=notifications" class="menu-item <?php echo $current_tab === 'notifications' ? 'active' : ''; ?>">
-                        <i class="far fa-bell"></i>
-                        <span>Circulars &amp; Notifications</span>
-                    </a>
-
-                    <!-- 8. Top Announcement Bar -->
+                    <!-- Top Announcement Bar -->
                     <a href="?tab=announcements" class="menu-item <?php echo $current_tab === 'announcements' ? 'active' : ''; ?>">
                         <i class="fas fa-bullhorn"></i>
                         <span>Announcement Bar</span>
-                        <?php if (!empty($ann_settings['is_enabled'])): ?>
-                            <span style="margin-left:auto; width:8px; height:8px; border-radius:50%; background:#00b894; display:inline-block;" title="Live on website"></span>
+                        <?php if ($is_ann_enabled): ?>
+                            <span class="pulse-indicator" style="margin-left:auto; width:8px; height:8px;" title="Live on website"></span>
                         <?php else: ?>
                             <span style="margin-left:auto; width:8px; height:8px; border-radius:50%; background:#94a3b8; display:inline-block;" title="Hidden / Disabled"></span>
                         <?php endif; ?>
                     </a>
 
-                    <!-- 8. Departments Management -->
+                    <!-- News -->
+                    <a href="?tab=news" class="menu-item <?php echo $current_tab === 'news' ? 'active' : ''; ?>">
+                        <i class="far fa-newspaper"></i>
+                        <span>News</span>
+                    </a>
+
+                    <!-- Circulars & Notifications -->
+                    <a href="?tab=notifications" class="menu-item <?php echo $current_tab === 'notifications' ? 'active' : ''; ?>">
+                        <i class="far fa-bell"></i>
+                        <span>Circulars &amp; Notifications</span>
+                    </a>
+
+                    <!-- SECTION 3: CAMPUS & EVENTS -->
+                    <div class="sidebar-section-header">Campus &amp; Events</div>
+
+                    <!-- Events -->
+                    <a href="?tab=events" class="menu-item <?php echo $current_tab === 'events' ? 'active' : ''; ?>">
+                        <i class="far fa-calendar-check"></i>
+                        <span>Events</span>
+                    </a>
+
+                    <!-- Event Files -->
+                    <a href="?tab=event_files" class="menu-item <?php echo $current_tab === 'event_files' ? 'active' : ''; ?>">
+                        <i class="fas fa-photo-video"></i>
+                        <span>Event Files</span>
+                    </a>
+
+                    <!-- SECTION 4: ACADEMICS -->
+                    <div class="sidebar-section-header">Academics</div>
+
+                    <!-- Departments Management -->
                     <a href="?tab=departments" class="menu-item <?php echo $current_tab === 'departments' ? 'active' : ''; ?>">
                         <i class="fas fa-sitemap"></i>
                         <span>Departments</span>
                     </a>
 
-                    <!-- 9. Faculty Management -->
+                    <!-- Faculty Management -->
                     <a href="?tab=faculty" class="menu-item <?php echo $current_tab === 'faculty' ? 'active' : ''; ?>">
                         <i class="fas fa-chalkboard-teacher"></i>
                         <span>Faculty Directory</span>
                     </a>
 
-                    <!-- 10. Activity Logs -->
+                    <!-- R&D Department Rankings -->
+                    <a href="?tab=rnd_rankings" class="menu-item <?php echo in_array($current_tab, ['rnd_rankings', 'rnd']) ? 'active' : ''; ?>">
+                        <i class="fas fa-medal"></i>
+                        <span>R&amp;D Rankings</span>
+                        <span class="menu-badge" style="background:rgba(217,119,6,0.12); color:#d97706; font-weight:700;"><?php echo $total_rnd_rankings; ?></span>
+                    </a>
+
+                    <!-- SECTION 5: ADMINISTRATION -->
                     <?php if ($is_admin): ?>
+                        <div class="sidebar-section-header">Administration</div>
+
+                        <!-- Users -->
+                        <a href="?tab=users" class="menu-item <?php echo $current_tab === 'users' ? 'active' : ''; ?>">
+                            <i class="fas fa-users-cog"></i>
+                            <span>Users</span>
+                        </a>
+
+                        <!-- Activity Logs -->
                         <a href="?tab=activity_logs" class="menu-item <?php echo $current_tab === 'activity_logs' ? 'active' : ''; ?>">
                             <i class="fas fa-history"></i>
                             <span>Activity Logs</span>
@@ -308,382 +365,285 @@ $initials = strtoupper(substr($admin_name, 0, 2));
         <main class="dashboard-main">
             <!-- Flash Message Alert -->
             <?php if ($flash_msg): ?>
-                <div class="alert alert-<?php echo $flash_type; ?> dismissible">
-                    <i class="fas <?php echo $flash_type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'; ?>"></i>
-                    <span><?php echo htmlspecialchars($flash_msg); ?></span>
-                    <button type="button" class="close-alert" onclick="this.parentElement.remove()">&times;</button>
-                </div>
+                    <div class="alert alert-<?php echo $flash_type; ?> dismissible">
+                        <i class="fas <?php echo $flash_type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'; ?>"></i>
+                        <span><?php echo htmlspecialchars($flash_msg); ?></span>
+                        <button type="button" class="close-alert" onclick="this.parentElement.remove()">&times;</button>
+                    </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
             <!-- TAB 1: OVERVIEW -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'overview'): ?>
-                <div class="tab-pane active">
-                    <!-- Overview Summary 6 Cards Row Strictly Matching Reference -->
-                    <div class="metrics-row-image2">
-                        <!-- Card 1: TOTAL FILES -->
-                        <div class="metric-card-image2">
-                            <div class="metric-card-top">
-                                <span class="metric-label-image2">TOTAL FILES</span>
-                                <div class="metric-icon-circle icon-blue-pastel"><i class="fas fa-layer-group"></i></div>
+                    <div class="tab-pane active">
+                        <!-- Overview Summary 6 Cards Row Strictly Matching Reference -->
+                        <div class="metrics-row-image2">
+                            <!-- Card 1: TOTAL FILES -->
+                            <div class="metric-card-image2">
+                                <div class="metric-card-top">
+                                    <span class="metric-label-image2">TOTAL FILES</span>
+                                    <div class="metric-icon-circle icon-blue-pastel"><i class="fas fa-layer-group"></i></div>
+                                </div>
+                                <div class="metric-value-image2"><?php echo count($all_uploads); ?></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo count($all_uploads); ?></div>
-                        </div>
 
-                        <!-- Card 2: NO. OF USERS -->
-                        <div class="metric-card-image2">
-                            <div class="metric-card-top">
-                                <span class="metric-label-image2">NO. OF USERS</span>
-                                <div class="metric-icon-circle icon-amber-pastel"><i class="fas fa-users"></i></div>
+                            <!-- Card 2: NO. OF USERS -->
+                            <div class="metric-card-image2">
+                                <div class="metric-card-top">
+                                    <span class="metric-label-image2">NO. OF USERS</span>
+                                    <div class="metric-icon-circle icon-amber-pastel"><i class="fas fa-users"></i></div>
+                                </div>
+                                <div class="metric-value-image2"><?php echo count($users_list); ?></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo count($users_list); ?></div>
-                        </div>
 
-                        <!-- Card 3: WORKSHOPS & TASKS -->
-                        <div class="metric-card-image2">
-                            <div class="metric-card-top">
-                                <span class="metric-label-image2">WORKSHOPS &amp; TASKS</span>
-                                <div class="metric-icon-circle icon-emerald-pastel"><i class="fas fa-laptop-code"></i></div>
+                            <!-- Card 3: WORKSHOPS & TASKS -->
+                            <div class="metric-card-image2">
+                                <div class="metric-card-top">
+                                    <span class="metric-label-image2">WORKSHOPS &amp; TASKS</span>
+                                    <div class="metric-icon-circle icon-emerald-pastel"><i class="fas fa-laptop-code"></i></div>
+                                </div>
+                                <div class="metric-value-image2"><?php echo $total_workshops; ?></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo $total_workshops; ?></div>
-                        </div>
 
-                        <!-- Card 4: NO. OF EVENTS -->
-                        <div class="metric-card-image2">
-                            <div class="metric-card-top">
-                                <span class="metric-label-image2">NO. OF EVENTS</span>
-                                <div class="metric-icon-circle icon-red-pastel"><i class="far fa-calendar-alt"></i></div>
+                            <!-- Card 4: NO. OF EVENTS -->
+                            <div class="metric-card-image2">
+                                <div class="metric-card-top">
+                                    <span class="metric-label-image2">NO. OF EVENTS</span>
+                                    <div class="metric-icon-circle icon-red-pastel"><i class="far fa-calendar-alt"></i></div>
+                                </div>
+                                <div class="metric-value-image2"><?php echo $total_events; ?></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo $total_events; ?></div>
-                        </div>
 
-                        <!-- Card 5: NEWS -->
-                        <div class="metric-card-image2">
-                            <div class="metric-card-top">
-                                <span class="metric-label-image2">NEWS</span>
-                                <div class="metric-icon-circle icon-teal-pastel"><i class="far fa-newspaper"></i></div>
+                            <!-- Card 5: NEWS -->
+                            <div class="metric-card-image2">
+                                <div class="metric-card-top">
+                                    <span class="metric-label-image2">NEWS</span>
+                                    <div class="metric-icon-circle icon-teal-pastel"><i class="far fa-newspaper"></i></div>
+                                </div>
+                                <div class="metric-value-image2"><?php echo $total_news; ?></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo $total_news; ?></div>
-                        </div>
 
-                        <!-- Card 6: CIRCULARS & NOTIFICATIONS -->
-                        <div class="metric-card-image2">
-                            <div class="metric-card-top">
-                                <span class="metric-label-image2">CIRCULARS &amp; NOTIFICATIONS</span>
-                                <div class="metric-icon-circle icon-orange-pastel"><i class="far fa-bell"></i></div>
+                            <!-- Card 6: CIRCULARS & NOTIFICATIONS -->
+                            <div class="metric-card-image2">
+                                <div class="metric-card-top">
+                                    <span class="metric-label-image2">CIRCULARS &amp; NOTIFICATIONS</span>
+                                    <div class="metric-icon-circle icon-orange-pastel"><i class="far fa-bell"></i></div>
+                                </div>
+                                <div class="metric-value-image2"><?php echo $total_notifications; ?></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo $total_notifications; ?></div>
-                        </div>
 
-                        <!-- Card 7: DEPARTMENTS -->
-                        <div class="metric-card-image2" onclick="window.location.href='?tab=departments'" style="cursor:pointer;" title="Click to view Departments">
-                            <div class="metric-card-top">
-                                <span class="metric-label-image2">DEPARTMENTS</span>
-                                <div class="metric-icon-circle" style="background:#ecfdf5; color:#00b894;"><i class="fas fa-sitemap"></i></div>
+                            <!-- Card 7: DEPARTMENTS -->
+                            <div class="metric-card-image2" onclick="window.location.href='?tab=departments'" style="cursor:pointer;" title="Click to view Departments">
+                                <div class="metric-card-top">
+                                    <span class="metric-label-image2">DEPARTMENTS</span>
+                                    <div class="metric-icon-circle" style="background:#ecfdf5; color:#00b894;"><i class="fas fa-sitemap"></i></div>
+                                </div>
+                                <div class="metric-value-image2"><?php echo $total_departments; ?></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo $total_departments; ?></div>
-                        </div>
 
-                        <!-- Card 8: FACULTY MEMBERS -->
-                        <div class="metric-card-image2" onclick="window.location.href='?tab=faculty'" style="cursor:pointer;" title="Click to view Faculty Directory">
-                            <div class="metric-card-top">
-                                <span class="metric-label-image2">FACULTY MEMBERS</span>
-                                <div class="metric-icon-circle" style="background:#eff6ff; color:#2563eb;"><i class="fas fa-chalkboard-teacher"></i></div>
+                            <!-- Card 8: FACULTY MEMBERS -->
+                            <div class="metric-card-image2" onclick="window.location.href='?tab=faculty'" style="cursor:pointer;" title="Click to view Faculty Directory">
+                                <div class="metric-card-top">
+                                    <span class="metric-label-image2">FACULTY MEMBERS</span>
+                                    <div class="metric-icon-circle" style="background:#eff6ff; color:#2563eb;"><i class="fas fa-chalkboard-teacher"></i></div>
+                                </div>
+                                <div class="metric-value-image2"><?php echo $total_faculty; ?></div>
                             </div>
-                            <div class="metric-value-image2"><?php echo $total_faculty; ?></div>
+
+                            <!-- Card 9: R&D RANKINGS -->
+                            <div class="metric-card-image2" onclick="window.location.href='?tab=rnd_rankings'" style="cursor:pointer;" title="Click to view R&D Department Rankings">
+                                <div class="metric-card-top">
+                                    <span class="metric-label-image2">R&amp;D RANKINGS</span>
+                                    <div class="metric-icon-circle" style="background:#fffbeb; color:#d97706;"><i class="fas fa-medal"></i></div>
+                                </div>
+                                <div class="metric-value-image2"><?php echo $total_rnd_rankings; ?></div>
+                            </div>
                         </div>
                     </div>
-
-                    <div class="pane-header-image2">
-                        <div class="pane-title-group">
-                            <div class="pane-text">
-                                <h2>Control Center Overview</h2>
-                                <p>Role-Based System Access Control Active</p>
-                            </div>
-                        </div>
-                        <div class="pane-actions-right">
-                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalNotification')">
-                                <i class="fas fa-plus"></i> Create Notification
-                            </button>
-                            <button type="button" class="btn-outline-pill" onclick="openModal('modalWorkshop')">
-                                <i class="fas fa-laptop-code"></i> New Workshop
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Action & Filter Bar matching Image 2 -->
-                    <div class="action-filter-bar-image2">
-                        <div class="filter-left-group">
-                            <div class="search-box-pill">
-                                <i class="fas fa-search"></i>
-                                <input type="text" class="search-pill-input" placeholder="Search notices, events, or workshops..." onkeyup="filterGenericTable('overviewTable', this.value)">
-                            </div>
-                            <select class="filter-pill-select" onchange="window.location.href='?tab='+this.value">
-                                <option value="overview">All Modules</option>
-                                <option value="users">Users</option>
-                                <option value="workshops">Workshops &amp; Tasks</option>
-                                <option value="events">Events</option>
-                                <option value="news">News</option>
-                                <option value="notifications">Circulars</option>
-                                <option value="scrollbar">Scrollbar</option>
-                            </select>
-                        </div>
-                        <div class="filter-right-actions">
-                            <a href="?tab=activity_logs" class="btn-outline-pill"><i class="fas fa-history"></i> Task History</a>
-                            <button type="button" class="btn-outline-pill" onclick="window.print()"><i class="fas fa-download"></i> Export CSV</button>
-                        </div>
-                    </div>
-
-                    <div class="table-card-image2">
-                        <table class="table-image2" id="overviewTable">
-                            <thead>
-                                <tr>
-                                    <th>ANNOUNCEMENT INFO</th>
-                                    <th>MODULE / CATEGORY</th>
-                                    <th>ATTACHMENT &amp; FILE</th>
-                                    <th>STATEMENT / SUMMARY</th>
-                                    <th>STATUS</th>
-                                    <th>ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach (array_slice($notifications, 0, 8) as $n): ?>
-                                    <tr>
-                                        <td>
-                                            <div class="item-main-title"><?php echo htmlspecialchars($n['title']); ?></div>
-                                            <div class="item-sub-text">Date: <?php echo htmlspecialchars($n['publish_date']); ?></div>
-                                        </td>
-                                        <td>
-                                            <div style="font-weight:600; color:#334155;"><?php echo htmlspecialchars($n['category']); ?></div>
-                                            <div class="item-sub-text">Academic AY: 2026-27</div>
-                                        </td>
-                                        <td>
-                                            <?php if (!empty($n['attachment_path'])): ?>
-                                                <a href="../<?php echo htmlspecialchars($n['attachment_path']); ?>" target="_blank" class="topbar-action-btn" style="font-size:11.5px; padding:3px 10px;">
-                                                    <i class="fas fa-paperclip"></i> <?php echo strtoupper($n['attachment_type'] ?? 'DOC'); ?>
-                                                </a>
-                                            <?php else: ?>
-                                                <span class="item-sub-text">Text Announcement</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <div style="max-width:280px; font-size:12.5px; color:#475569; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-                                                <?php echo htmlspecialchars($n['description'] ?: 'Official notice published by Trinity College of Engineering & Technology.'); ?>
-                                            </div>
-                                        </td>
-                                        <td>
-                                            <?php if (!empty($n['is_marquee'])): ?>
-                                                <span class="status-pill-dot status-active">&bull; LIVE</span>
-                                            <?php else: ?>
-                                                <span class="status-pill-dot status-pending">&bull; PENDING</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td>
-                                            <div class="action-icons-wrap">
-                                                <?php if (!empty($n['attachment_path'])): ?>
-                                                    <a href="../<?php echo htmlspecialchars($n['attachment_path']); ?>" target="_blank" class="btn-icon-circle btn-icon-check" title="View Attachment"><i class="fas fa-check"></i></a>
-                                                <?php else: ?>
-                                                    <span class="btn-icon-circle btn-icon-check"><i class="fas fa-check"></i></span>
-                                                <?php endif; ?>
-                                                <button type="button" class="btn-icon-circle btn-icon-edit" onclick="openModal('modalNotification')"><i class="fas fa-pencil-alt"></i></button>
-                                                <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this notification?');" style="display:inline;">
-                                                    <input type="hidden" name="action" value="delete_notification">
-                                                    <input type="hidden" name="id" value="<?php echo $n['id']; ?>">
-                                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                    <button type="submit" class="btn-icon-circle btn-icon-trash"><i class="fas fa-trash-alt"></i></button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
             <!-- TAB 2: USERS -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'users' && $is_admin): ?>
-                <div class="tab-pane active">
-                    <div class="pane-header-image2">
-                        <div class="pane-title-group">
-                            <div class="pane-text">
-                                <h2>User &amp; Role Management</h2>
-                                <p>Role-Based System Access Control Active</p>
+                    <div class="tab-pane active">
+                        <div class="pane-header-image2">
+                            <div class="pane-title-group">
+                                <div class="pane-text">
+                                    <h2>User &amp; Role Management</h2>
+                                    <p>Role-Based System Access Control Active</p>
+                                </div>
+                            </div>
+                            <div class="pane-actions-right">
+                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalUser')">
+                                    <i class="fas fa-user-plus"></i> Create User
+                                </button>
                             </div>
                         </div>
-                        <div class="pane-actions-right">
-                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalUser')">
-                                <i class="fas fa-user-plus"></i> Create User
-                            </button>
+
+                        <div class="table-card-image2">
+                            <table class="table-image2">
+                                <thead>
+                                    <tr>
+                                        <th>USERNAME</th>
+                                        <th>FULL NAME</th>
+                                        <th>ROLE</th>
+                                        <th>EMAIL ADDRESS</th>
+                                        <th>STATUS</th>
+                                        <th>ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (empty($users_list)): ?>
+                                            <tr>
+                                                <td colspan="6" style="text-align:center; padding:36px; color:#64748b;">
+                                                    <i class="fas fa-users-slash" style="font-size:24px; margin-bottom:8px; display:block; color:#94a3b8;"></i>
+                                                    No users registered yet. Click <strong>+ Create User</strong> above to add an administrator or staff member.
+                                                </td>
+                                            </tr>
+                                    <?php else: ?>
+                                            <?php foreach ($users_list as $usr): ?>
+                                                    <tr>
+                                                        <td><code><?php echo htmlspecialchars($usr['username']); ?></code></td>
+                                                        <td><strong><?php echo htmlspecialchars($usr['full_name']); ?></strong></td>
+                                                        <td><span class="status-pill-dot status-active">&bull; <?php echo strtoupper($usr['role']); ?></span></td>
+                                                        <td><?php echo htmlspecialchars($usr['email'] ?? 'officetcek@gmail.com'); ?></td>
+                                                        <td><span class="status-pill-dot status-active">&bull; ACTIVE</span></td>
+                                                        <td>
+                                                            <div class="action-icons-wrap">
+                                                                <button type="button" class="btn-icon-circle btn-icon-check"><i class="fas fa-check"></i></button>
+                                                                <button type="button" class="btn-icon-circle btn-icon-edit" onclick="openModal('modalUser')"><i class="fas fa-pencil-alt"></i></button>
+                                                                <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this user?');" style="display:inline;">
+                                                                    <input type="hidden" name="action" value="delete_user">
+                                                                    <input type="hidden" name="id" value="<?php echo $usr['id']; ?>">
+                                                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                                    <button type="submit" class="btn-icon-circle btn-icon-trash"><i class="fas fa-trash-alt"></i></button>
+                                                                </form>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                            <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
-
-                    <div class="table-card-image2">
-                        <table class="table-image2">
-                            <thead>
-                                <tr>
-                                    <th>USERNAME</th>
-                                    <th>FULL NAME</th>
-                                    <th>ROLE</th>
-                                    <th>EMAIL ADDRESS</th>
-                                    <th>STATUS</th>
-                                    <th>ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($users_list)): ?>
-                                    <tr>
-                                        <td colspan="6" style="text-align:center; padding:36px; color:#64748b;">
-                                            <i class="fas fa-users-slash" style="font-size:24px; margin-bottom:8px; display:block; color:#94a3b8;"></i>
-                                            No users registered yet. Click <strong>+ Create User</strong> above to add an administrator or staff member.
-                                        </td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($users_list as $usr): ?>
-                                        <tr>
-                                            <td><code><?php echo htmlspecialchars($usr['username']); ?></code></td>
-                                            <td><strong><?php echo htmlspecialchars($usr['full_name']); ?></strong></td>
-                                            <td><span class="status-pill-dot status-active">&bull; <?php echo strtoupper($usr['role']); ?></span></td>
-                                            <td><?php echo htmlspecialchars($usr['email'] ?? 'officetcek@gmail.com'); ?></td>
-                                            <td><span class="status-pill-dot status-active">&bull; ACTIVE</span></td>
-                                            <td>
-                                                <div class="action-icons-wrap">
-                                                    <button type="button" class="btn-icon-circle btn-icon-check"><i class="fas fa-check"></i></button>
-                                                    <button type="button" class="btn-icon-circle btn-icon-edit" onclick="openModal('modalUser')"><i class="fas fa-pencil-alt"></i></button>
-                                                    <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this user?');" style="display:inline;">
-                                                        <input type="hidden" name="action" value="delete_user">
-                                                        <input type="hidden" name="id" value="<?php echo $usr['id']; ?>">
-                                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                        <button type="submit" class="btn-icon-circle btn-icon-trash"><i class="fas fa-trash-alt"></i></button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
             <!-- TAB 3: WORKSHOPS & TASKS -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'workshops'): ?>
-                <div class="tab-pane active">
-                    <div class="pane-header-image2">
-                        <div class="pane-title-group">
-                            <div class="pane-text">
-                                <h2>Workshops &amp; Student Technical Tasks</h2>
-                                <p>Role-Based System Access Control Active</p>
+                    <div class="tab-pane active">
+                        <div class="pane-header-image2">
+                            <div class="pane-title-group">
+                                <div class="pane-text">
+                                    <h2>Workshops &amp; Student Technical Tasks</h2>
+                                    <p>Role-Based System Access Control Active</p>
+                                </div>
+                            </div>
+                            <div class="pane-actions-right">
+                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalWorkshop')">
+                                    <i class="fas fa-laptop-code"></i> Add Workshop / Task
+                                </button>
                             </div>
                         </div>
-                        <div class="pane-actions-right">
-                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalWorkshop')">
-                                <i class="fas fa-laptop-code"></i> Add Workshop / Task
-                            </button>
-                        </div>
-                    </div>
 
-                    <!-- Filter Bar -->
-                    <div class="action-filter-bar-image2">
-                        <div class="filter-left-group">
-                            <form method="GET" action="dashboard.php" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
-                                <input type="hidden" name="tab" value="workshops">
-                                <div class="search-box-pill">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" name="workshop_search" class="search-pill-input" placeholder="Search workshop title, instructor, or lab..." value="<?php echo htmlspecialchars($workshop_search); ?>" onkeyup="filterGenericTable('workshopsTable', this.value)">
-                                </div>
-                                <select name="category" class="filter-pill-select" onchange="this.form.submit()">
-                                    <option value="all">All Domains</option>
-                                    <option value="AI / ML" <?php echo $workshop_cat === 'AI / ML' ? 'selected' : ''; ?>>AI / ML</option>
-                                    <option value="Web Dev" <?php echo $workshop_cat === 'Web Dev' ? 'selected' : ''; ?>>Web Dev</option>
-                                    <option value="Embedded" <?php echo ($workshop_cat === 'Embedded' || $workshop_cat === 'Embedded / IoT') ? 'selected' : ''; ?>>Embedded / IoT</option>
-                                </select>
-                                <?php if (!empty($workshop_search) || ($workshop_cat !== 'all' && !empty($workshop_cat))): ?>
-                                    <a href="?tab=workshops" style="font-size:12px; color:#ef4444; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
-                                        <i class="fas fa-times-circle"></i> Reset
-                                    </a>
-                                <?php endif; ?>
-                            </form>
+                        <!-- Filter Bar -->
+                        <div class="action-filter-bar-image2">
+                            <div class="filter-left-group">
+                                <form method="GET" action="dashboard.php" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; flex:1;">
+                                    <input type="hidden" name="tab" value="workshops">
+                                    <div class="search-box-pill">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" name="workshop_search" class="search-pill-input" placeholder="Search workshop title, instructor, or lab..." value="<?php echo htmlspecialchars($workshop_search); ?>" onkeyup="filterGenericTable('workshopsTable', this.value)">
+                                    </div>
+                                    <select name="category" class="filter-pill-select" onchange="this.form.submit()">
+                                        <option value="all">All Domains</option>
+                                        <option value="AI / ML" <?php echo $workshop_cat === 'AI / ML' ? 'selected' : ''; ?>>AI / ML</option>
+                                        <option value="Web Dev" <?php echo $workshop_cat === 'Web Dev' ? 'selected' : ''; ?>>Web Dev</option>
+                                        <option value="Embedded" <?php echo ($workshop_cat === 'Embedded' || $workshop_cat === 'Embedded / IoT') ? 'selected' : ''; ?>>Embedded / IoT</option>
+                                    </select>
+                                    <?php if (!empty($workshop_search) || ($workshop_cat !== 'all' && !empty($workshop_cat))): ?>
+                                            <a href="?tab=workshops" style="font-size:12px; color:#ef4444; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:4px;">
+                                                <i class="fas fa-times-circle"></i> Reset
+                                            </a>
+                                    <?php endif; ?>
+                                </form>
+                            </div>
+                            <div class="filter-right-actions">
+                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalWorkshop')">
+                                    <i class="fas fa-plus"></i> New Task
+                                </button>
+                                <button type="button" class="btn-outline-pill" onclick="window.print()"><i class="fas fa-download"></i> Export CSV</button>
+                            </div>
                         </div>
-                        <div class="filter-right-actions">
-                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalWorkshop')">
-                                <i class="fas fa-plus"></i> New Task
-                            </button>
-                            <button type="button" class="btn-outline-pill" onclick="window.print()"><i class="fas fa-download"></i> Export CSV</button>
-                        </div>
-                    </div>
 
-                    <div class="table-card-image2">
-                        <table class="table-image2" id="workshopsTable">
-                            <thead>
-                                <tr>
-                                    <th>WORKSHOP / TASK TITLE</th>
-                                    <th>INSTRUCTOR / LEAD</th>
-                                    <th>VENUE / LAB</th>
-                                    <th>SCHEDULED DATE</th>
-                                    <th>STATUS</th>
-                                    <th>ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($workshops_list)): ?>
+                        <div class="table-card-image2">
+                            <table class="table-image2" id="workshopsTable">
+                                <thead>
                                     <tr>
-                                        <td colspan="6" style="text-align:center; padding:36px; color:#94a3b8;">
-                                            <i class="fas fa-laptop-code" style="font-size:32px; margin-bottom:8px; display:block; color:#cbd5e1;"></i>
-                                            No workshops or tasks found. Click <strong>“Add Workshop / Task”</strong> above to create one.
-                                        </td>
+                                        <th>WORKSHOP / TASK TITLE</th>
+                                        <th>INSTRUCTOR / LEAD</th>
+                                        <th>VENUE / LAB</th>
+                                        <th>SCHEDULED DATE</th>
+                                        <th>STATUS</th>
+                                        <th>ACTIONS</th>
                                     </tr>
-                                <?php else: ?>
-                                    <?php foreach ($workshops_list as $w): ?>
-                                        <tr class="data-row" data-branch="<?php echo htmlspecialchars($w['category']); ?>">
-                                            <td>
-                                                <div class="item-main-title"><?php echo htmlspecialchars($w['title']); ?></div>
-                                                <div class="item-sub-text">Category: <?php echo htmlspecialchars($w['category']); ?></div>
-                                            </td>
-                                            <td>
-                                                <div style="font-weight:600; color:#1e293b;"><?php echo htmlspecialchars($w['instructor'] ?? 'Faculty Mentor'); ?></div>
-                                                <div class="item-sub-text">CSE / ECE / AIML</div>
-                                            </td>
-                                            <td>
-                                                <div style="color:#334155; font-weight:500;"><?php echo htmlspecialchars($w['venue']); ?></div>
-                                            </td>
-                                            <td>
-                                                <div style="font-weight:600; color:#0f172a;"><?php echo htmlspecialchars($w['event_date']); ?></div>
-                                            </td>
-                                            <td>
-                                                <?php if (($w['status'] ?? '') === 'ACTIVE'): ?>
-                                                    <span class="status-pill-dot status-active">&bull; ACTIVE</span>
-                                                <?php else: ?>
-                                                    <span class="status-pill-dot status-pending">&bull; UPCOMING</span>
-                                                <?php endif; ?>
-                                            </td>
-                                            <td>
-                                                <div class="action-icons-wrap">
-                                                    <button type="button" class="btn-icon-circle btn-icon-check"><i class="fas fa-check"></i></button>
-                                                    <button type="button" class="btn-icon-circle btn-icon-edit" onclick="openModal('modalWorkshop')"><i class="fas fa-pencil-alt"></i></button>
-                                                    <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this workshop?');" style="display:inline;">
-                                                        <input type="hidden" name="action" value="delete_workshop">
-                                                        <input type="hidden" name="id" value="<?php echo $w['id']; ?>">
-                                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                        <button type="submit" class="btn-icon-circle btn-icon-trash"><i class="fas fa-trash-alt"></i></button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                        <?php echo render_pagination_bar($workshops_pagination); ?>
+                                </thead>
+                                <tbody>
+                                    <?php if (empty($workshops_list)): ?>
+                                            <tr>
+                                                <td colspan="6" style="text-align:center; padding:36px; color:#94a3b8;">
+                                                    <i class="fas fa-laptop-code" style="font-size:32px; margin-bottom:8px; display:block; color:#cbd5e1;"></i>
+                                                    No workshops or tasks found. Click <strong>“Add Workshop / Task”</strong> above to create one.
+                                                </td>
+                                            </tr>
+                                    <?php else: ?>
+                                            <?php foreach ($workshops_list as $w): ?>
+                                                    <tr class="data-row" data-branch="<?php echo htmlspecialchars($w['category']); ?>">
+                                                        <td>
+                                                            <div class="item-main-title"><?php echo htmlspecialchars($w['title']); ?></div>
+                                                            <div class="item-sub-text">Category: <?php echo htmlspecialchars($w['category']); ?></div>
+                                                        </td>
+                                                        <td>
+                                                            <div style="font-weight:600; color:#1e293b;"><?php echo htmlspecialchars($w['instructor'] ?? 'Faculty Mentor'); ?></div>
+                                                            <div class="item-sub-text">CSE / ECE / AIML</div>
+                                                        </td>
+                                                        <td>
+                                                            <div style="color:#334155; font-weight:500;"><?php echo htmlspecialchars($w['venue']); ?></div>
+                                                        </td>
+                                                        <td>
+                                                            <div style="font-weight:600; color:#0f172a;"><?php echo htmlspecialchars($w['event_date']); ?></div>
+                                                        </td>
+                                                        <td>
+                                                            <?php if (($w['status'] ?? '') === 'ACTIVE'): ?>
+                                                                    <span class="status-pill-dot status-active">&bull; ACTIVE</span>
+                                                            <?php else: ?>
+                                                                    <span class="status-pill-dot status-pending">&bull; UPCOMING</span>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                        <td>
+                                                            <div class="action-icons-wrap">
+                                                                <button type="button" class="btn-icon-circle btn-icon-check"><i class="fas fa-check"></i></button>
+                                                                <button type="button" class="btn-icon-circle btn-icon-edit" onclick="openModal('modalWorkshop')"><i class="fas fa-pencil-alt"></i></button>
+                                                                <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this workshop?');" style="display:inline;">
+                                                                    <input type="hidden" name="action" value="delete_workshop">
+                                                                    <input type="hidden" name="id" value="<?php echo $w['id']; ?>">
+                                                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                                    <button type="submit" class="btn-icon-circle btn-icon-trash"><i class="fas fa-trash-alt"></i></button>
+                                                                </form>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                            <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                            <?php echo render_pagination_bar($workshops_pagination); ?>
+                        </div>
                     </div>
-                </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
@@ -693,247 +653,247 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             <!-- TAB 4: EVENTS (CREATING & MANAGING EVENTS ONLY)                 -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'events'): ?>
-                <div class="tab-pane active">
-                    <div class="pane-header-image2">
-                        <div class="pane-title-group">
-                            <div class="pane-text">
-                                <h2>Events</h2>
-                                <p>Create and manage scheduled college events, fests, and celebrations</p>
+                    <div class="tab-pane active">
+                        <div class="pane-header-image2">
+                            <div class="pane-title-group">
+                                <div class="pane-text">
+                                    <h2>Events</h2>
+                                    <p>Create and manage scheduled college events, fests, and celebrations</p>
+                                </div>
+                            </div>
+                            <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                    <input type="hidden" name="tab" value="events">
+                                    <div class="search-box-pill" style="margin:0;">
+                                        <i class="fas fa-search"></i>
+                                        <input type="text" name="events_search" value="<?php echo htmlspecialchars($events_search); ?>" class="search-pill-input" placeholder="Search events..." onchange="this.form.submit()">
+                                    </div>
+                                </form>
+                                <a href="?tab=event_files" class="btn-outline-pill" style="text-decoration:none; font-size:12.5px; font-weight:600;">
+                                    <i class="fas fa-photo-video"></i> Go to Event Files
+                                </a>
+                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalEvent')">
+                                    <i class="far fa-calendar-plus"></i> Create Event
+                                </button>
                             </div>
                         </div>
-                        <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                            <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
-                                <input type="hidden" name="tab" value="events">
-                                <div class="search-box-pill" style="margin:0;">
-                                    <i class="fas fa-search"></i>
-                                    <input type="text" name="events_search" value="<?php echo htmlspecialchars($events_search); ?>" class="search-pill-input" placeholder="Search events..." onchange="this.form.submit()">
-                                </div>
-                            </form>
-                            <a href="?tab=event_files" class="btn-outline-pill" style="text-decoration:none; font-size:12.5px; font-weight:600;">
-                                <i class="fas fa-photo-video"></i> Go to Event Files
-                            </a>
-                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalEvent')">
-                                <i class="far fa-calendar-plus"></i> Create Event
-                            </button>
+
+                        <div class="table-card-image2">
+                            <table class="table-image2">
+                                <thead>
+                                    <tr>
+                                        <th style="min-width: 240px;">EVENT NAME</th>
+                                        <th style="min-width: 170px;">DATE</th>
+                                        <th>DESCRIPTION</th>
+                                        <th style="min-width: 200px; text-align: right;">ACTIONS</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php if (empty($events)): ?>
+                                            <tr>
+                                                <td colspan="4" style="text-align:center; padding:36px; color:#94a3b8;">
+                                                    <i class="far fa-calendar-times" style="font-size:32px; margin-bottom:8px; display:block;"></i>
+                                                    <?php if (!empty($events_search)): ?>
+                                                            No events found matching "<?php echo htmlspecialchars($events_search); ?>". <a href="?tab=events" style="color:#00b894; font-weight:600;">Clear search</a>
+                                                    <?php else: ?>
+                                                            No events scheduled yet. Click <strong>“Create Event”</strong> above to add one.
+                                                    <?php endif; ?>
+                                                </td>
+                                            </tr>
+                                    <?php else: ?>
+                                            <?php foreach ($events as $ev): ?>
+                                                    <tr>
+                                                        <td>
+                                                            <div class="item-main-title"><?php echo htmlspecialchars($ev['title']); ?></div>
+                                                            <div style="font-size:11.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:8px;">
+                                                                <span><i class="fas fa-map-marker-alt" style="color:#00b894;"></i> <?php echo htmlspecialchars($ev['venue'] ?? 'Trinity Campus Auditorium'); ?></span>
+                                                                <?php $mCount = count($ev['media_items'] ?? []); ?>
+                                                                <?php if ($mCount > 0): ?>
+                                                                        <a href="?tab=event_files&event_id=<?php echo $ev['id']; ?>" style="color:#059669; font-weight:600; text-decoration:none; background:#ecfdf5; padding:1px 7px; border-radius:999px;">
+                                                                             <i class="fas fa-paperclip"></i> <?php echo $mCount; ?> file<?php echo $mCount > 1 ? 's' : ''; ?>
+                                                                        </a>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div style="font-weight:600; color:#0f172a;"><?php echo htmlspecialchars($ev['event_date']); ?></div>
+                                                            <div style="font-size:12px; color:#64748b; font-weight:500; margin-top:2px;">
+                                                                <i class="far fa-clock" style="color:#00b894;"></i> <?php echo htmlspecialchars($ev['event_time'] ?? '10:00 AM'); ?>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div style="max-width:320px; font-size:12.5px; color:#475569; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<?php echo htmlspecialchars($ev['description'] ?? ''); ?>">
+                                                                <?php echo htmlspecialchars($ev['description'] ?: 'Annual fest and celebration at Trinity College.'); ?>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="action-icons-wrap" style="justify-content: flex-end; gap:6px;">
+                                                                <!-- View Action -->
+                                                                <button type="button" class="btn-action-view" onclick='viewEventDetails(<?php echo htmlspecialchars(json_encode($ev), ENT_QUOTES); ?>)' title="View Event &amp; Attached Files">
+                                                                    <i class="fas fa-eye"></i> View
+                                                                </button>
+                                                                <!-- Edit Action -->
+                                                                <button type="button" class="btn-action-edit" onclick='openEditEventModal(<?php echo htmlspecialchars(json_encode($ev), ENT_QUOTES); ?>)' title="Edit Event Details">
+                                                                    <i class="fas fa-edit"></i> Edit
+                                                                </button>
+                                                                <!-- Delete Action -->
+                                                                <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Are you sure you want to delete &quot;<?php echo addslashes(htmlspecialchars($ev['title'])); ?>&quot; and all its attached media?');" style="display:inline;">
+                                                                    <input type="hidden" name="action" value="delete_event">
+                                                                    <input type="hidden" name="id" value="<?php echo $ev['id']; ?>">
+                                                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                                    <button type="submit" class="btn-action-delete" title="Delete Event">
+                                                                        <i class="fas fa-trash-alt"></i> Delete
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                            <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                            <?php echo render_pagination_bar($events_pagination); ?>
                         </div>
                     </div>
-
-                    <div class="table-card-image2">
-                        <table class="table-image2">
-                            <thead>
-                                <tr>
-                                    <th style="min-width: 240px;">EVENT NAME</th>
-                                    <th style="min-width: 170px;">DATE</th>
-                                    <th>DESCRIPTION</th>
-                                    <th style="min-width: 200px; text-align: right;">ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($events)): ?>
-                                    <tr>
-                                        <td colspan="4" style="text-align:center; padding:36px; color:#94a3b8;">
-                                            <i class="far fa-calendar-times" style="font-size:32px; margin-bottom:8px; display:block;"></i>
-                                            <?php if (!empty($events_search)): ?>
-                                                No events found matching "<?php echo htmlspecialchars($events_search); ?>". <a href="?tab=events" style="color:#00b894; font-weight:600;">Clear search</a>
-                                            <?php else: ?>
-                                                No events scheduled yet. Click <strong>“Create Event”</strong> above to add one.
-                                            <?php endif; ?>
-                                        </td>
-                                    </tr>
-                                <?php else: ?>
-                                    <?php foreach ($events as $ev): ?>
-                                        <tr>
-                                            <td>
-                                                <div class="item-main-title"><?php echo htmlspecialchars($ev['title']); ?></div>
-                                                <div style="font-size:11.5px; color:#64748b; margin-top:3px; display:flex; align-items:center; gap:8px;">
-                                                    <span><i class="fas fa-map-marker-alt" style="color:#00b894;"></i> <?php echo htmlspecialchars($ev['venue'] ?? 'Trinity Campus Auditorium'); ?></span>
-                                                    <?php $mCount = count($ev['media_items'] ?? []); ?>
-                                                    <?php if ($mCount > 0): ?>
-                                                        <a href="?tab=event_files&event_id=<?php echo $ev['id']; ?>" style="color:#059669; font-weight:600; text-decoration:none; background:#ecfdf5; padding:1px 7px; border-radius:999px;">
-                                                             <i class="fas fa-paperclip"></i> <?php echo $mCount; ?> file<?php echo $mCount > 1 ? 's' : ''; ?>
-                                                        </a>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div style="font-weight:600; color:#0f172a;"><?php echo htmlspecialchars($ev['event_date']); ?></div>
-                                                <div style="font-size:12px; color:#64748b; font-weight:500; margin-top:2px;">
-                                                    <i class="far fa-clock" style="color:#00b894;"></i> <?php echo htmlspecialchars($ev['event_time'] ?? '10:00 AM'); ?>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div style="max-width:320px; font-size:12.5px; color:#475569; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<?php echo htmlspecialchars($ev['description'] ?? ''); ?>">
-                                                    <?php echo htmlspecialchars($ev['description'] ?: 'Annual fest and celebration at Trinity College.'); ?>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="action-icons-wrap" style="justify-content: flex-end; gap:6px;">
-                                                    <!-- View Action -->
-                                                    <button type="button" class="btn-action-view" onclick='viewEventDetails(<?php echo htmlspecialchars(json_encode($ev), ENT_QUOTES); ?>)' title="View Event &amp; Attached Files">
-                                                        <i class="fas fa-eye"></i> View
-                                                    </button>
-                                                    <!-- Edit Action -->
-                                                    <button type="button" class="btn-action-edit" onclick='openEditEventModal(<?php echo htmlspecialchars(json_encode($ev), ENT_QUOTES); ?>)' title="Edit Event Details">
-                                                        <i class="fas fa-edit"></i> Edit
-                                                    </button>
-                                                    <!-- Delete Action -->
-                                                    <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Are you sure you want to delete &quot;<?php echo addslashes(htmlspecialchars($ev['title'])); ?>&quot; and all its attached media?');" style="display:inline;">
-                                                        <input type="hidden" name="action" value="delete_event">
-                                                        <input type="hidden" name="id" value="<?php echo $ev['id']; ?>">
-                                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                        <button type="submit" class="btn-action-delete" title="Delete Event">
-                                                            <i class="fas fa-trash-alt"></i> Delete
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                        <?php echo render_pagination_bar($events_pagination); ?>
-                    </div>
-                </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
             <!-- TAB 5: EVENT FILES (UPLOADING & MANAGING MEDIA ONLY)            -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'event_files'): ?>
-                <div class="tab-pane active">
-                    <div class="pane-header-image2">
-                        <div class="pane-title-group">
-                            <div class="pane-text">
-                                <h2>Event Files</h2>
-                                <p>Upload images or videos directly linked to an event &bull; Automatically displayed on the public website</p>
+                    <div class="tab-pane active">
+                        <div class="pane-header-image2">
+                            <div class="pane-title-group">
+                                <div class="pane-text">
+                                    <h2>Event Files</h2>
+                                    <p>Upload images or videos directly linked to an event &bull; Automatically displayed on the public website</p>
+                                </div>
                             </div>
-                        </div>
-                        <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalEventMedia')">
-                                <i class="fas fa-cloud-upload-alt"></i> Upload Event File
-                            </button>
-                            <span class="linked-event-pill" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size:12.5px; padding:7px 14px;">
-                                <i class="fas fa-photo-video"></i> <?php echo $total_event_media; ?> Total Files
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- Table of Uploaded Files -->
-                    <div class="table-card-image2" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                                <h3 style="margin:0; font-size:16px; font-weight:700; color:#1e293b;">
-                                    <i class="fas fa-photo-video" style="color:#00b894;"></i> Uploaded Event Files
-                                </h3>
-                                <span style="background:#f1f5f9; color:#475569; font-size:12px; font-weight:700; padding:2px 10px; border-radius:999px;">
-                                    <?php echo $total_event_media; ?> Files
-                                </span>
-                            </div>
-
-                            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                                <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
-                                    <input type="hidden" name="tab" value="event_files">
-                                    <?php if ($event_filter_id): ?>
-                                        <input type="hidden" name="event_id" value="<?php echo $event_filter_id; ?>">
-                                    <?php endif; ?>
-                                    <div class="search-box-pill" style="margin:0;">
-                                        <i class="fas fa-search"></i>
-                                        <input type="text" name="file_search" id="eventFileSearchInput" value="<?php echo htmlspecialchars($event_file_search); ?>" class="search-pill-input" placeholder="Search event file..." onchange="this.form.submit()">
-                                    </div>
-                                </form>
-                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalEventMedia')" style="padding:7px 18px; font-size:12.5px;">
+                            <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalEventMedia')">
                                     <i class="fas fa-cloud-upload-alt"></i> Upload Event File
                                 </button>
+                                <span class="linked-event-pill" style="background:#e0f2fe; color:#0369a1; font-weight:700; font-size:12.5px; padding:7px 14px;">
+                                    <i class="fas fa-photo-video"></i> <?php echo $total_event_media; ?> Total Files
+                                </span>
                             </div>
                         </div>
 
-                        <?php if ($event_filter_id): ?>
-                            <div style="margin-bottom:14px; background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:8px 14px; border-radius:10px; font-size:12.5px; display:flex; align-items:center; justify-content:space-between;">
-                                <span><i class="fas fa-filter"></i> Filtering files for Event ID #<?php echo $event_filter_id; ?></span>
-                                <a href="?tab=event_files" style="color:#2563eb; font-weight:700; text-decoration:none;">Show All Files &times;</a>
-                            </div>
-                        <?php endif; ?>
+                        <!-- Table of Uploaded Files -->
+                        <div class="table-card-image2" style="background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; padding:20px 24px; box-shadow:0 1px 3px rgba(0,0,0,0.04);">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; flex-wrap:wrap; gap:12px;">
+                                <div style="display:flex; align-items:center; gap:10px;">
+                                    <h3 style="margin:0; font-size:16px; font-weight:700; color:#1e293b;">
+                                        <i class="fas fa-photo-video" style="color:#00b894;"></i> Uploaded Event Files
+                                    </h3>
+                                    <span style="background:#f1f5f9; color:#475569; font-size:12px; font-weight:700; padding:2px 10px; border-radius:999px;">
+                                        <?php echo $total_event_media; ?> Files
+                                    </span>
+                                </div>
 
-                        <table class="table-image2" id="eventFilesTable">
-                            <thead>
-                                <tr>
-                                    <th style="width: 70px;">PREVIEW</th>
-                                    <th style="min-width: 200px;">FILE NAME</th>
-                                    <th style="min-width: 180px;">LINKED EVENT</th>
-                                    <th>DESCRIPTION</th>
-                                    <th style="min-width: 150px; text-align: right;">ACTIONS</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php if (empty($all_event_media)): ?>
+                                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                    <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                        <input type="hidden" name="tab" value="event_files">
+                                        <?php if ($event_filter_id): ?>
+                                                <input type="hidden" name="event_id" value="<?php echo $event_filter_id; ?>">
+                                        <?php endif; ?>
+                                        <div class="search-box-pill" style="margin:0;">
+                                            <i class="fas fa-search"></i>
+                                            <input type="text" name="file_search" id="eventFileSearchInput" value="<?php echo htmlspecialchars($event_file_search); ?>" class="search-pill-input" placeholder="Search event file..." onchange="this.form.submit()">
+                                        </div>
+                                    </form>
+                                    <button type="button" class="btn-emerald-pill" onclick="openModal('modalEventMedia')" style="padding:7px 18px; font-size:12.5px;">
+                                        <i class="fas fa-cloud-upload-alt"></i> Upload Event File
+                                    </button>
+                                </div>
+                            </div>
+
+                            <?php if ($event_filter_id): ?>
+                                    <div style="margin-bottom:14px; background:#eff6ff; border:1px solid #bfdbfe; color:#1e40af; padding:8px 14px; border-radius:10px; font-size:12.5px; display:flex; align-items:center; justify-content:space-between;">
+                                        <span><i class="fas fa-filter"></i> Filtering files for Event ID #<?php echo $event_filter_id; ?></span>
+                                        <a href="?tab=event_files" style="color:#2563eb; font-weight:700; text-decoration:none;">Show All Files &times;</a>
+                                    </div>
+                            <?php endif; ?>
+
+                            <table class="table-image2" id="eventFilesTable">
+                                <thead>
                                     <tr>
-                                        <td colspan="5" style="text-align:center; padding:36px; color:#94a3b8;">
-                                            <i class="fas fa-photo-video" style="font-size:32px; margin-bottom:8px; display:block; color:#cbd5e1;"></i>
-                                            <?php if (!empty($event_file_search) || !empty($event_filter_id)): ?>
-                                                No event files found matching your filters. <a href="?tab=event_files" style="color:#00b894; font-weight:600;">Clear filters</a>
-                                            <?php else: ?>
-                                                No event files uploaded yet. Click <strong>“Upload Event File”</strong> above to add files.
-                                            <?php endif; ?>
-                                        </td>
+                                        <th style="width: 70px;">PREVIEW</th>
+                                        <th style="min-width: 200px;">FILE NAME</th>
+                                        <th style="min-width: 180px;">LINKED EVENT</th>
+                                        <th>DESCRIPTION</th>
+                                        <th style="min-width: 150px; text-align: right;">ACTIONS</th>
                                     </tr>
-                                <?php else: ?>
-                                    <?php foreach ($all_event_media as $m): ?>
-                                        <?php $isVid = ($m['media_type'] === 'video'); ?>
-                                        <tr>
-                                            <td>
-                                                <div class="event-file-thumb-wrap">
-                                                    <?php if ($isVid): ?>
-                                                        <div style="color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; background:#1e293b;">
-                                                            <i class="fas fa-video" style="color:#60a5fa; font-size:14px;"></i>
-                                                        </div>
+                                </thead>
+                                <tbody>
+                                    <?php if (empty($all_event_media)): ?>
+                                            <tr>
+                                                <td colspan="5" style="text-align:center; padding:36px; color:#94a3b8;">
+                                                    <i class="fas fa-photo-video" style="font-size:32px; margin-bottom:8px; display:block; color:#cbd5e1;"></i>
+                                                    <?php if (!empty($event_file_search) || !empty($event_filter_id)): ?>
+                                                            No event files found matching your filters. <a href="?tab=event_files" style="color:#00b894; font-weight:600;">Clear filters</a>
                                                     <?php else: ?>
-                                                        <img src="../<?php echo htmlspecialchars($m['file_path']); ?>" alt="" onerror="this.src='../assets/events/tcek-fresher.jpg'">
+                                                            No event files uploaded yet. Click <strong>“Upload Event File”</strong> above to add files.
                                                     <?php endif; ?>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="item-main-title"><?php echo htmlspecialchars($m['media_title']); ?></div>
-                                                <span class="media-type-tag <?php echo $isVid ? 'tag-video' : 'tag-image'; ?>">
-                                                    <i class="fas <?php echo $isVid ? 'fa-video' : 'fa-image'; ?>"></i> <?php echo strtoupper($m['media_type']); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <span class="linked-event-pill" title="<?php echo htmlspecialchars($m['event_title'] ?? ''); ?>">
-                                                    <i class="far fa-calendar-check" style="color:#00b894;"></i> 
-                                                    <?php echo htmlspecialchars($m['event_title'] ?? ('Event #' . ($m['event_id'] ?? ''))); ?>
-                                                </span>
-                                            </td>
-                                            <td>
-                                                <div style="max-width:260px; font-size:12px; color:#64748b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<?php echo htmlspecialchars($m['media_description'] ?? ''); ?>">
-                                                    <?php echo htmlspecialchars($m['media_description'] ?: 'No description provided'); ?>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <div class="action-icons-wrap" style="justify-content: flex-end; gap:6px;">
-                                                    <!-- Edit Action -->
-                                                    <button type="button" class="btn-action-edit" onclick='openEditMediaModal(<?php echo htmlspecialchars(json_encode($m), ENT_QUOTES); ?>)' title="Edit File Name &amp; Description">
-                                                        <i class="fas fa-edit"></i> Edit
-                                                    </button>
-                                                    <!-- Delete Action -->
-                                                    <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this media file?');" style="display:inline;">
-                                                        <input type="hidden" name="action" value="delete_event_media">
-                                                        <input type="hidden" name="media_id" value="<?php echo $m['id']; ?>">
-                                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                        <button type="submit" class="btn-action-delete" title="Delete File">
-                                                            <i class="fas fa-trash-alt"></i> Delete
-                                                        </button>
-                                                    </form>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                        <?php echo render_pagination_bar($event_files_pagination); ?>
+                                                </td>
+                                            </tr>
+                                    <?php else: ?>
+                                            <?php foreach ($all_event_media as $m): ?>
+                                                    <?php $isVid = ($m['media_type'] === 'video'); ?>
+                                                    <tr>
+                                                        <td>
+                                                            <div class="event-file-thumb-wrap">
+                                                                <?php if ($isVid): ?>
+                                                                        <div style="color:#fff; display:flex; flex-direction:column; align-items:center; justify-content:center; width:100%; height:100%; background:#1e293b;">
+                                                                            <i class="fas fa-video" style="color:#60a5fa; font-size:14px;"></i>
+                                                                        </div>
+                                                                <?php else: ?>
+                                                                        <img src="../<?php echo htmlspecialchars($m['file_path']); ?>" alt="" onerror="this.src='../assets/events/tcek-fresher.jpg'">
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="item-main-title"><?php echo htmlspecialchars($m['media_title']); ?></div>
+                                                            <span class="media-type-tag <?php echo $isVid ? 'tag-video' : 'tag-image'; ?>">
+                                                                <i class="fas <?php echo $isVid ? 'fa-video' : 'fa-image'; ?>"></i> <?php echo strtoupper($m['media_type']); ?>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <span class="linked-event-pill" title="<?php echo htmlspecialchars($m['event_title'] ?? ''); ?>">
+                                                                <i class="far fa-calendar-check" style="color:#00b894;"></i> 
+                                                                <?php echo htmlspecialchars($m['event_title'] ?? ('Event #' . ($m['event_id'] ?? ''))); ?>
+                                                            </span>
+                                                        </td>
+                                                        <td>
+                                                            <div style="max-width:260px; font-size:12px; color:#64748b; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" title="<?php echo htmlspecialchars($m['media_description'] ?? ''); ?>">
+                                                                <?php echo htmlspecialchars($m['media_description'] ?: 'No description provided'); ?>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="action-icons-wrap" style="justify-content: flex-end; gap:6px;">
+                                                                <!-- Edit Action -->
+                                                                <button type="button" class="btn-action-edit" onclick='openEditMediaModal(<?php echo htmlspecialchars(json_encode($m), ENT_QUOTES); ?>)' title="Edit File Name &amp; Description">
+                                                                    <i class="fas fa-edit"></i> Edit
+                                                                </button>
+                                                                <!-- Delete Action -->
+                                                                <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this media file?');" style="display:inline;">
+                                                                    <input type="hidden" name="action" value="delete_event_media">
+                                                                    <input type="hidden" name="media_id" value="<?php echo $m['id']; ?>">
+                                                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                                    <button type="submit" class="btn-action-delete" title="Delete File">
+                                                                        <i class="fas fa-trash-alt"></i> Delete
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </td>
+                                                    </tr>
+                                            <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                            <?php echo render_pagination_bar($event_files_pagination); ?>
+                        </div>
                     </div>
-                </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
@@ -943,347 +903,351 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             <!-- TAB 5: NEWS (NEWS MANAGEMENT) -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'news'): ?>
-                <div class="tab-pane active">
-                    <!-- Top Page Header -->
-                    <div class="pane-header-image2">
-                        <div class="pane-title-group">
-                            <div class="pane-text">
-                                <h2>News Management</h2>
-                                <p>Role-Based System Access Control Active &bull; Newspaper clippings automatically appear in the public website News section.</p>
-                            </div>
-                        </div>
-                        <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center;">
-                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadNews')">
-                                <i class="fas fa-newspaper"></i> Upload News
-                            </button>
-                            <span class="events-count-badge">
-                                <i class="fas fa-newspaper"></i> <?php echo $total_news; ?> Published Articles
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- LIST OF NEWS -->
-                    <div class="events-section-card">
-                        <div class="events-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                            <div class="events-section-title-wrap">
-                                <span class="events-section-num num-blue"><i class="fas fa-list"></i></span>
-                                <div>
-                                    <h3 class="events-section-heading">List of News</h3>
-                                    <p class="events-section-sub">Display uploaded newspaper news &bull; Actions: View / Edit / Delete</p>
+                    <div class="tab-pane active">
+                        <!-- Top Page Header -->
+                        <div class="pane-header-image2">
+                            <div class="pane-title-group">
+                                <div class="pane-text">
+                                    <h2>News Management</h2>
+                                    <p>Role-Based System Access Control Active &bull; Newspaper clippings automatically appear in the public website News section.</p>
                                 </div>
                             </div>
-                            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                                <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
-                                    <input type="hidden" name="tab" value="news">
-                                    <div class="search-box-pill" style="margin:0;">
-                                        <i class="fas fa-search"></i>
-                                        <input type="text" name="news_search" id="newsSearchInput" value="<?php echo htmlspecialchars($news_search); ?>" class="search-pill-input" placeholder="Search news title..." onchange="this.form.submit()">
-                                    </div>
-                                </form>
-                                <span class="events-count-badge">
-                                    <i class="fas fa-newspaper"></i> <?php echo $total_news; ?> News Items
-                                </span>
-                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadNews')" style="padding:7px 18px; font-size:12.5px;">
+                            <div class="pane-actions-right" style="display:flex; gap:10px; align-items:center;">
+                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadNews')">
                                     <i class="fas fa-newspaper"></i> Upload News
                                 </button>
+                                <span class="events-count-badge">
+                                    <i class="fas fa-newspaper"></i> <?php echo $total_news; ?> Published Articles
+                                </span>
                             </div>
                         </div>
 
-                        <?php if (empty($news_list)): ?>
-                            <div style="padding: 48px 24px; text-align: center;">
-                                <div style="width: 60px; height: 60px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;">
-                                    <i class="fas fa-newspaper"></i>
+                        <!-- LIST OF NEWS -->
+                        <div class="events-section-card">
+                            <div class="events-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                                <div class="events-section-title-wrap">
+                                    <span class="events-section-num num-blue"><i class="fas fa-list"></i></span>
+                                    <div>
+                                        <h3 class="events-section-heading">List of News</h3>
+                                        <p class="events-section-sub">Display uploaded newspaper news &bull; Actions: View / Edit / Delete</p>
+                                    </div>
                                 </div>
-                                <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Newspaper News Uploaded Yet</h4>
-                                <p style="margin: 0; color: #64748b; font-size: 13px;">
-                                    <?php if (!empty($news_search)): ?>
-                                        No articles matching "<?php echo htmlspecialchars($news_search); ?>". <a href="?tab=news" style="color:#00b894; font-weight:600;">Clear search</a>
-                                    <?php else: ?>
-                                        Click <strong>"Upload News"</strong> above to publish your first newspaper clipping image.
-                                    <?php endif; ?>
-                                </p>
+                                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                    <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                        <input type="hidden" name="tab" value="news">
+                                        <div class="search-box-pill" style="margin:0;">
+                                            <i class="fas fa-search"></i>
+                                            <input type="text" name="news_search" id="newsSearchInput" value="<?php echo htmlspecialchars($news_search); ?>" class="search-pill-input" placeholder="Search news title..." onchange="this.form.submit()">
+                                        </div>
+                                    </form>
+                                    <span class="events-count-badge">
+                                        <i class="fas fa-newspaper"></i> <?php echo $total_news; ?> News Items
+                                    </span>
+                                    <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadNews')" style="padding:7px 18px; font-size:12.5px;">
+                                        <i class="fas fa-newspaper"></i> Upload News
+                                    </button>
+                                </div>
                             </div>
-                        <?php else: ?>
-                            <div class="table-card-image2" style="border:none; border-radius:0; box-shadow:none;">
-                                <table class="table-image2" id="newsTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 110px;">NEWSPAPER IMAGE</th>
-                                            <th>NEWS TITLE</th>
-                                            <th style="width: 130px;">DATE</th>
-                                            <th>DESCRIPTION</th>
-                                            <th style="width: 230px; text-align: center;">ACTIONS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($news_list as $nws): 
-                                             $raw_img = !empty($nws['image_path']) ? $nws['image_path'] : 'assets/Gallery/paper1.jpg';
-                                             $thumb_src = '../' . ltrim($raw_img, '/');
-                                             $formatted_date = !empty($nws['publish_date']) ? date('M d, Y', strtotime($nws['publish_date'])) : '—';
-                                             $clean_desc = $nws['description'] ?? ($nws['summary'] ?? '');
-                                        ?>
-                                            <tr>
-                                                <!-- Newspaper Image -->
-                                                <td>
-                                                    <div class="news-table-thumb-wrap" onclick="openViewNewsModal(<?php echo htmlspecialchars(json_encode($nws), ENT_QUOTES, 'UTF-8'); ?>)" title="Click to view high-res image">
-                                                        <img src="<?php echo htmlspecialchars($thumb_src); ?>" alt="<?php echo htmlspecialchars($nws['title']); ?>" onerror="this.src='../assets/Gallery/paper1.jpg'">
-                                                        <span class="news-thumb-zoom-icon"><i class="fas fa-search-plus"></i></span>
-                                                    </div>
-                                                </td>
 
-                                                <!-- News Title -->
-                                                <td>
-                                                    <div class="item-main-title" style="font-size:14px; font-weight:700; color:#0f172a; line-height:1.4;">
-                                                        <?php echo htmlspecialchars($nws['title']); ?>
-                                                    </div>
-                                                    <?php if (!empty($nws['source'])): ?>
-                                                        <span class="linked-event-pill" style="margin-top:5px; font-size:11px;">
-                                                            <i class="fas fa-bookmark" style="color:#00b894;"></i> <?php echo htmlspecialchars($nws['source']); ?>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </td>
+                            <?php if (empty($news_list)): ?>
+                                    <div style="padding: 48px 24px; text-align: center;">
+                                        <div style="width: 60px; height: 60px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;">
+                                            <i class="fas fa-newspaper"></i>
+                                        </div>
+                                        <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Newspaper News Uploaded Yet</h4>
+                                        <p style="margin: 0; color: #64748b; font-size: 13px;">
+                                            <?php if (!empty($news_search)): ?>
+                                                    No articles matching "<?php echo htmlspecialchars($news_search); ?>". <a href="?tab=news" style="color:#00b894; font-weight:600;">Clear search</a>
+                                            <?php else: ?>
+                                                    Click <strong>"Upload News"</strong> above to publish your first newspaper clipping image.
+                                            <?php endif; ?>
+                                        </p>
+                                    </div>
+                            <?php else: ?>
+                                    <div class="table-card-image2" style="border:none; border-radius:0; box-shadow:none;">
+                                        <table class="table-image2" id="newsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 110px;">NEWSPAPER IMAGE</th>
+                                                    <th>NEWS TITLE</th>
+                                                    <th style="width: 130px;">DATE</th>
+                                                    <th>DESCRIPTION</th>
+                                                    <th style="width: 230px; text-align: center;">ACTIONS</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($news_list as $nws):
+                                                    $raw_img = !empty($nws['image_path']) ? $nws['image_path'] : 'assets/Gallery/paper1.jpg';
+                                                    $thumb_src = '../' . ltrim($raw_img, '/');
+                                                    $formatted_date = !empty($nws['publish_date']) ? date('M d, Y', strtotime($nws['publish_date'])) : '—';
+                                                    $clean_desc = $nws['description'] ?? ($nws['summary'] ?? '');
+                                                    ?>
+                                                        <tr>
+                                                            <!-- Newspaper Image -->
+                                                            <td>
+                                                                <div class="news-table-thumb-wrap" onclick="openViewNewsModal(<?php echo htmlspecialchars(json_encode($nws), ENT_QUOTES, 'UTF-8'); ?>)" title="Click to view high-res image">
+                                                                    <img src="<?php echo htmlspecialchars($thumb_src); ?>" alt="<?php echo htmlspecialchars($nws['title']); ?>" onerror="this.src='../assets/Gallery/paper1.jpg'">
+                                                                    <span class="news-thumb-zoom-icon"><i class="fas fa-search-plus"></i></span>
+                                                                </div>
+                                                            </td>
 
-                                                <!-- Date -->
-                                                <td>
-                                                    <div style="font-weight:600; color:#0f172a; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
-                                                        <i class="far fa-calendar-alt" style="color:#00b894;"></i> <?php echo htmlspecialchars($formatted_date); ?>
-                                                    </div>
-                                                </td>
+                                                            <!-- News Title -->
+                                                            <td>
+                                                                <div class="item-main-title" style="font-size:14px; font-weight:700; color:#0f172a; line-height:1.4;">
+                                                                    <?php echo htmlspecialchars($nws['title']); ?>
+                                                                </div>
+                                                                <?php if (!empty($nws['source'])): ?>
+                                                                        <span class="linked-event-pill" style="margin-top:5px; font-size:11px;">
+                                                                            <i class="fas fa-bookmark" style="color:#00b894;"></i> <?php echo htmlspecialchars($nws['source']); ?>
+                                                                        </span>
+                                                                <?php endif; ?>
+                                                            </td>
 
-                                                <!-- Description -->
-                                                <td>
-                                                    <div style="max-width:320px; font-size:12.5px; color:#475569; line-height:1.5;">
-                                                        <?php if (!empty($clean_desc)): ?>
-                                                            <?php 
-                                                            $desc_short = (strlen($clean_desc) > 140) ? substr($clean_desc, 0, 140) . '...' : $clean_desc;
-                                                            echo htmlspecialchars($desc_short); 
-                                                            ?>
-                                                        <?php else: ?>
-                                                            <span style="color:#94a3b8; font-style:italic;">No description provided</span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
+                                                            <!-- Date -->
+                                                            <td>
+                                                                <div style="font-weight:600; color:#0f172a; font-size:13px; display:inline-flex; align-items:center; gap:6px;">
+                                                                    <i class="far fa-calendar-alt" style="color:#00b894;"></i> <?php echo htmlspecialchars($formatted_date); ?>
+                                                                </div>
+                                                            </td>
 
-                                                <!-- Actions: View / Edit / Delete -->
-                                                <td style="text-align: center;">
-                                                    <div style="display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;">
-                                                        <!-- View Button -->
-                                                        <button type="button" class="btn-action-view" onclick="openViewNewsModal(<?php echo htmlspecialchars(json_encode($nws), ENT_QUOTES, 'UTF-8'); ?>)" title="View Full Newspaper Clipping">
-                                                            <i class="fas fa-eye"></i> View
-                                                        </button>
+                                                            <!-- Description -->
+                                                            <td>
+                                                                <div style="max-width:320px; font-size:12.5px; color:#475569; line-height:1.5;">
+                                                                    <?php if (!empty($clean_desc)): ?>
+                                                                            <?php
+                                                                            $desc_short = (strlen($clean_desc) > 140) ? substr($clean_desc, 0, 140) . '...' : $clean_desc;
+                                                                            echo htmlspecialchars($desc_short);
+                                                                            ?>
+                                                                    <?php else: ?>
+                                                                            <span style="color:#94a3b8; font-style:italic;">No description provided</span>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </td>
 
-                                                        <!-- Edit Button -->
-                                                        <button type="button" class="btn-action-edit" onclick="openEditNewsModal(<?php echo htmlspecialchars(json_encode($nws), ENT_QUOTES, 'UTF-8'); ?>)" title="Edit News">
-                                                            <i class="fas fa-pencil-alt"></i> Edit
-                                                        </button>
+                                                            <!-- Actions: View / Edit / Delete -->
+                                                            <td style="text-align: center;">
+                                                                <div style="display:flex; align-items:center; justify-content:center; gap:6px; flex-wrap:wrap;">
+                                                                    <!-- View Button -->
+                                                                    <button type="button" class="btn-action-view" onclick="openViewNewsModal(<?php echo htmlspecialchars(json_encode($nws), ENT_QUOTES, 'UTF-8'); ?>)" title="View Full Newspaper Clipping">
+                                                                        <i class="fas fa-eye"></i> View
+                                                                    </button>
 
-                                                        <!-- Delete Button -->
-                                                        <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Are you sure you want to delete this newspaper news clipping?');" style="display:inline; margin:0;">
-                                                            <input type="hidden" name="action" value="delete_news">
-                                                            <input type="hidden" name="id" value="<?php echo $nws['id']; ?>">
-                                                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                            <button type="submit" class="btn-action-delete" title="Delete News">
-                                                                <i class="fas fa-trash-alt"></i> Delete
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <?php echo render_pagination_bar($news_pagination); ?>
-                        <?php endif; ?>
+                                                                    <!-- Edit Button -->
+                                                                    <button type="button" class="btn-action-edit" onclick="openEditNewsModal(<?php echo htmlspecialchars(json_encode($nws), ENT_QUOTES, 'UTF-8'); ?>)" title="Edit News">
+                                                                        <i class="fas fa-pencil-alt"></i> Edit
+                                                                    </button>
+
+                                                                    <!-- Delete Button -->
+                                                                    <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Are you sure you want to delete this newspaper news clipping?');" style="display:inline; margin:0;">
+                                                                        <input type="hidden" name="action" value="delete_news">
+                                                                        <input type="hidden" name="id" value="<?php echo $nws['id']; ?>">
+                                                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                                        <button type="submit" class="btn-action-delete" title="Delete News">
+                                                                            <i class="fas fa-trash-alt"></i> Delete
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <?php echo render_pagination_bar($news_pagination); ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
             <!-- TAB 6: CIRCULARS & NOTIFICATIONS -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'notifications'): ?>
-                <div class="tab-pane active">
-                    <div class="pane-header-image2">
-                        <div class="pane-title-group">
-                            <div class="pane-text">
-                                <h2>Official College Circulars</h2>
-                                <p>Upload and manage official circulars, examination schedules, and administrative notices</p>
-                            </div>
-                        </div>
-                        <div class="pane-actions-right">
-                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadCircular')">
-                                <i class="fas fa-cloud-upload-alt"></i> Upload Circular
-                            </button>
-                            <a href="../circulars.php" target="_blank" class="topbar-action-btn">
-                                <i class="fas fa-external-link-alt"></i> View on Public Website
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- LIST OF CIRCULARS SECTION -->
-                    <div class="events-section-card">
-                        <div class="events-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                            <div class="events-section-title-wrap">
-                                <span class="events-section-num num-blue"><i class="fas fa-file-alt"></i></span>
-                                <div>
-                                    <h3 class="events-section-heading">List of Circulars</h3>
-                                    <p class="events-section-sub">Official notifications, examination schedules &amp; academic circulars &bull; Actions: View / Edit / Delete</p>
+                    <div class="tab-pane active">
+                        <div class="pane-header-image2">
+                            <div class="pane-title-group">
+                                <div class="pane-text">
+                                    <h2>Official College Circulars</h2>
+                                    <p>Upload and manage official circulars, examination schedules, and administrative notices</p>
                                 </div>
                             </div>
-
-                            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                                <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
-                                    <input type="hidden" name="tab" value="notifications">
-                                    <div class="search-box-pill" style="margin:0;">
-                                        <i class="fas fa-search"></i>
-                                        <input type="text" name="cir_search" id="circularSearchInput" value="<?php echo htmlspecialchars($notifications_search); ?>" class="search-pill-input" placeholder="Search circular title..." onchange="this.form.submit()">
-                                    </div>
-                                </form>
-                                <span class="events-count-badge">
-                                    <i class="fas fa-file-invoice"></i> <?php echo $total_notifications; ?> Circulars
-                                </span>
-                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadCircular')" style="padding:7px 18px; font-size:12.5px;">
+                            <div class="pane-actions-right">
+                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadCircular')">
                                     <i class="fas fa-cloud-upload-alt"></i> Upload Circular
                                 </button>
+                                <a href="../circulars.php" target="_blank" class="topbar-action-btn">
+                                    <i class="fas fa-external-link-alt"></i> View on Public Website
+                                </a>
                             </div>
                         </div>
 
-                        <?php if (empty($notifications)): ?>
-                            <div style="padding: 56px 24px; text-align: center;">
-                                <div style="width: 60px; height: 60px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;">
-                                    <i class="fas fa-folder-open"></i>
+                        <!-- LIST OF CIRCULARS SECTION -->
+                        <div class="events-section-card">
+                            <div class="events-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                                <div class="events-section-title-wrap">
+                                    <span class="events-section-num num-blue"><i class="fas fa-file-alt"></i></span>
+                                    <div>
+                                        <h3 class="events-section-heading">List of Circulars</h3>
+                                        <p class="events-section-sub">Official notifications, examination schedules &amp; academic circulars &bull; Actions: View / Edit / Delete</p>
+                                    </div>
                                 </div>
-                                <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Circulars Found</h4>
-                                <p style="margin: 0 auto; max-width: 440px; color: #64748b; font-size: 13px;">
-                                    <?php if (!empty($notifications_search)): ?>
-                                        No circulars matching "<?php echo htmlspecialchars($notifications_search); ?>". <a href="?tab=notifications" style="color:#00b894; font-weight:600;">Clear search</a>
-                                    <?php else: ?>
-                                        Click <strong>"Upload Circular"</strong> above to publish your first official college notice or exam schedule.
-                                    <?php endif; ?>
-                                </p>
+
+                                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                    <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                        <input type="hidden" name="tab" value="notifications">
+                                        <div class="search-box-pill" style="margin:0;">
+                                            <i class="fas fa-search"></i>
+                                            <input type="text" name="cir_search" id="circularSearchInput" value="<?php echo htmlspecialchars($notifications_search); ?>" class="search-pill-input" placeholder="Search circular title..." onchange="this.form.submit()">
+                                        </div>
+                                    </form>
+                                    <span class="events-count-badge">
+                                        <i class="fas fa-file-invoice"></i> <?php echo $total_notifications; ?> Circulars
+                                    </span>
+                                    <button type="button" class="btn-emerald-pill" onclick="openModal('modalUploadCircular')" style="padding:7px 18px; font-size:12.5px;">
+                                        <i class="fas fa-cloud-upload-alt"></i> Upload Circular
+                                    </button>
+                                </div>
                             </div>
-                        <?php else: ?>
-                            <div class="table-card-image2" style="border:none; border-radius:0; box-shadow:none;">
-                                <table class="table-image2" id="circularsTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="min-width:260px;">CIRCULAR TITLE</th>
-                                            <th style="width:130px;">DATE</th>
-                                            <th style="width:120px;">FILE TYPE</th>
-                                            <th style="min-width:260px;">DESCRIPTION</th>
-                                            <th style="width:230px; text-align:center;">ACTIONS</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($notifications as $cir): 
-                                            $cir_file = !empty($cir['attachment_path']) ? $cir['attachment_path'] : (!empty($cir['file_path']) ? $cir['file_path'] : '');
-                                            $cir_type = strtolower($cir['attachment_type'] ?? '');
-                                            if (empty($cir_type) || $cir_type === 'none') {
-                                                if (!empty($cir_file)) {
-                                                    $ext = strtolower(pathinfo($cir_file, PATHINFO_EXTENSION));
-                                                    if ($ext === 'pdf') $cir_type = 'pdf';
-                                                    elseif (in_array($ext, ['doc', 'docx'])) $cir_type = 'docx';
-                                                    elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) $cir_type = 'image';
-                                                    else $cir_type = 'other';
-                                                } else {
-                                                    $cir_type = 'none';
-                                                }
-                                            }
-                                            $clean_desc = trim($cir['description'] ?? '');
-                                        ?>
-                                            <tr class="circular-row" data-title="<?php echo strtolower(htmlspecialchars($cir['title'])); ?>">
-                                                <!-- Circular Title -->
-                                                <td>
-                                                    <div class="item-main-title" style="font-size:14px; font-weight:700; color:#0f172a; line-height:1.4;">
-                                                        <?php echo htmlspecialchars($cir['title']); ?>
-                                                    </div>
-                                                    <div style="display:flex; align-items:center; gap:8px; margin-top:5px; flex-wrap:wrap;">
-                                                        <span style="font-size:11px; color:#64748b; font-weight:600;">ID: CIR-<?php echo $cir['id']; ?></span>
-                                                        <?php if (!empty($cir['is_marquee'])): ?>
-                                                            <span style="font-size:10.5px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
-                                                                <i class="fas fa-bullhorn" style="font-size:10px;"></i> Live Marquee
-                                                            </span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
 
-                                                <!-- Date -->
-                                                <td>
-                                                    <div style="font-weight:600; font-size:13px; color:#334155; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
-                                                        <i class="far fa-calendar-alt" style="color:#00b894;"></i>
-                                                        <?php echo date('d M Y', strtotime($cir['publish_date'] ?? date('Y-m-d'))); ?>
-                                                    </div>
-                                                </td>
+                            <?php if (empty($notifications)): ?>
+                                    <div style="padding: 56px 24px; text-align: center;">
+                                        <div style="width: 60px; height: 60px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;">
+                                            <i class="fas fa-folder-open"></i>
+                                        </div>
+                                        <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Circulars Found</h4>
+                                        <p style="margin: 0 auto; max-width: 440px; color: #64748b; font-size: 13px;">
+                                            <?php if (!empty($notifications_search)): ?>
+                                                    No circulars matching "<?php echo htmlspecialchars($notifications_search); ?>". <a href="?tab=notifications" style="color:#00b894; font-weight:600;">Clear search</a>
+                                            <?php else: ?>
+                                                    Click <strong>"Upload Circular"</strong> above to publish your first official college notice or exam schedule.
+                                            <?php endif; ?>
+                                        </p>
+                                    </div>
+                            <?php else: ?>
+                                    <div class="table-card-image2" style="border:none; border-radius:0; box-shadow:none;">
+                                        <table class="table-image2" id="circularsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th style="min-width:260px;">CIRCULAR TITLE</th>
+                                                    <th style="width:130px;">DATE</th>
+                                                    <th style="width:120px;">FILE TYPE</th>
+                                                    <th style="min-width:260px;">DESCRIPTION</th>
+                                                    <th style="width:230px; text-align:center;">ACTIONS</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($notifications as $cir):
+                                                    $cir_file = !empty($cir['attachment_path']) ? $cir['attachment_path'] : (!empty($cir['file_path']) ? $cir['file_path'] : '');
+                                                    $cir_type = strtolower($cir['attachment_type'] ?? '');
+                                                    if (empty($cir_type) || $cir_type === 'none') {
+                                                        if (!empty($cir_file)) {
+                                                            $ext = strtolower(pathinfo($cir_file, PATHINFO_EXTENSION));
+                                                            if ($ext === 'pdf')
+                                                                $cir_type = 'pdf';
+                                                            elseif (in_array($ext, ['doc', 'docx']))
+                                                                $cir_type = 'docx';
+                                                            elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp']))
+                                                                $cir_type = 'image';
+                                                            else
+                                                                $cir_type = 'other';
+                                                        } else {
+                                                            $cir_type = 'none';
+                                                        }
+                                                    }
+                                                    $clean_desc = trim($cir['description'] ?? '');
+                                                    ?>
+                                                        <tr class="circular-row" data-title="<?php echo strtolower(htmlspecialchars($cir['title'])); ?>">
+                                                            <!-- Circular Title -->
+                                                            <td>
+                                                                <div class="item-main-title" style="font-size:14px; font-weight:700; color:#0f172a; line-height:1.4;">
+                                                                    <?php echo htmlspecialchars($cir['title']); ?>
+                                                                </div>
+                                                                <div style="display:flex; align-items:center; gap:8px; margin-top:5px; flex-wrap:wrap;">
+                                                                    <span style="font-size:11px; color:#64748b; font-weight:600;">ID: CIR-<?php echo $cir['id']; ?></span>
+                                                                    <?php if (!empty($cir['is_marquee'])): ?>
+                                                                            <span style="font-size:10.5px; font-weight:700; color:#059669; background:#ecfdf5; border:1px solid #a7f3d0; padding:2px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px;">
+                                                                                <i class="fas fa-bullhorn" style="font-size:10px;"></i> Live Marquee
+                                                                            </span>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </td>
 
-                                                <!-- File Type -->
-                                                <td>
-                                                    <?php if ($cir_type === 'pdf'): ?>
-                                                        <a href="../<?php echo htmlspecialchars($cir_file); ?>" target="_blank" class="badge-file-type badge-pdf" title="Open PDF in new tab">
-                                                            <i class="fas fa-file-pdf"></i> PDF
-                                                        </a>
-                                                    <?php elseif ($cir_type === 'docx'): ?>
-                                                        <a href="../<?php echo htmlspecialchars($cir_file); ?>" download class="badge-file-type badge-docx" title="Download DOCX document">
-                                                            <i class="fas fa-file-word"></i> DOCX
-                                                        </a>
-                                                    <?php elseif ($cir_type === 'image'): ?>
-                                                        <a href="../<?php echo htmlspecialchars($cir_file); ?>" target="_blank" class="badge-file-type badge-image" title="View image in new tab">
-                                                            <i class="fas fa-file-image"></i> IMAGE
-                                                        </a>
-                                                    <?php else: ?>
-                                                        <span class="badge-file-type badge-none">
-                                                            <i class="fas fa-align-left"></i> TEXT
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </td>
+                                                            <!-- Date -->
+                                                            <td>
+                                                                <div style="font-weight:600; font-size:13px; color:#334155; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+                                                                    <i class="far fa-calendar-alt" style="color:#00b894;"></i>
+                                                                    <?php echo date('d M Y', strtotime($cir['publish_date'] ?? date('Y-m-d'))); ?>
+                                                                </div>
+                                                            </td>
 
-                                                <!-- Description -->
-                                                <td>
-                                                    <div style="font-size:12.5px; color:#475569; line-height:1.5; max-width:320px;">
-                                                        <?php if (!empty($clean_desc)): ?>
-                                                            <?php 
-                                                            $desc_short = (strlen($clean_desc) > 130) ? substr($clean_desc, 0, 130) . '...' : $clean_desc;
-                                                            echo htmlspecialchars($desc_short); 
-                                                            ?>
-                                                        <?php else: ?>
-                                                            <span style="color:#94a3b8; font-style:italic;">No description provided</span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
+                                                            <!-- File Type -->
+                                                            <td>
+                                                                <?php if ($cir_type === 'pdf'): ?>
+                                                                        <a href="../<?php echo htmlspecialchars($cir_file); ?>" target="_blank" class="badge-file-type badge-pdf" title="Open PDF in new tab">
+                                                                            <i class="fas fa-file-pdf"></i> PDF
+                                                                        </a>
+                                                                <?php elseif ($cir_type === 'docx'): ?>
+                                                                        <a href="../<?php echo htmlspecialchars($cir_file); ?>" download class="badge-file-type badge-docx" title="Download DOCX document">
+                                                                            <i class="fas fa-file-word"></i> DOCX
+                                                                        </a>
+                                                                <?php elseif ($cir_type === 'image'): ?>
+                                                                        <a href="../<?php echo htmlspecialchars($cir_file); ?>" target="_blank" class="badge-file-type badge-image" title="View image in new tab">
+                                                                            <i class="fas fa-file-image"></i> IMAGE
+                                                                        </a>
+                                                                <?php else: ?>
+                                                                        <span class="badge-file-type badge-none">
+                                                                            <i class="fas fa-align-left"></i> TEXT
+                                                                        </span>
+                                                                <?php endif; ?>
+                                                            </td>
 
-                                                <!-- Actions: View / Edit / Delete (Single Row, No Wrap) -->
-                                                <td style="text-align:center; width:230px; white-space:nowrap;">
-                                                    <div style="display:inline-flex; align-items:center; justify-content:center; gap:6px; flex-wrap:nowrap;">
-                                                        <!-- View Button -->
-                                                        <button type="button" class="btn-action-view" onclick="openViewCircularModal(<?php echo htmlspecialchars(json_encode($cir), ENT_QUOTES, 'UTF-8'); ?>)" title="View Circular">
-                                                            <i class="fas fa-eye"></i> View
-                                                        </button>
+                                                            <!-- Description -->
+                                                            <td>
+                                                                <div style="font-size:12.5px; color:#475569; line-height:1.5; max-width:320px;">
+                                                                    <?php if (!empty($clean_desc)): ?>
+                                                                            <?php
+                                                                            $desc_short = (strlen($clean_desc) > 130) ? substr($clean_desc, 0, 130) . '...' : $clean_desc;
+                                                                            echo htmlspecialchars($desc_short);
+                                                                            ?>
+                                                                    <?php else: ?>
+                                                                            <span style="color:#94a3b8; font-style:italic;">No description provided</span>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </td>
 
-                                                        <!-- Edit Button -->
-                                                        <button type="button" class="btn-action-edit" onclick="openEditCircularModal(<?php echo htmlspecialchars(json_encode($cir), ENT_QUOTES, 'UTF-8'); ?>)" title="Edit Circular">
-                                                            <i class="fas fa-pencil-alt"></i> Edit
-                                                        </button>
+                                                            <!-- Actions: View / Edit / Delete (Single Row, No Wrap) -->
+                                                            <td style="text-align:center; width:230px; white-space:nowrap;">
+                                                                <div style="display:inline-flex; align-items:center; justify-content:center; gap:6px; flex-wrap:nowrap;">
+                                                                    <!-- View Button -->
+                                                                    <button type="button" class="btn-action-view" onclick="openViewCircularModal(<?php echo htmlspecialchars(json_encode($cir), ENT_QUOTES, 'UTF-8'); ?>)" title="View Circular">
+                                                                        <i class="fas fa-eye"></i> View
+                                                                    </button>
 
-                                                        <!-- Delete Button -->
-                                                        <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Are you sure you want to delete this circular?');" style="display:inline; margin:0;">
-                                                            <input type="hidden" name="action" value="delete_circular">
-                                                            <input type="hidden" name="id" value="<?php echo $cir['id']; ?>">
-                                                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                            <button type="submit" class="btn-action-delete" title="Delete Circular">
-                                                                <i class="fas fa-trash-alt"></i> Delete
-                                                            </button>
-                                                        </form>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <?php echo render_pagination_bar($notifications_pagination); ?>
-                        <?php endif; ?>
+                                                                    <!-- Edit Button -->
+                                                                    <button type="button" class="btn-action-edit" onclick="openEditCircularModal(<?php echo htmlspecialchars(json_encode($cir), ENT_QUOTES, 'UTF-8'); ?>)" title="Edit Circular">
+                                                                        <i class="fas fa-pencil-alt"></i> Edit
+                                                                    </button>
+
+                                                                    <!-- Delete Button -->
+                                                                    <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Are you sure you want to delete this circular?');" style="display:inline; margin:0;">
+                                                                        <input type="hidden" name="action" value="delete_circular">
+                                                                        <input type="hidden" name="id" value="<?php echo $cir['id']; ?>">
+                                                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                                        <button type="submit" class="btn-action-delete" title="Delete Circular">
+                                                                            <i class="fas fa-trash-alt"></i> Delete
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <?php echo render_pagination_bar($notifications_pagination); ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
@@ -1293,199 +1257,232 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             <!-- TAB 7: TOP ANNOUNCEMENT BAR (Single Main Scrolling Announcement) -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'announcements' || $current_tab === 'scrollbar'): ?>
-                <div class="tab-pane active">
-                    <div class="pane-header-image2">
-                        <div class="pane-title-group">
-                            <div class="pane-text">
-                                <h2>Top Announcement Bar Management</h2>
-                                <p>Manage the single main scrolling announcement displayed at the top of the college website</p>
-                            </div>
-                        </div>
-                        <div class="pane-actions-right" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
-                            <!-- Instant Toggle Bar Button -->
-                            <form action="../backend/crud.php" method="POST" style="display:inline; margin:0;">
-                                <input type="hidden" name="action" value="toggle_announcement_bar">
-                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                <button type="submit" class="<?php echo $is_ann_enabled ? 'btn-emerald-pill' : 'btn-outline-pill'; ?>" style="font-size:13px;" title="Click to instantly toggle visibility on website">
-                                    <i class="fas fa-power-off"></i> <?php echo $is_ann_enabled ? 'Bar Active (Enabled)' : 'Bar Hidden (Disabled)'; ?>
-                                </button>
-                            </form>
-                            <a href="../index.php" target="_blank" class="btn-outline-pill" style="font-size:13px; text-decoration:none;">
-                                <i class="fas fa-external-link-alt"></i> View Live Site
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Live Ticker Preview Card -->
-                    <div class="form-card-light" style="padding:18px 22px; margin-bottom:24px; background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 4px 16px rgba(15,23,42,0.03);">
-                        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-                            <div style="display:flex; align-items:center; gap:8px;">
-                                <span class="pulse-indicator" style="background:#00b894; box-shadow:0 0 0 3px rgba(0,184,148,0.25);"></span>
-                                <span style="font-size:12px; font-weight:700; color:#008f72; letter-spacing:0.5px;">
-                                    <i class="fas fa-bullhorn"></i> LIVE TICKER PREVIEW:
-                                </span>
-                                <span id="previewStatusBadge" class="status-pill-dot <?php echo $is_ann_enabled ? 'status-active' : 'status-paused'; ?>">
-                                    &bull; <?php echo $is_ann_enabled ? 'LIVE ON WEBSITE' : 'CURRENTLY DISABLED (HIDDEN)'; ?>
-                                </span>
-                            </div>
-                            <div style="display:flex; align-items:center; gap:8px; font-size:12.5px;">
-                                <button type="button" id="btnToggleMotion" class="speed-preset-chip" onclick="toggleTickerMotion()">
-                                    <i class="fas fa-pause"></i> <span>Pause Motion</span>
-                                </button>
-                                <span class="speed-preset-chip" style="cursor:default;">
-                                    <i class="fas fa-tachometer-alt" style="color:#00b894;"></i> Speed: <strong id="previewSpeedChip"><?php echo $ann_speed; ?>s</strong>
-                                </span>
-                                <span class="speed-preset-chip" style="cursor:default;">
-                                    <i class="far fa-calendar-check" style="color:#00b894;"></i> <strong id="previewDateChip"><?php echo htmlspecialchars($ann_last_updated); ?></strong>
-                                </span>
-                            </div>
-                        </div>
-
-                        <!-- Exact Replica of Top Green Bar -->
-                        <div class="news-ticker" style="--ticker-speed: <?php echo $ann_speed; ?>s; border-radius:10px; box-shadow:0 2px 10px rgba(0,184,148,0.18);">
-                            <div class="ticker-bar-container">
-                                <div class="ticker-meta-side" id="previewMetaSide" style="<?php echo $show_ann_updated ? '' : 'display:none;'; ?>">
-                                    <span class="ticker-live-badge"><i class="fas fa-bullhorn"></i> ANNOUNCEMENT</span>
-                                    <span class="ticker-meta-divider">&bull;</span>
-                                    <span class="ticker-updated-badge"><i class="far fa-calendar-check"></i> Last Updated: <span id="badgeDateText"><?php echo htmlspecialchars($ann_last_updated); ?></span></span>
+                    <div class="tab-pane active">
+                        <div class="pane-header-image2" style="margin-bottom:24px;">
+                            <div class="pane-title-group">
+                                <div class="admin-breadcrumb-pill">
+                                    <span class="bc-dot"></span> BROADCAST ENGINE &bull; GLOBAL HEADER
                                 </div>
-                                <div class="ticker-flow-track">
-                                    <div id="dashLiveTickerContent" class="ticker-content" style="animation-duration: <?php echo $ann_speed; ?>s;">
-                                        <span id="previewTickerTextWrap"><?php echo get_announcement_ticker_html($announcements_data, true); ?></span>
+                                <h2 class="pane-headline">Top Announcement Bar</h2>
+                                <p class="pane-subtext">Manage the real-time scrolling marquee displayed across the top of all college website pages.</p>
+                            </div>
+                            <div class="pane-actions-right" style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                <!-- Instant Toggle Bar Button -->
+                                <form action="../backend/crud.php" method="POST" style="display:inline; margin:0;">
+                                    <input type="hidden" name="action" value="toggle_announcement_bar">
+                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                    <button type="submit" class="<?php echo $is_ann_enabled ? 'btn-emerald-pill' : 'btn-outline-pill'; ?>" title="Click to instantly toggle visibility on website">
+                                        <i class="fas fa-power-off"></i> <?php echo $is_ann_enabled ? 'Bar Active (Enabled)' : 'Bar Hidden (Disabled)'; ?>
+                                    </button>
+                                </form>
+                                <a href="../index.php" target="_blank" class="btn-outline-pill">
+                                    <i class="fas fa-external-link-alt"></i> View Live Site
+                                </a>
+                            </div>
+                        </div>
+
+                        <!-- Live Ticker Simulator Card -->
+                        <div class="ticker-simulator-card">
+                            <div class="simulator-top-toolbar">
+                                <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;">
+                                    <div class="simulator-window-dots">
+                                        <span class="sim-dot red"></span>
+                                        <span class="sim-dot yellow"></span>
+                                        <span class="sim-dot green"></span>
+                                    </div>
+                                    <div class="simulator-url-bar">
+                                        <i class="fas fa-lock url-lock"></i>
+                                        <span>https://<strong>tcek.in</strong>/#top-announcement</span>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                        <div style="margin-top:10px; display:flex; justify-content:space-between; align-items:center; font-size:11.5px; color:#94a3b8; flex-wrap:wrap; gap:8px;">
-                            <span><i class="fas fa-info-circle" style="color:#00b894;"></i> Hover over preview to pause. Edits typed below reflect instantly in this preview before saving.</span>
-                            <a href="../index.php" target="_blank" style="color:#00b894; font-weight:600; text-decoration:none;"><i class="fas fa-external-link-alt"></i> View Live Site</a>
-                        </div>
-                    </div>
-
-                    <!-- Single Main Announcement Management Card -->
-                    <div class="form-card-light" style="padding:24px; margin-bottom:24px; background:#ffffff; border:1px solid #e2e8f0; border-radius:14px; box-shadow:0 4px 16px rgba(15,23,42,0.03);">
-                        <div style="margin-bottom:20px; border-bottom:1px solid #f1f5f9; padding-bottom:14px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                            <div>
-                                <h3 style="font-size:16px; font-weight:700; color:#0f172a; margin-bottom:4px; display:flex; align-items:center; gap:8px;">
-                                    <i class="fas fa-edit" style="color:#00b894;"></i> Main Announcement Editor
-                                </h3>
-                                <p style="font-size:13px; color:#64748b; margin:0;">Configure the single scrolling announcement, visibility toggle, speed, and date without touching code.</p>
-                            </div>
-                            <span class="status-pill-dot status-active" style="font-size:11.5px;">
-                                <i class="fas fa-shield-alt"></i> Single Announcement Mode
-                            </span>
-                        </div>
-
-                        <form action="../backend/crud.php" method="POST" id="formMainAnnouncement">
-                            <input type="hidden" name="action" value="save_main_announcement">
-                            <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-
-                            <!-- 1. The Single Input Field for the Main Announcement -->
-                            <div class="form-group" style="margin-bottom:20px;">
-                                <label style="font-size:13.5px; font-weight:700; color:#0f172a; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
-                                    <span><i class="fas fa-bullhorn" style="color:#00b894;"></i> Announcement Message *</span>
-                                    <span style="font-size:12px; font-weight:500; color:#64748b;">Single message scrolling on website</span>
-                                </label>
-                                <textarea name="announcement_text" id="announcement_text_input" rows="3" class="form-control" required placeholder="Enter the main announcement message to scroll on the website..." style="width:100%; border-radius:10px; font-size:13.5px; font-family:'Poppins', sans-serif; line-height:1.5; padding:12px 14px;" oninput="updateLivePreviewText(this.value)"><?php echo htmlspecialchars($ann_text); ?></textarea>
-                                <small style="font-size:12px; color:#64748b; margin-top:5px; display:block;">
-                                    <i class="fas fa-info-circle" style="color:#00b894;"></i> Updating this text directly replaces the current announcement on the live website.
-                                </small>
-                            </div>
-
-                            <!-- 2. Destination Link (Optional) -->
-                            <div class="form-group" style="margin-bottom:22px;">
-                                <label style="font-size:13px; font-weight:600; color:#334155; margin-bottom:6px; display:block;">
-                                    <i class="fas fa-link" style="color:#00b894;"></i> Destination Link URL (Optional)
-                                </label>
-                                <div style="position:relative;">
-                                    <i class="fas fa-globe" style="position:absolute; left:14px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px;"></i>
-                                    <input type="text" name="link_url" id="link_url_input" class="form-control" value="<?php echo htmlspecialchars($ann_link); ?>" placeholder="e.g. admission.php, circulars.php, or https://example.com" style="padding-left:38px; height:44px; border-radius:10px; font-size:13px;" oninput="updateLivePreviewLink(this.value)">
+                                <div class="simulator-viewport-controls">
+                                    <span style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase; margin-right:4px;">Simulator:</span>
+                                    <button type="button" id="btnViewDesktop" class="viewport-chip-btn active" onclick="setSimulatorView('desktop')">
+                                        <i class="fas fa-desktop"></i> Desktop
+                                    </button>
+                                    <button type="button" id="btnViewMobile" class="viewport-chip-btn" onclick="setSimulatorView('mobile')">
+                                        <i class="fas fa-mobile-alt"></i> Mobile (440px)
+                                    </button>
                                 </div>
-                                <small style="font-size:11.5px; color:#94a3b8; margin-top:4px; display:block;">
-                                    If provided, visitors clicking anywhere on the announcement will navigate to this page. Leave blank for text-only.
-                                </small>
                             </div>
 
-                            <!-- 3. Two Columns: Enable/Disable Switch & Last Updated Date Options -->
-                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:18px; margin-bottom:22px;">
-                                <!-- Toggle 1: Enable / Disable Announcement Bar -->
-                                <div class="ui-toggle-card">
-                                    <div class="ui-toggle-label">
-                                        <div class="ui-toggle-title">
-                                            <i class="fas fa-power-off" style="color:#00b894;"></i> Enable Announcement Bar
+                            <div class="simulator-canvas" id="simulatorCanvas">
+                                <div class="simulator-status-bar">
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span class="live-pulse-badge">
+                                            <span class="radar-dot"></span>
+                                            <span>LIVE SIMULATOR</span>
+                                        </span>
+                                        <span id="previewStatusBadge" class="status-pill-dot <?php echo $is_ann_enabled ? 'status-active' : 'status-paused'; ?>">
+                                            &bull; <?php echo $is_ann_enabled ? 'LIVE ON WEBSITE' : 'CURRENTLY DISABLED (HIDDEN)'; ?>
+                                        </span>
+                                    </div>
+                                    <div class="live-controls-cluster">
+                                        <button type="button" id="btnToggleMotion" class="speed-preset-chip" onclick="toggleTickerMotion()">
+                                            <i class="fas fa-pause"></i> <span>Pause Motion</span>
+                                        </button>
+                                        <span class="speed-preset-chip" style="cursor:default;">
+                                            <i class="fas fa-tachometer-alt" style="color:#059669;"></i> Speed: <strong id="previewSpeedChip"><?php echo $ann_speed; ?>s</strong>
+                                        </span>
+                                        <span class="speed-preset-chip" style="cursor:default;">
+                                            <i class="far fa-calendar-check" style="color:#059669;"></i> <strong id="previewDateChip"><?php echo htmlspecialchars($ann_last_updated); ?></strong>
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- The Live Marquee Banner -->
+                                <div class="news-ticker-preview-wrapper">
+                                    <div class="news-ticker" style="--ticker-speed: <?php echo $ann_speed; ?>s;">
+                                        <div class="ticker-bar-container">
+                                            <div class="ticker-meta-side" id="previewMetaSide" style="<?php echo $show_ann_updated ? '' : 'display:none;'; ?>">
+                                                <span class="ticker-live-badge"><i class="fas fa-bullhorn"></i> ANNOUNCEMENT</span>
+                                                <span class="ticker-meta-divider">&bull;</span>
+                                                <span class="ticker-updated-badge"><i class="far fa-calendar-check"></i> Last Updated: <span id="badgeDateText"><?php echo htmlspecialchars($ann_last_updated); ?></span></span>
+                                            </div>
+                                            <div class="ticker-flow-track">
+                                                <div id="dashLiveTickerContent" class="ticker-content" style="animation-duration: <?php echo $ann_speed; ?>s;">
+                                                    <span id="previewTickerTextWrap"><?php echo get_announcement_ticker_html($announcements_data, true); ?></span>
+                                                </div>
+                                            </div>
                                         </div>
-                                        <div class="ui-toggle-desc">
-                                            Show or completely hide the scrolling announcement bar across the website.
+                                    </div>
+                                </div>
+
+                                <div class="simulator-footer-hint">
+                                    <span><i class="fas fa-sparkles" style="color:#059669;"></i> <strong>Instant Sync Active:</strong> Edits typed in the editor below reflect in this preview immediately. Hover to pause.</span>
+                                    <a href="../index.php" target="_blank"><i class="fas fa-external-link-alt"></i> Open Full Website</a>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Main Announcement Editor Card -->
+                        <div class="announcement-editor-card">
+                            <div class="editor-card-header">
+                                <div class="editor-header-title-box">
+                                    <div class="editor-header-icon">
+                                        <i class="fas fa-edit"></i>
+                                    </div>
+                                    <div>
+                                        <h3>Main Announcement Editor</h3>
+                                        <p>Configure the broadcast text, destination URL, display switches, and animation speed without editing code.</p>
+                                    </div>
+                                </div>
+                                <span class="mode-badge-pill">
+                                    <i class="fas fa-shield-alt" style="color:#059669;"></i> Single Announcement Mode
+                                </span>
+                            </div>
+
+                            <form action="../backend/crud.php" method="POST" id="formMainAnnouncement">
+                                <input type="hidden" name="action" value="save_main_announcement">
+                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+
+                                <!-- Quick Snippet Tags Bar -->
+                                <div class="quick-snippets-bar">
+                                    <span class="quick-snippets-label"><i class="fas fa-bolt" style="color:#f59e0b;"></i> Quick Insert:</span>
+                                    <button type="button" class="snippet-chip-btn" onclick="insertSnippet('We Proudly Announce That We Got JNTUH & UGC AUTONOMOUS Status for Five Years')">+ 🏛️ Autonomous Status</button>
+                                    <button type="button" class="snippet-chip-btn" onclick="insertSnippet('NAAC Accredited \'B++\' Grade')">+ ⭐ NAAC Grade</button>
+                                    <button type="button" class="snippet-chip-btn" onclick="insertSnippet('Admissions Open for Diploma, BTech and MBA')">+ 🎓 Admissions Open</button>
+                                    <button type="button" class="snippet-chip-btn" onclick="insertSnippet('(For Admissions Contact: 7396903383, 8522954369)')">+ 📞 Contact Phones</button>
+                                    <button type="button" class="snippet-chip-btn" onclick="insertSnippet(' • ')">+ • Bullet</button>
+                                </div>
+
+                                <!-- 1. Announcement Text Input Field -->
+                                <div class="form-group" style="margin-bottom:22px;">
+                                    <label style="font-size:13.5px; font-weight:700; color:#0f172a; margin-bottom:8px; display:flex; align-items:center; justify-content:space-between;">
+                                        <span><i class="fas fa-bullhorn" style="color:#059669;"></i> Announcement Message *</span>
+                                        <span id="charCountPill" class="char-counter-pill">0 chars &bull; 0 words</span>
+                                    </label>
+                                    <textarea name="announcement_text" id="announcement_text_input" rows="3" class="form-textarea-modern" required placeholder="Enter the main announcement message to scroll on the website..." oninput="handleAnnouncementInput(this.value)"><?php echo htmlspecialchars($ann_text); ?></textarea>
+                                    <div class="textarea-footer-row">
+                                        <small style="font-size:12px; color:#64748b;">
+                                            <i class="fas fa-info-circle" style="color:#059669;"></i> Changes immediately update the live website upon saving.
+                                        </small>
+                                        <div class="textarea-actions-toolbar">
+                                            <button type="button" class="mini-tool-btn" onclick="copyAnnouncementText()"><i class="far fa-copy"></i> Copy Text</button>
+                                            <button type="button" class="mini-tool-btn" onclick="resetDefaultAnnouncement()"><i class="fas fa-history"></i> Reset Default</button>
+                                            <button type="button" class="mini-tool-btn" onclick="clearAnnouncementText()"><i class="far fa-trash-alt"></i> Clear</button>
                                         </div>
-                                        <div style="margin-top:6px;">
+                                    </div>
+                                </div>
+
+                                <input type="hidden" name="link_url" value="">
+
+                                <!-- 3. Dual Settings Grid: Enable Switch & Date Stamp -->
+                                <div class="modern-toggle-grid">
+                                    <!-- Setting 1: Enable / Disable Announcement Bar -->
+                                    <div class="modern-setting-card">
+                                        <div class="setting-card-top">
+                                            <div class="setting-icon-meta">
+                                                <div class="setting-icon-pill">
+                                                    <i class="fas fa-power-off"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="setting-card-title">Enable Announcement Bar</div>
+                                                    <div class="setting-card-desc">Show or completely hide the scrolling announcement bar across all pages of the college website.</div>
+                                                </div>
+                                            </div>
+                                            <input type="hidden" name="is_enabled" value="0">
+                                            <label class="switch-box" style="margin:0;">
+                                                <input type="checkbox" name="is_enabled" value="1" id="switchBarEnabled" <?php echo $is_ann_enabled ? 'checked' : ''; ?> onchange="onStatusToggleChange(this)">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                        <div style="margin-top:14px; padding-top:12px; border-top:1px solid #e2e8f0;">
                                             <span id="switchStatusLabel" class="status-pill-dot <?php echo $is_ann_enabled ? 'status-active' : 'status-paused'; ?>">
                                                 &bull; <?php echo $is_ann_enabled ? 'Enabled (Live on Website)' : 'Disabled (Hidden from Website)'; ?>
                                             </span>
                                         </div>
                                     </div>
-                                    <input type="hidden" name="is_enabled" value="0">
-                                    <label class="switch-box" style="margin:0;">
-                                        <input type="checkbox" name="is_enabled" value="1" id="switchBarEnabled" <?php echo $is_ann_enabled ? 'checked' : ''; ?> onchange="onStatusToggleChange(this)">
-                                        <span class="switch-slider"></span>
-                                    </label>
-                                </div>
 
-                                <!-- Toggle 2: "Last Updated" Date Display -->
-                                <div class="ui-toggle-card" style="flex-direction:column; align-items:stretch; gap:12px;">
-                                    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                                        <div class="ui-toggle-label">
-                                            <div class="ui-toggle-title">
-                                                <i class="far fa-calendar-check" style="color:#00b894;"></i> "Last Updated" Date Display
+                                    <!-- Setting 2: Last Updated Date Display -->
+                                    <div class="modern-setting-card">
+                                        <div class="setting-card-top">
+                                            <div class="setting-icon-meta">
+                                                <div class="setting-icon-pill">
+                                                    <i class="far fa-calendar-check"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="setting-card-title">"Last Updated" Date Display</div>
+                                                    <div class="setting-card-desc">Show or hide the "Last Updated" badge inside the marquee ticker.</div>
+                                                </div>
                                             </div>
-                                            <div class="ui-toggle-desc">
-                                                Show or hide the "Last Updated" badge in the bar.
+                                            <input type="hidden" name="show_last_updated" value="0">
+                                            <label class="switch-box" style="margin:0;">
+                                                <input type="checkbox" name="show_last_updated" value="1" id="switchShowUpdated" <?php echo $show_ann_updated ? 'checked' : ''; ?> onchange="onBadgeToggleChange(this)">
+                                                <span class="switch-slider"></span>
+                                            </label>
+                                        </div>
+                                        <div class="date-input-cluster">
+                                            <div class="date-input-wrap">
+                                                <i class="far fa-calendar-alt"></i>
+                                                <input type="text" id="last_updated_input" name="last_updated" class="date-text-input" value="<?php echo htmlspecialchars($ann_last_updated); ?>" placeholder="e.g. 09 October 2026" required oninput="onDateInputChange(this.value)">
                                             </div>
+                                            <button type="button" class="btn-outline-pill" style="height:38px; padding:0 14px; font-size:12px; white-space:nowrap;" onclick="setTodayDate()" title="Set to today's date">
+                                                <i class="fas fa-bolt" style="color:#059669;"></i> Today
+                                            </button>
                                         </div>
-                                        <input type="hidden" name="show_last_updated" value="0">
-                                        <label class="switch-box" style="margin:0;">
-                                            <input type="checkbox" name="show_last_updated" value="1" id="switchShowUpdated" <?php echo $show_ann_updated ? 'checked' : ''; ?> onchange="onBadgeToggleChange(this)">
-                                            <span class="switch-slider"></span>
-                                        </label>
-                                    </div>
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <div style="position:relative; flex:1;">
-                                            <i class="far fa-calendar-alt" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#94a3b8; font-size:13px;"></i>
-                                            <input type="text" id="last_updated_input" name="last_updated" class="form-control" value="<?php echo htmlspecialchars($ann_last_updated); ?>" placeholder="e.g. 09 October 2026" required style="padding-left:34px; height:40px; font-size:13px; border-radius:10px;" oninput="onDateInputChange(this.value)">
-                                        </div>
-                                        <button type="button" class="btn-outline-pill" style="height:40px; padding:0 14px; font-size:12px; white-space:nowrap;" onclick="setTodayDate()" title="Set to today's date">
-                                            <i class="fas fa-bolt" style="color:#00b894;"></i> Today
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- 4. Scrolling Speed Controller -->
-                            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:14px; padding:18px 20px; margin-bottom:24px;">
-                                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; flex-wrap:wrap; gap:10px;">
-                                    <div>
-                                        <div style="font-size:13.5px; font-weight:700; color:#0f172a; display:flex; align-items:center; gap:8px;">
-                                            <i class="fas fa-tachometer-alt" style="color:#00b894;"></i> Scrolling Speed Controller
-                                        </div>
-                                        <div style="font-size:12px; color:#64748b; margin-top:2px;">
-                                            Duration in seconds for one full scroll cycle. Lower number scrolls faster.
-                                        </div>
-                                    </div>
-                                    <div style="display:flex; align-items:center; gap:8px;">
-                                        <span style="font-size:12px; font-weight:600; color:#475569;">Duration:</span>
-                                        <input type="number" id="scrolling_speed_input" name="scrolling_speed" class="form-control" min="10" max="300" value="<?php echo $ann_speed; ?>" required style="width:75px; height:36px; text-align:center; font-weight:700; font-size:14px; border-radius:8px;" oninput="syncSpeedInput(this.value)">
-                                        <span style="font-size:13px; font-weight:600; color:#64748b;">seconds</span>
                                     </div>
                                 </div>
 
-                                <div style="display:flex; flex-direction:column; gap:12px;">
-                                    <div style="display:flex; align-items:center; gap:14px;">
-                                        <span style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Faster</span>
-                                        <input type="range" id="scrolling_speed_slider" min="15" max="150" value="<?php echo $ann_speed; ?>" class="speed-slider-control" oninput="syncSpeedSlider(this.value)">
-                                        <span style="font-size:11px; font-weight:700; color:#94a3b8; text-transform:uppercase;">Slower</span>
+                                <!-- 4. Scrolling Speed Tuner -->
+                                <div class="speed-tuner-card">
+                                    <div class="speed-tuner-header">
+                                        <div class="speed-title-meta">
+                                            <i class="fas fa-tachometer-alt" style="color:#059669; font-size:16px;"></i>
+                                            <h4>Scrolling Speed Controller</h4>
+                                            <span id="speedRatingBadge" class="speed-rating-pill">⚡ Normal Flow</span>
+                                        </div>
+                                        <div class="speed-duration-badge">
+                                            <span>Duration:</span>
+                                            <input type="number" id="scrolling_speed_input" name="scrolling_speed" min="10" max="300" value="<?php echo $ann_speed; ?>" required oninput="syncSpeedInput(this.value)">
+                                            <span>seconds</span>
+                                        </div>
                                     </div>
 
-                                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                                        <span style="font-size:12px; font-weight:600; color:#64748b; margin-right:4px;">Presets:</span>
+                                    <input type="range" id="scrolling_speed_slider" min="15" max="150" value="<?php echo $ann_speed; ?>" class="speed-slider-control" oninput="syncSpeedSlider(this.value)">
+
+                                    <div class="speed-preset-chips-row">
+                                        <span style="font-size:12px; font-weight:700; color:#64748b; margin-right:4px;">Presets:</span>
                                         <button type="button" class="speed-preset-chip <?php echo ($ann_speed == 25) ? 'active' : ''; ?>" onclick="selectSpeedPreset(25, this)">
                                             <i class="fas fa-bolt"></i> Fast (25s)
                                         </button>
@@ -1500,19 +1497,276 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                         </button>
                                     </div>
                                 </div>
-                            </div>
 
-                            <!-- 5. Save Changes Action Bar -->
-                            <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; padding-top:4px;">
-                                <div style="display:flex; align-items:center; gap:8px; font-size:12.5px; color:#64748b;">
-                                    <i class="fas fa-check-circle" style="color:#00b894;"></i>
-                                    <span>Changes will automatically update the website's top scrolling bar immediately.</span>
+                                <!-- 5. Save Changes Action Bar -->
+                                <div class="editor-action-footer">
+                                    <div class="action-status-reassurance">
+                                        <i class="fas fa-check-circle"></i>
+                                        <span>Live cache sync active: Changes take effect across the entire website instantly.</span>
+                                    </div>
+                                    <div style="display:flex; align-items:center; gap:12px;">
+                                        <button type="button" class="btn-outline-pill" onclick="resetFormToSaved()">
+                                            <i class="fas fa-undo"></i> Discard Edits
+                                        </button>
+                                        <button type="submit" class="btn-emerald-pill" style="padding:12px 34px; font-size:14px;">
+                                            <i class="fas fa-save"></i> Save &amp; Publish Announcement
+                                        </button>
+                                    </div>
                                 </div>
-                                <button type="submit" class="btn-emerald-pill" style="padding:12px 32px; font-size:14px; font-weight:600; box-shadow:0 4px 14px rgba(0, 184, 148, 0.35);">
-                                    <i class="fas fa-save"></i> Save Changes
+                            </form>
+                        </div>
+                    </div>
+            <?php endif; ?>
+
+            <!-- ============================================================== -->
+            <!-- TAB: HOMEPAGE HERO SLIDER MANAGEMENT -->
+            <!-- ============================================================== -->
+            <?php if (in_array($current_tab, ['hero', 'hero_slider']) && $is_admin): ?>
+                    <div class="tab-pane active">
+                        <!-- Header -->
+                        <div class="pane-header-image2">
+                            <div class="pane-title-group">
+                                <div class="pane-text">
+                                    <h2>Homepage Hero Section &amp; Slider</h2>
+                                    <p>Live Website Management &bull; Headlines, Badges, Media Slides &amp; Admissions CTA</p>
+                                </div>
+                            </div>
+                            <div class="pane-actions-right" style="display:flex; align-items:center; gap:10px;">
+                                <a href="../index.php" target="_blank" class="btn-outline-pill" style="text-decoration:none;">
+                                    <i class="fas fa-external-link-alt"></i> View Live Homepage
+                                </a>
+                                <button type="button" class="btn-emerald-pill" onclick="openModal('modalAddHeroSlide')">
+                                    <i class="fas fa-plus-circle"></i> Add New Slide
                                 </button>
                             </div>
-                        </form>
+                        </div>
+
+                        <!-- 1. Real-time Hero Simulator Card -->
+                        <div class="events-section-card" style="margin-bottom:24px;">
+                            <div class="events-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                                <div class="events-section-title-wrap">
+                                    <span class="events-section-num num-blue"><i class="fas fa-desktop"></i></span>
+                                    <div>
+                                        <h3 class="events-section-heading">Live Visual Simulator</h3>
+                                        <p class="events-section-sub">Pixel-perfect preview matching the live website design with interactive controls</p>
+                                    </div>
+                                </div>
+                                <div style="display:flex; align-items:center; gap:8px;">
+                                    <span class="status-pill-dot status-active" style="font-size:11.5px; padding:4px 10px;">
+                                        &bull; Live Sync Active
+                                    </span>
+                                    <div class="view-mode-pill-toggle" style="display:inline-flex; background:#f1f5f9; padding:3px; border-radius:20px; border:1px solid #e2e8f0;">
+                                        <button type="button" id="btnHeroDesktop" class="mode-toggle-btn active" onclick="setHeroSimulatorMode('desktop')" style="border:none; background:transparent; padding:4px 12px; font-size:12px; font-weight:600; border-radius:16px; cursor:pointer; color:#475569;">
+                                            <i class="fas fa-desktop"></i> Desktop
+                                        </button>
+                                        <button type="button" id="btnHeroMobile" class="mode-toggle-btn" onclick="setHeroSimulatorMode('mobile')" style="border:none; background:transparent; padding:4px 12px; font-size:12px; font-weight:600; border-radius:16px; cursor:pointer; color:#475569;">
+                                            <i class="fas fa-mobile-alt"></i> Mobile
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Simulator Stage Frame -->
+                            <div id="heroSimulatorOuter" style="background:#020617; border-radius:28px; padding:12px; box-shadow:0 20px 45px rgba(15,23,42,0.18); overflow:hidden; transition:all 0.3s ease;">
+                                <div class="hero-stage" id="adminHeroStagePreview" style="margin:0 auto; width:100%; transition:max-width 0.3s ease;">
+                                    <!-- Badges (Floating on top) -->
+                                    <div class="hero-top-badges">
+                                        <div class="hero-glass-badge" id="previewBadgeLeftWrap">
+                                            <span class="live-pulse-dot" id="previewBadgeLeftPulse" style="<?php echo !empty($hero_content['badge_left_pulse']) ? '' : 'display:none;'; ?>"></span>
+                                            <span id="previewBadgeLeftText"><?php echo htmlspecialchars($hero_content['badge_left_text'] ?? 'Campus Highlights'); ?></span>
+                                        </div>
+                                        <div class="hero-glass-badge badge-accent" id="previewBadgeRightWrap">
+                                            <i id="previewBadgeRightIcon" class="<?php echo htmlspecialchars($hero_content['badge_right_icon'] ?? 'fas fa-certificate'); ?>"></i>
+                                            <span id="previewBadgeRightText"><?php echo htmlspecialchars($hero_content['badge_right_text'] ?? "NAAC 'B++' Grade & Autonomous"); ?></span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Slides Track -->
+                                    <div class="hero-slides-track" id="adminHeroSlidesTrack">
+                                        <?php if (!empty($hero_slides)): ?>
+                                                <?php $slideIdx = 0;
+                                                foreach ($hero_slides as $slide): ?>
+                                                        <?php
+                                                        $mediaSrc = (strpos($slide['file_path'], 'http') === 0 || strpos($slide['file_path'], '/') === 0)
+                                                            ? $slide['file_path']
+                                                            : '../' . ltrim($slide['file_path'], '/');
+                                                        $isVid = ($slide['media_type'] ?? 'image') === 'video';
+                                                        ?>
+                                                        <?php if ($isVid): ?>
+                                                                <video src="<?php echo htmlspecialchars($mediaSrc); ?>" class="hero-slide admin-sim-slide <?php echo $slideIdx === 0 ? 'active' : ''; ?>" data-slide-index="<?php echo $slideIdx; ?>" muted playsinline loop></video>
+                                                        <?php else: ?>
+                                                                <img src="<?php echo htmlspecialchars($mediaSrc); ?>" alt="<?php echo htmlspecialchars($slide['title'] ?? 'College Event'); ?>" class="hero-slide admin-sim-slide <?php echo $slideIdx === 0 ? 'active' : ''; ?>" data-slide-index="<?php echo $slideIdx; ?>">
+                                                        <?php endif; ?>
+                                                    <?php $slideIdx++; endforeach; ?>
+                                        <?php else: ?>
+                                                <img src="../assets/College Event/all1.jpg" alt="Default Hero" class="hero-slide admin-sim-slide active" data-slide-index="0">
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <!-- Bottom Cinematic Bar -->
+                                    <div class="hero-bottom-bar">
+                                        <div class="hero-bar-text">
+                                            <h3 id="previewHeroTitle"><?php echo htmlspecialchars($hero_content['title'] ?? 'Excellence in Education'); ?></h3>
+                                            <p>
+                                                <i id="previewHeroSubtitleIcon" class="<?php echo htmlspecialchars($hero_content['subtitle_icon'] ?? 'fas fa-shield-halved'); ?>"></i>
+                                                <span id="previewHeroSubtitle"><?php echo htmlspecialchars($hero_content['subtitle'] ?? 'Inspiring Future Innovators Since 2008'); ?></span>
+                                            </p>
+                                        </div>
+
+                                        <!-- Navigation Arrows & Slide Dots -->
+                                        <div class="hero-controls-wrapper">
+                                            <button type="button" class="hero-nav-arrow" onclick="previewHeroPrevSlide()" aria-label="Previous Slide">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </button>
+                                            <div class="hero-dots-container" id="adminHeroDotsContainer">
+                                                <?php $dotCount = max(1, count($hero_slides));
+                                                for ($d = 0; $d < $dotCount; $d++): ?>
+                                                        <span class="hero-dot <?php echo $d === 0 ? 'active' : ''; ?>" onclick="showAdminHeroSlide(<?php echo $d; ?>)"></span>
+                                                <?php endfor; ?>
+                                            </div>
+                                            <button type="button" class="hero-nav-arrow" onclick="previewHeroNextSlide()" aria-label="Next Slide">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </button>
+                                        </div>
+
+                                        <!-- Admissions CTA Button -->
+                                        <div class="hero-bar-cta">
+                                            <a href="<?php echo htmlspecialchars($hero_content['cta_link'] ?? 'admission.php'); ?>" id="previewHeroCtaLink" target="_blank" class="hero-pill-btn">
+                                                <span id="previewHeroCtaText"><?php echo htmlspecialchars($hero_content['cta_text'] ?? 'Admissions Open'); ?></span>
+                                                <i class="fas fa-arrow-right"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Simulator Status Bar -->
+                            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:12px; padding:0 6px; font-size:12px; color:#64748b;">
+                                <div>
+                                    <i class="fas fa-info-circle" style="color:var(--primary);"></i>
+                                    <span>Click the <strong>&lt;</strong> and <strong>&gt;</strong> arrows above to cycle through active slides.</span>
+                                </div>
+                                <div>
+                                    <span>Active Slide: <strong id="adminCurrentSlideNum">1</strong> of <strong><?php echo max(1, count($hero_slides)); ?></strong></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. Slider Media Items Management Card -->
+                        <div class="events-section-card">
+                        <div class="events-section-header" style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                            <div class="events-section-title-wrap">
+                                <span class="events-section-num num-purple"><i class="fas fa-images"></i></span>
+                                <div>
+                                    <h3 class="events-section-heading">Slider Media Items (<?php echo $total_hero_slides; ?>)</h3>
+                                    <p class="events-section-sub">Reorder, enable/hide, edit captions, replace media, or remove slides from homepage carousel</p>
+                                </div>
+                            </div>
+                            <button type="button" class="btn-emerald-pill" onclick="openModal('modalAddHeroSlide')" style="font-size:12.5px; padding:9px 18px;">
+                                <i class="fas fa-plus-circle"></i> Add New Slide
+                            </button>
+                        </div>
+
+                        <!-- Slides List Container -->
+                        <div class="hero-slides-admin-list" style="display:flex; flex-direction:column; gap:12px;">
+                            <?php if (empty($hero_slides)): ?>
+                                <div style="text-align:center; padding:36px 16px; background:#f8fafc; border:1px dashed #cbd5e1; border-radius:12px; color:#64748b;">
+                                    <i class="fas fa-images" style="font-size:32px; color:#cbd5e1; margin-bottom:8px; display:block;"></i>
+                                    No slides added yet. Click <strong>Add New Slide</strong> above to upload media.
+                                </div>
+                            <?php else: ?>
+                                <?php 
+                                $slidePos = 0; 
+                                foreach ($hero_slides as $s): 
+                                    $slidePos++;
+                                    $isLast = ($slidePos === count($hero_slides));
+                                    $isFirst = ($slidePos === 1);
+                                    $mediaUrl = (strpos($s['file_path'], 'http') === 0 || strpos($s['file_path'], '/') === 0) 
+                                        ? $s['file_path'] 
+                                        : '../' . ltrim($s['file_path'], '/');
+                                    $isVideo = ($s['media_type'] ?? 'image') === 'video';
+                                    $isActive = !empty($s['is_active']);
+                                ?>
+                                    <div class="hero-slide-item-card" style="display:flex; align-items:center; justify-content:space-between; background:<?php echo $isActive ? '#ffffff' : '#f8fafc'; ?>; border:1px solid <?php echo $isActive ? '#e2e8f0' : '#cbd5e1'; ?>; border-radius:12px; padding:12px 16px; gap:16px; opacity:<?php echo $isActive ? '1' : '0.75'; ?>; transition:all 0.2s ease;">
+                                        <!-- Position & Thumbnail -->
+                                        <div style="display:flex; align-items:center; gap:14px; min-width:0;">
+                                            <span style="font-size:12px; font-weight:800; color:#64748b; background:#f1f5f9; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                                                #<?php echo $slidePos; ?>
+                                            </span>
+                                            <div style="position:relative; width:80px; height:54px; border-radius:8px; overflow:hidden; background:#0b1120; flex-shrink:0; border:1px solid #cbd5e1;">
+                                                <?php if ($isVideo): ?>
+                                                    <video src="<?php echo htmlspecialchars($mediaUrl); ?>" style="width:100%; height:100%; object-fit:cover;" muted></video>
+                                                    <span style="position:absolute; bottom:2px; right:2px; background:rgba(0,0,0,0.7); color:#fff; font-size:9px; padding:1px 4px; border-radius:4px;"><i class="fas fa-video"></i></span>
+                                                <?php else: ?>
+                                                    <img src="<?php echo htmlspecialchars($mediaUrl); ?>" alt="<?php echo htmlspecialchars($s['title'] ?? 'Slide'); ?>" style="width:100%; height:100%; object-fit:cover;">
+                                                <?php endif; ?>
+                                            </div>
+                                            <div style="min-width:0; overflow:hidden;">
+                                                <div style="font-size:14px; font-weight:700; color:#0f172a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                                    <?php echo htmlspecialchars($s['title'] ?: 'Hero Slide #' . $s['id']); ?>
+                                                </div>
+                                                <div style="font-size:11.5px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                                                    <span class="badge" style="font-size:10px; padding:2px 7px; border-radius:6px; background:<?php echo $isVideo ? 'rgba(59,130,246,0.1)' : 'rgba(16,185,129,0.1)'; ?>; color:<?php echo $isVideo ? '#2563eb' : '#059669'; ?>; font-weight:700; margin-right:6px;">
+                                                        <?php echo strtoupper($s['media_type'] ?? 'IMAGE'); ?>
+                                                    </span>
+                                                    <span><?php echo htmlspecialchars(basename($s['file_path'])); ?></span>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Controls & Actions -->
+                                        <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                                            <!-- Move Up -->
+                                            <form action="../backend/crud.php" method="POST" style="margin:0;">
+                                                <input type="hidden" name="action" value="move_hero_slide">
+                                                <input type="hidden" name="id" value="<?php echo $s['id']; ?>">
+                                                <input type="hidden" name="direction" value="up">
+                                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                <button type="submit" class="btn-icon-action" title="Move Up" <?php echo $isFirst ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : ''; ?> style="width:34px; height:34px; border-radius:8px; border:1px solid #e2e8f0; background:#ffffff; color:#475569; cursor:pointer;">
+                                                    <i class="fas fa-chevron-up"></i>
+                                                </button>
+                                            </form>
+
+                                            <!-- Move Down -->
+                                            <form action="../backend/crud.php" method="POST" style="margin:0;">
+                                                <input type="hidden" name="action" value="move_hero_slide">
+                                                <input type="hidden" name="id" value="<?php echo $s['id']; ?>">
+                                                <input type="hidden" name="direction" value="down">
+                                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                <button type="submit" class="btn-icon-action" title="Move Down" <?php echo $isLast ? 'disabled style="opacity:0.3; cursor:not-allowed;"' : ''; ?> style="width:34px; height:34px; border-radius:8px; border:1px solid #e2e8f0; background:#ffffff; color:#475569; cursor:pointer;">
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </button>
+                                            </form>
+
+                                            <!-- Toggle Active/Hidden -->
+                                            <form action="../backend/crud.php" method="POST" style="margin:0;">
+                                                <input type="hidden" name="action" value="toggle_hero_slide">
+                                                <input type="hidden" name="id" value="<?php echo $s['id']; ?>">
+                                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                <button type="submit" class="btn-icon-action" title="<?php echo $isActive ? 'Active (Click to Hide)' : 'Hidden (Click to Activate)'; ?>" style="width:34px; height:34px; border-radius:8px; border:1px solid <?php echo $isActive ? '#bbf7d0' : '#e2e8f0'; ?>; background:<?php echo $isActive ? '#f0fdf4' : '#f8fafc'; ?>; color:<?php echo $isActive ? '#16a34a' : '#94a3b8'; ?>; cursor:pointer;">
+                                                    <i class="fas <?php echo $isActive ? 'fa-eye' : 'fa-eye-slash'; ?>"></i>
+                                                </button>
+                                            </form>
+
+                                            <!-- Edit Slide Modal Opener -->
+                                            <button type="button" class="btn-icon-action" title="Edit Slide" onclick='openEditHeroSlideModal(<?php echo json_encode($s); ?>)' style="width:34px; height:34px; border-radius:8px; border:1px solid #fed7aa; background:#fff7ed; color:#ea580c; cursor:pointer;">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+
+                                            <!-- Delete Slide -->
+                                            <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Are you sure you want to remove this slide from the homepage carousel?');" style="margin:0;">
+                                                <input type="hidden" name="action" value="delete_hero_slide">
+                                                <input type="hidden" name="id" value="<?php echo $s['id']; ?>">
+                                                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                <button type="submit" class="btn-icon-action" title="Delete Slide" style="width:34px; height:34px; border-radius:8px; border:1px solid #fecaca; background:#fef2f2; color:#ef4444; cursor:pointer;">
+                                                    <i class="fas fa-trash-alt"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
                 </div>
             <?php endif; ?>
@@ -1521,207 +1775,214 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             <!-- TAB 8: ACTIVITY LOGS -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'activity_logs' && $is_admin): ?>
-                <div class="tab-pane active">
-                    <div class="pane-header-image2">
-                        <div class="pane-title-group">
-                            <div class="pane-text">
-                                <h2>Activity Logs &amp; Audit Trail</h2>
-                                <p>Historical registry of who changed what and when &bull; Enterprise security logging</p>
-                            </div>
-                        </div>
-                        <div class="pane-actions-right">
-                            <span class="events-count-badge">
-                                <i class="fas fa-shield-alt"></i> Audit Trail Active
-                            </span>
-                        </div>
-                    </div>
-
-                    <!-- System Audit Trail Table Card -->
-                    <div class="events-section-card">
-                        <div class="events-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
-                            <div class="events-section-title-wrap">
-                                <span class="events-section-num num-blue"><i class="fas fa-history"></i></span>
-                                <div>
-                                    <h3 class="events-section-heading">System Audit Trail</h3>
-                                    <p class="events-section-sub">Real-time log of administrative actions &bull; Security, content updates &amp; authentication</p>
+                    <div class="tab-pane active">
+                        <div class="pane-header-image2">
+                            <div class="pane-title-group">
+                                <div class="pane-text">
+                                    <h2>Activity Logs &amp; Audit Trail</h2>
+                                    <p>Historical registry of who changed what and when &bull; Enterprise security logging</p>
                                 </div>
                             </div>
-
-                            <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-                                <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
-                                    <input type="hidden" name="tab" value="activity_logs">
-                                    <?php if ($log_module_filter !== 'all'): ?><input type="hidden" name="log_module" value="<?php echo htmlspecialchars($log_module_filter); ?>"><?php endif; ?>
-                                    <?php if ($log_action_filter !== 'all'): ?><input type="hidden" name="log_action" value="<?php echo htmlspecialchars($log_action_filter); ?>"><?php endif; ?>
-                                    <div class="search-box-pill" style="margin:0;">
-                                        <i class="fas fa-search"></i>
-                                        <input type="text" name="log_search" id="logSearchInput" value="<?php echo htmlspecialchars($log_search); ?>" class="search-pill-input" placeholder="Search admin, record, or action..." onchange="this.form.submit()">
-                                    </div>
-                                </form>
+                            <div class="pane-actions-right">
                                 <span class="events-count-badge">
-                                    <i class="fas fa-clipboard-list"></i> <?php echo $total_activity_logs; ?> Log Entries
+                                    <i class="fas fa-shield-alt"></i> Audit Trail Active
                                 </span>
                             </div>
                         </div>
 
-                        <!-- Filter Toolbar -->
-                        <div style="padding:14px 24px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
-                            <form method="GET" action="dashboard.php" class="log-filter-groups" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:0;">
-                                <input type="hidden" name="tab" value="activity_logs">
-                                <?php if (!empty($log_search)): ?>
-                                    <input type="hidden" name="log_search" value="<?php echo htmlspecialchars($log_search); ?>">
-                                <?php endif; ?>
-                                
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Module:</span>
-                                    <select name="log_module" class="filter-pill-select" onchange="this.form.submit()" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
-                                        <option value="all" <?php echo $log_module_filter === 'all' ? 'selected' : ''; ?>>All Modules</option>
-                                        <option value="Users" <?php echo $log_module_filter === 'Users' ? 'selected' : ''; ?>>Users</option>
-                                        <option value="Workshops" <?php echo $log_module_filter === 'Workshops' ? 'selected' : ''; ?>>Workshops</option>
-                                        <option value="Events" <?php echo $log_module_filter === 'Events' ? 'selected' : ''; ?>>Events</option>
-                                        <option value="News" <?php echo $log_module_filter === 'News' ? 'selected' : ''; ?>>News</option>
-                                        <option value="Notifications" <?php echo $log_module_filter === 'Notifications' ? 'selected' : ''; ?>>Notifications</option>
-                                    </select>
+                        <!-- System Audit Trail Table Card -->
+                        <div class="events-section-card">
+                            <div class="events-section-header" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+                                <div class="events-section-title-wrap">
+                                    <span class="events-section-num num-blue"><i class="fas fa-history"></i></span>
+                                    <div>
+                                        <h3 class="events-section-heading">System Audit Trail</h3>
+                                        <p class="events-section-sub">Real-time log of administrative actions &bull; Security, content updates &amp; authentication</p>
+                                    </div>
                                 </div>
 
-                                <div style="display:flex; align-items:center; gap:8px;">
-                                    <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Action:</span>
-                                    <select name="log_action" class="filter-pill-select" onchange="this.form.submit()" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
-                                        <option value="all" <?php echo $log_action_filter === 'all' ? 'selected' : ''; ?>>All Actions</option>
-                                        <option value="Added" <?php echo $log_action_filter === 'Added' ? 'selected' : ''; ?>>Added</option>
-                                        <option value="Updated" <?php echo $log_action_filter === 'Updated' ? 'selected' : ''; ?>>Updated</option>
-                                        <option value="Deleted" <?php echo $log_action_filter === 'Deleted' ? 'selected' : ''; ?>>Deleted</option>
-                                        <option value="Login" <?php echo $log_action_filter === 'Login' ? 'selected' : ''; ?>>Login</option>
-                                    </select>
+                                <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+                                    <form method="GET" action="dashboard.php" style="display:inline-flex; align-items:center; margin:0;">
+                                        <input type="hidden" name="tab" value="activity_logs">
+                                        <?php if ($log_module_filter !== 'all'): ?><input type="hidden" name="log_module" value="<?php echo htmlspecialchars($log_module_filter); ?>"><?php endif; ?>
+                                        <?php if ($log_action_filter !== 'all'): ?><input type="hidden" name="log_action" value="<?php echo htmlspecialchars($log_action_filter); ?>"><?php endif; ?>
+                                        <div class="search-box-pill" style="margin:0;">
+                                            <i class="fas fa-search"></i>
+                                            <input type="text" name="log_search" id="logSearchInput" value="<?php echo htmlspecialchars($log_search); ?>" class="search-pill-input" placeholder="Search admin, record, or action..." onchange="this.form.submit()">
+                                        </div>
+                                    </form>
+                                    <span class="events-count-badge">
+                                        <i class="fas fa-clipboard-list"></i> <?php echo $total_activity_logs; ?> Log Entries
+                                    </span>
                                 </div>
-
-                                <?php if ($log_module_filter !== 'all' || $log_action_filter !== 'all' || !empty($log_search)): ?>
-                                    <a href="?tab=activity_logs" style="font-size:12px; color:#ef4444; text-decoration:none; font-weight:600; margin-left:4px; display:inline-flex; align-items:center; gap:4px;">
-                                        <i class="fas fa-times-circle"></i> Reset Filters
-                                    </a>
-                                <?php endif; ?>
-                            </form>
-
-                            <div style="font-size:12.5px; color:#64748b;">
-                                Showing <strong><?php echo $activity_logs_pagination['start_index']; ?>–<?php echo $activity_logs_pagination['end_index']; ?></strong> of <strong><?php echo $total_activity_logs; ?></strong> recorded actions
                             </div>
-                        </div>
 
-                        <?php if (empty($activity_logs)): ?>
-                            <div style="padding: 56px 24px; text-align: center;">
-                                <div style="width: 60px; height: 60px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;">
-                                    <i class="fas fa-history"></i>
-                                </div>
-                                <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Activity Logs Found</h4>
-                                <p style="margin: 0 auto; max-width: 440px; color: #64748b; font-size: 13px;">
-                                    <?php if (!empty($log_search) || $log_module_filter !== 'all' || $log_action_filter !== 'all'): ?>
-                                        There are no recorded activities matching your selected filters. <a href="?tab=activity_logs" style="color:#00b894; font-weight:600;">Reset filters</a>
-                                    <?php else: ?>
-                                        There are currently no recorded administrative activities.
+                            <!-- Filter Toolbar -->
+                            <div style="padding:14px 24px; background:#f8fafc; border-bottom:1px solid #e2e8f0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+                                <form method="GET" action="dashboard.php" class="log-filter-groups" style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin:0;">
+                                    <input type="hidden" name="tab" value="activity_logs">
+                                    <?php if (!empty($log_search)): ?>
+                                            <input type="hidden" name="log_search" value="<?php echo htmlspecialchars($log_search); ?>">
                                     <?php endif; ?>
-                                </p>
+                                
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Module:</span>
+                                        <select name="log_module" class="filter-pill-select" onchange="this.form.submit()" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
+                                            <option value="all" <?php echo $log_module_filter === 'all' ? 'selected' : ''; ?>>All Modules</option>
+                                            <option value="Users" <?php echo $log_module_filter === 'Users' ? 'selected' : ''; ?>>Users</option>
+                                            <option value="Workshops" <?php echo $log_module_filter === 'Workshops' ? 'selected' : ''; ?>>Workshops</option>
+                                            <option value="Events" <?php echo $log_module_filter === 'Events' ? 'selected' : ''; ?>>Events</option>
+                                            <option value="News" <?php echo $log_module_filter === 'News' ? 'selected' : ''; ?>>News</option>
+                                            <option value="Notifications" <?php echo $log_module_filter === 'Notifications' ? 'selected' : ''; ?>>Notifications</option>
+                                        </select>
+                                    </div>
+
+                                    <div style="display:flex; align-items:center; gap:8px;">
+                                        <span style="font-size:11.5px; font-weight:700; color:#64748b; text-transform:uppercase; letter-spacing:0.5px;">Action:</span>
+                                        <select name="log_action" class="filter-pill-select" onchange="this.form.submit()" style="background:#fff; border:1px solid #cbd5e1; border-radius:20px; padding:6px 14px; font-size:12.5px; font-weight:600; color:#334155; cursor:pointer;">
+                                            <option value="all" <?php echo $log_action_filter === 'all' ? 'selected' : ''; ?>>All Actions</option>
+                                            <option value="Added" <?php echo $log_action_filter === 'Added' ? 'selected' : ''; ?>>Added</option>
+                                            <option value="Updated" <?php echo $log_action_filter === 'Updated' ? 'selected' : ''; ?>>Updated</option>
+                                            <option value="Deleted" <?php echo $log_action_filter === 'Deleted' ? 'selected' : ''; ?>>Deleted</option>
+                                            <option value="Login" <?php echo $log_action_filter === 'Login' ? 'selected' : ''; ?>>Login</option>
+                                        </select>
+                                    </div>
+
+                                    <?php if ($log_module_filter !== 'all' || $log_action_filter !== 'all' || !empty($log_search)): ?>
+                                            <a href="?tab=activity_logs" style="font-size:12px; color:#ef4444; text-decoration:none; font-weight:600; margin-left:4px; display:inline-flex; align-items:center; gap:4px;">
+                                                <i class="fas fa-times-circle"></i> Reset Filters
+                                            </a>
+                                    <?php endif; ?>
+                                </form>
+
+                                <div style="font-size:12.5px; color:#64748b;">
+                                    Showing <strong><?php echo $activity_logs_pagination['start_index']; ?>–<?php echo $activity_logs_pagination['end_index']; ?></strong> of <strong><?php echo $total_activity_logs; ?></strong> recorded actions
+                                </div>
                             </div>
-                        <?php else: ?>
-                            <div class="table-card-image2" style="border:none; border-radius:0; box-shadow:none;">
-                                <table class="table-image2" id="activityLogsTable">
-                                    <thead>
-                                        <tr>
-                                            <th style="width: 170px;">ADMINISTRATOR</th>
-                                            <th style="width: 120px;">ACTION</th>
-                                            <th style="width: 140px;">MODULE</th>
-                                            <th style="min-width: 200px;">RECORD / TARGET</th>
-                                            <th style="width: 180px;">DATE &amp; TIME</th>
-                                            <th style="min-width: 260px;">DETAILS &amp; NOTES</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <?php foreach ($activity_logs as $log): 
-                                            $act = strtoupper($log['action'] ?? 'ACTION');
-                                            $badgeStyle = 'background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;';
-                                            if ($act === 'ADDED' || $act === 'CREATE') {
-                                                $badgeStyle = 'background:#dcfce7; color:#15803d; border:1px solid #bbf7d0;';
-                                            } elseif ($act === 'UPDATED' || $act === 'EDIT') {
-                                                $badgeStyle = 'background:#fef3c7; color:#b45309; border:1px solid #fde68a;';
-                                            } elseif ($act === 'DELETED' || $act === 'REMOVE') {
-                                                $badgeStyle = 'background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;';
-                                            }
-                                            $adminInitial = strtoupper(substr($log['admin_name'] ?? 'A', 0, 1));
-                                        ?>
-                                            <tr>
-                                                <!-- Administrator -->
-                                                <td>
-                                                    <div style="display:flex; align-items:center; gap:10px;">
-                                                        <div style="width:34px; height:34px; border-radius:50%; background:#ecfdf5; color:#00b894; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; border:1px solid #a7f3d0;">
-                                                            <?php echo htmlspecialchars($adminInitial); ?>
-                                                        </div>
-                                                        <div>
-                                                            <div style="font-weight:700; color:#0f172a; font-size:13.5px;"><?php echo htmlspecialchars($log['admin_name']); ?></div>
-                                                            <span style="font-size:11px; color:#64748b;">Admin</span>
-                                                        </div>
-                                                    </div>
-                                                </td>
 
-                                                <!-- Action Badge -->
-                                                <td>
-                                                    <span style="display:inline-block; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; letter-spacing:0.4px; <?php echo $badgeStyle; ?>">
-                                                        <?php echo htmlspecialchars($act); ?>
-                                                    </span>
-                                                </td>
+                            <?php if (empty($activity_logs)): ?>
+                                    <div style="padding: 56px 24px; text-align: center;">
+                                        <div style="width: 60px; height: 60px; border-radius: 50%; background: #f1f5f9; color: #94a3b8; display: inline-flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px;">
+                                            <i class="fas fa-history"></i>
+                                        </div>
+                                        <h4 style="margin: 0 0 6px; color: #1e293b; font-size: 16px;">No Activity Logs Found</h4>
+                                        <p style="margin: 0 auto; max-width: 440px; color: #64748b; font-size: 13px;">
+                                            <?php if (!empty($log_search) || $log_module_filter !== 'all' || $log_action_filter !== 'all'): ?>
+                                                    There are no recorded activities matching your selected filters. <a href="?tab=activity_logs" style="color:#00b894; font-weight:600;">Reset filters</a>
+                                            <?php else: ?>
+                                                    There are currently no recorded administrative activities.
+                                            <?php endif; ?>
+                                        </p>
+                                    </div>
+                            <?php else: ?>
+                                    <div class="table-card-image2" style="border:none; border-radius:0; box-shadow:none;">
+                                        <table class="table-image2" id="activityLogsTable">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 170px;">ADMINISTRATOR</th>
+                                                    <th style="width: 120px;">ACTION</th>
+                                                    <th style="width: 140px;">MODULE</th>
+                                                    <th style="min-width: 200px;">RECORD / TARGET</th>
+                                                    <th style="width: 180px;">DATE &amp; TIME</th>
+                                                    <th style="min-width: 260px;">DETAILS &amp; NOTES</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <?php foreach ($activity_logs as $log):
+                                                    $act = strtoupper($log['action'] ?? 'ACTION');
+                                                    $badgeStyle = 'background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd;';
+                                                    if ($act === 'ADDED' || $act === 'CREATE') {
+                                                        $badgeStyle = 'background:#dcfce7; color:#15803d; border:1px solid #bbf7d0;';
+                                                    } elseif ($act === 'UPDATED' || $act === 'EDIT') {
+                                                        $badgeStyle = 'background:#fef3c7; color:#b45309; border:1px solid #fde68a;';
+                                                    } elseif ($act === 'DELETED' || $act === 'REMOVE') {
+                                                        $badgeStyle = 'background:#fee2e2; color:#b91c1c; border:1px solid #fecaca;';
+                                                    }
+                                                    $adminInitial = strtoupper(substr($log['admin_name'] ?? 'A', 0, 1));
+                                                    ?>
+                                                        <tr>
+                                                            <!-- Administrator -->
+                                                            <td>
+                                                                <div style="display:flex; align-items:center; gap:10px;">
+                                                                    <div style="width:34px; height:34px; border-radius:50%; background:#ecfdf5; color:#00b894; font-weight:700; font-size:13px; display:flex; align-items:center; justify-content:center; border:1px solid #a7f3d0;">
+                                                                        <?php echo htmlspecialchars($adminInitial); ?>
+                                                                    </div>
+                                                                    <div>
+                                                                        <div style="font-weight:700; color:#0f172a; font-size:13.5px;"><?php echo htmlspecialchars($log['admin_name']); ?></div>
+                                                                        <span style="font-size:11px; color:#64748b;">Admin</span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
 
-                                                <!-- Module -->
-                                                <td>
-                                                    <span class="linked-event-pill" style="font-size:11.5px; padding:4px 10px; background:#f1f5f9; color:#334155; font-weight:600; border-radius:6px;">
-                                                        <i class="fas fa-layer-group" style="color:#00b894;"></i> <?php echo htmlspecialchars($log['module']); ?>
-                                                    </span>
-                                                </td>
+                                                            <!-- Action Badge -->
+                                                            <td>
+                                                                <span style="display:inline-block; font-size:11px; font-weight:700; padding:4px 10px; border-radius:6px; letter-spacing:0.4px; <?php echo $badgeStyle; ?>">
+                                                                    <?php echo htmlspecialchars($act); ?>
+                                                                </span>
+                                                            </td>
 
-                                                <!-- Record / Target -->
-                                                <td>
-                                                    <div class="item-main-title" style="font-size:13.5px; font-weight:700; color:#0f172a;">
-                                                        <?php echo htmlspecialchars($log['record_name']); ?>
-                                                    </div>
-                                                </td>
+                                                            <!-- Module -->
+                                                            <td>
+                                                                <span class="linked-event-pill" style="font-size:11.5px; padding:4px 10px; background:#f1f5f9; color:#334155; font-weight:600; border-radius:6px;">
+                                                                    <i class="fas fa-layer-group" style="color:#00b894;"></i> <?php echo htmlspecialchars($log['module']); ?>
+                                                                </span>
+                                                            </td>
 
-                                                <!-- Date & Time -->
-                                                <td>
-                                                    <div style="font-size:12.5px; color:#475569; font-weight:600; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
-                                                        <i class="far fa-calendar-alt" style="color:#00b894;"></i> <?php echo format_log_time($log['created_at']); ?>
-                                                    </div>
-                                                </td>
+                                                            <!-- Record / Target -->
+                                                            <td>
+                                                                <div class="item-main-title" style="font-size:13.5px; font-weight:700; color:#0f172a;">
+                                                                    <?php echo htmlspecialchars($log['record_name']); ?>
+                                                                </div>
+                                                            </td>
 
-                                                <!-- Details & Notes -->
-                                                <td>
-                                                    <div style="max-width:340px; font-size:12.5px; color:#475569; line-height:1.5;">
-                                                        <?php if (!empty($log['description'])): ?>
-                                                            <i class="fas fa-info-circle" style="color:#94a3b8; font-size:11.5px; margin-right:4px;"></i>
-                                                            <?php echo htmlspecialchars($log['description']); ?>
-                                                        <?php else: ?>
-                                                            <span style="color:#94a3b8; font-style:italic;">No additional notes</span>
-                                                        <?php endif; ?>
-                                                    </div>
-                                                </td>
-                                            </tr>
-                                        <?php endforeach; ?>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <?php echo render_pagination_bar($activity_logs_pagination); ?>
-                        <?php endif; ?>
+                                                            <!-- Date & Time -->
+                                                            <td>
+                                                                <div style="font-size:12.5px; color:#475569; font-weight:600; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+                                                                    <i class="far fa-calendar-alt" style="color:#00b894;"></i> <?php echo format_log_time($log['created_at']); ?>
+                                                                </div>
+                                                            </td>
+
+                                                            <!-- Details & Notes -->
+                                                            <td>
+                                                                <div style="max-width:340px; font-size:12.5px; color:#475569; line-height:1.5;">
+                                                                    <?php if (!empty($log['description'])): ?>
+                                                                            <i class="fas fa-info-circle" style="color:#94a3b8; font-size:11.5px; margin-right:4px;"></i>
+                                                                            <?php echo htmlspecialchars($log['description']); ?>
+                                                                    <?php else: ?>
+                                                                            <span style="color:#94a3b8; font-style:italic;">No additional notes</span>
+                                                                    <?php endif; ?>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                <?php endforeach; ?>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <?php echo render_pagination_bar($activity_logs_pagination); ?>
+                            <?php endif; ?>
+                        </div>
                     </div>
-                </div>
             <?php endif; ?>
 
             <!-- ============================================================== -->
             <!-- 9. DEPARTMENTS MANAGEMENT TAB -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'departments'): ?>
-                <?php include __DIR__ . '/views/departments_tab.php'; ?>
+                    <?php include __DIR__ . '/views/departments_tab.php'; ?>
             <?php endif; ?>
 
             <!-- ============================================================== -->
             <!-- 10. FACULTY DIRECTORY & STAFF MANAGEMENT TAB -->
             <!-- ============================================================== -->
             <?php if ($current_tab === 'faculty'): ?>
-                <?php include __DIR__ . '/views/faculty_tab.php'; ?>
+                    <?php include __DIR__ . '/views/faculty_tab.php'; ?>
+            <?php endif; ?>
+
+            <!-- ============================================================== -->
+            <!-- 11. R&D DEPARTMENT RANKINGS TAB -->
+            <!-- ============================================================== -->
+            <?php if ($current_tab === 'rnd_rankings' || $current_tab === 'rnd'): ?>
+                    <?php include __DIR__ . '/views/rnd_rankings_tab.php'; ?>
             <?php endif; ?>
 
         </main>
@@ -1732,6 +1993,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
     <!-- ============================================================== -->
 
     <?php include __DIR__ . '/views/dept_faculty_modals.php'; ?>
+    <?php include __DIR__ . '/views/rnd_modals.php'; ?>
 
     <!-- Modal Pop-up: Upload Official Circular -->
     <div class="modal-overlay" id="modalUploadCircular" onclick="handleBackdropClick(event, 'modalUploadCircular')">
@@ -2018,13 +2280,13 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                             </label>
                             <select name="event_id" id="event_media_select_id" class="form-control" required style="width:100%; height:44px; font-size:13.5px; border-radius:10px;">
                                 <option value="">-- Choose an Event --</option>
-                                <?php 
-                                $preselected_eid = isset($_GET['event_id']) ? (int)$_GET['event_id'] : 0;
-                                foreach ($all_events_options as $evOption): 
-                                ?>
-                                    <option value="<?php echo $evOption['id']; ?>" <?php echo $preselected_eid === (int)$evOption['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($evOption['title']); ?> (<?php echo htmlspecialchars($evOption['event_date']); ?>)
-                                    </option>
+                                <?php
+                                $preselected_eid = isset($_GET['event_id']) ? (int) $_GET['event_id'] : 0;
+                                foreach ($all_events_options as $evOption):
+                                    ?>
+                                        <option value="<?php echo $evOption['id']; ?>" <?php echo $preselected_eid === (int) $evOption['id'] ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($evOption['title']); ?> (<?php echo htmlspecialchars($evOption['event_date']); ?>)
+                                        </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -2214,9 +2476,9 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                         <label>Linked Event *</label>
                         <select name="event_id" id="edit_media_event_id" class="form-control" required>
                             <?php foreach ($all_events_options as $evOption): ?>
-                                <option value="<?php echo $evOption['id']; ?>">
-                                    <?php echo htmlspecialchars($evOption['title']); ?> (<?php echo htmlspecialchars($evOption['event_date']); ?>)
-                                </option>
+                                    <option value="<?php echo $evOption['id']; ?>">
+                                        <?php echo htmlspecialchars($evOption['title']); ?> (<?php echo htmlspecialchars($evOption['event_date']); ?>)
+                                    </option>
                             <?php endforeach; ?>
                         </select>
                     </div>
@@ -2576,6 +2838,147 @@ $initials = strtoupper(substr($admin_name, 0, 2));
         </div>
     </div>
 
+    <!-- Modal: Add New Hero Slide -->
+    <div class="modal-overlay" id="modalAddHeroSlide" onclick="handleBackdropClick(event, 'modalAddHeroSlide')">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <h3><i class="fas fa-plus-circle" style="color:var(--primary);"></i> Add New Hero Slide</h3>
+                    <p style="margin:2px 0 0; font-size:12px; color:#64748b;">Upload a photo or short video to the homepage carousel</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('modalAddHeroSlide')">&times;</button>
+            </div>
+            <form action="../backend/crud.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="add_hero_slide">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+
+                <div class="modal-body">
+                    <!-- File Upload Input with Live Preview -->
+                    <div class="form-group">
+                        <label style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:6px; display:block;">
+                            Slide Image or Video File
+                        </label>
+                        <input type="file" name="slide_file" id="hero_add_file_input" class="form-control" accept="image/*,video/mp4,video/webm" onchange="previewHeroAddUpload(this)" style="background:#fff; height:44px; padding:8px 12px; border-radius:10px;">
+                        <span style="font-size:11.5px; color:#64748b; margin-top:4px; display:block;">
+                            Supported formats: JPG, PNG, WEBP, MP4, WEBM (Recommended 1920x800 or 16:9 ratio)
+                        </span>
+
+                        <div id="hero_add_preview_box" style="display:none; margin-top:10px; background:#f8fafc; padding:10px; border-radius:10px; border:1px solid #cbd5e1; align-items:center; gap:12px;">
+                            <div id="hero_add_preview_media" style="width:100px; height:60px; border-radius:6px; overflow:hidden; background:#0b1120; display:flex; align-items:center; justify-content:center;"></div>
+                            <div>
+                                <span id="hero_add_preview_name" style="font-size:12.5px; font-weight:700; color:#0f172a; display:block;"></span>
+                                <span id="hero_add_preview_size" style="font-size:11.5px; color:#64748b;"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Or enter existing Asset Path -->
+                    <div class="form-group">
+                        <label style="font-size:12.5px; font-weight:700; color:#334155; margin-bottom:4px; display:block;">
+                            Or Existing Asset Path (Optional)
+                        </label>
+                        <input type="text" name="file_path" class="form-control" placeholder="e.g. assets/College Event/all1.jpg" style="height:38px; font-size:12.5px; font-family:monospace; border-radius:8px;">
+                        <span style="font-size:11px; color:#94a3b8;">Use if referencing a file already placed in your assets directory</span>
+                    </div>
+
+                    <!-- Slide Title / Caption -->
+                    <div class="form-group">
+                        <label style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:6px; display:block;">
+                            Slide Caption / Label
+                        </label>
+                        <input type="text" name="title" class="form-control" placeholder="e.g. Graduation Day Celebrations" style="height:42px; font-size:13.5px; border-radius:10px;">
+                    </div>
+
+                    <!-- Active Toggle -->
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; font-weight:600; color:#0f172a;">
+                            <input type="checkbox" name="is_active" value="1" checked style="width:18px; height:18px;">
+                            <span>Publish as Active Slide immediately</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline-pill" onclick="closeModal('modalAddHeroSlide')">Cancel</button>
+                    <button type="submit" class="btn-emerald-pill" style="padding:10px 24px; font-weight:700;">
+                        <i class="fas fa-plus-circle"></i> Add Slide
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Edit Hero Slide -->
+    <div class="modal-overlay" id="modalEditHeroSlide" onclick="handleBackdropClick(event, 'modalEditHeroSlide')">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div>
+                    <h3><i class="fas fa-edit" style="color:#d97706;"></i> Edit Hero Slide</h3>
+                    <p style="margin:2px 0 0; font-size:12px; color:#64748b;">Replace slide image/video, update caption or toggle visibility</p>
+                </div>
+                <button type="button" class="modal-close-btn" onclick="closeModal('modalEditHeroSlide')">&times;</button>
+            </div>
+            <form action="../backend/crud.php" method="POST" enctype="multipart/form-data">
+                <input type="hidden" name="action" value="edit_hero_slide">
+                <input type="hidden" name="id" id="edit_hero_slide_id" value="">
+                <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+
+                <div class="modal-body">
+                    <!-- Current Media Preview -->
+                    <div class="form-group">
+                        <label style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:6px; display:block;">Current Slide Media</label>
+                        <div style="display:flex; align-items:center; gap:14px; background:#f8fafc; padding:10px 14px; border-radius:10px; border:1px solid #e2e8f0;">
+                            <div id="edit_hero_current_thumb_wrap" style="width:96px; height:58px; border-radius:8px; overflow:hidden; background:#0b1120; display:flex; align-items:center; justify-content:center;"></div>
+                            <div style="font-size:12px; color:#64748b; min-width:0;">
+                                <strong id="edit_hero_current_name" style="color:#0f172a; display:block; text-overflow:ellipsis; overflow:hidden; white-space:nowrap;">Active Slide</strong>
+                                <span>Leave replacement upload empty below to keep this media.</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Replace Media Upload -->
+                    <div class="form-group">
+                        <label style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:6px; display:block;">
+                            Replace Slide File (Optional)
+                        </label>
+                        <input type="file" name="slide_file" id="edit_hero_file_input" class="form-control" accept="image/*,video/mp4,video/webm" onchange="previewHeroEditUpload(this)" style="background:#fff; height:42px; padding:7px 12px; border-radius:10px;">
+                        
+                        <div id="edit_hero_new_preview_box" style="display:none; margin-top:8px;">
+                            <span style="font-size:11.5px; color:#00b894; font-weight:600;"><i class="fas fa-check"></i> New replacement file selected</span>
+                        </div>
+                    </div>
+
+                    <!-- Existing Asset Path -->
+                    <div class="form-group">
+                        <label style="font-size:12.5px; font-weight:700; color:#334155; margin-bottom:4px; display:block;">
+                            Or File Path
+                        </label>
+                        <input type="text" name="file_path" id="edit_hero_slide_path" class="form-control" placeholder="assets/College Event/..." style="height:38px; font-size:12.5px; font-family:monospace; border-radius:8px;">
+                    </div>
+
+                    <!-- Slide Caption -->
+                    <div class="form-group">
+                        <label style="font-size:13px; font-weight:700; color:#1e293b; margin-bottom:6px; display:block;">Slide Caption / Title</label>
+                        <input type="text" name="title" id="edit_hero_slide_title" class="form-control" required style="background:#fff; height:42px; border-radius:10px;">
+                    </div>
+
+                    <!-- Active Toggle -->
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer; font-size:13px; font-weight:600; color:#0f172a;">
+                            <input type="checkbox" name="is_active" id="edit_hero_slide_active" value="1" style="width:18px; height:18px;">
+                            <span>Active (Visible in Carousel)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline-pill" onclick="closeModal('modalEditHeroSlide')">Cancel</button>
+                    <button type="submit" class="btn-emerald-pill"><i class="fas fa-check-circle"></i> Save Slide Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Modal Pop-up Controls
         function openModal(modalId) {
@@ -2601,9 +3004,10 @@ $initials = strtoupper(substr($admin_name, 0, 2));
         }
 
         // ==============================================================
-        // TOP ANNOUNCEMENT BAR REAL-TIME CONTROLS
+        // TOP ANNOUNCEMENT BAR REAL-TIME CONTROLS & MODERN UX
         // ==============================================================
         let isTickerMotionPaused = false;
+        const DEFAULT_COLLEGE_ANNOUNCEMENT = "We Proudly Announce That We Got JNTUH & UGC AUTONOMOUS Status for Five Years From The Academic Year 2025-2026 to 2029-2030 • NAAC Accredited • Admissions Open for Diploma, BTech and MBA (For Admissions Contact: 7396903383, 8522954369)";
 
         function toggleTickerMotion() {
             const ticker = document.getElementById('dashLiveTickerContent');
@@ -2619,6 +3023,23 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                 ticker.style.animationPlayState = 'running';
                 btn.innerHTML = '<i class="fas fa-pause"></i> <span>Pause Motion</span>';
                 btn.classList.remove('active');
+            }
+        }
+
+        function setSimulatorView(mode) {
+            const canvas = document.getElementById('simulatorCanvas');
+            const btnDesktop = document.getElementById('btnViewDesktop');
+            const btnMobile = document.getElementById('btnViewMobile');
+            if (!canvas) return;
+
+            if (mode === 'mobile') {
+                canvas.classList.add('mobile-view');
+                if (btnMobile) btnMobile.classList.add('active');
+                if (btnDesktop) btnDesktop.classList.remove('active');
+            } else {
+                canvas.classList.remove('mobile-view');
+                if (btnDesktop) btnDesktop.classList.add('active');
+                if (btnMobile) btnMobile.classList.remove('active');
             }
         }
 
@@ -2650,10 +3071,22 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             const chip = document.getElementById('previewSpeedChip');
             if (chip) chip.innerText = speed + 's';
 
+            const ratingBadge = document.getElementById('speedRatingBadge');
+            if (ratingBadge) {
+                if (speed <= 30) {
+                    ratingBadge.innerText = '⚡ Ultra Fast (' + speed + 's)';
+                } else if (speed <= 55) {
+                    ratingBadge.innerText = '🏃 Normal Flow (' + speed + 's)';
+                } else if (speed <= 85) {
+                    ratingBadge.innerText = '🍃 Relaxed (' + speed + 's)';
+                } else {
+                    ratingBadge.innerText = '🐢 Leisurely (' + speed + 's)';
+                }
+            }
+
             const ticker = document.getElementById('dashLiveTickerContent');
             if (ticker) ticker.style.animationDuration = speed + 's';
 
-            // Highlight active preset chip if speed matches
             document.querySelectorAll('.speed-preset-chip[onclick*="selectSpeedPreset"]').forEach(el => {
                 if (el.getAttribute('onclick').includes('(' + speed + ',')) {
                     el.classList.add('active');
@@ -2687,7 +3120,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
         }
 
         function onDateInputChange(val) {
-            val = val.trim();
+            val = (val || '').trim();
             const dateChip = document.getElementById('previewDateChip');
             const badgeDate = document.getElementById('badgeDateText');
             if (dateChip) dateChip.innerText = val || 'Not set';
@@ -2706,7 +3139,106 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             if (input) {
                 input.value = todayStr;
                 onDateInputChange(todayStr);
+                showToast('Date updated to today: ' + todayStr);
             }
+        }
+
+        function handleAnnouncementInput(text) {
+            updateLivePreviewText(text);
+            updateCharCount(text);
+        }
+
+        function updateCharCount(text) {
+            const counter = document.getElementById('charCountPill');
+            if (!counter) return;
+            const len = (text || '').length;
+            const words = (text || '').trim().split(/\s+/).filter(Boolean).length;
+            counter.innerText = `${len} chars • ${words} words`;
+            if (len > 300) {
+                counter.classList.add('warning');
+            } else {
+                counter.classList.remove('warning');
+            }
+        }
+
+        function insertSnippet(snippet) {
+            const input = document.getElementById('announcement_text_input');
+            if (!input) return;
+            const start = input.selectionStart || input.value.length;
+            const end = input.selectionEnd || input.value.length;
+            const val = input.value;
+            input.value = val.substring(0, start) + snippet + val.substring(end);
+            input.focus();
+            const newPos = start + snippet.length;
+            input.setSelectionRange(newPos, newPos);
+            handleAnnouncementInput(input.value);
+            showToast('Snippet inserted!');
+        }
+
+        function setLinkUrl(url) {
+            const input = document.getElementById('link_url_input');
+            if (!input) return;
+            input.value = url;
+            updateLivePreviewLink(url);
+            showToast(url ? 'Destination set: ' + url : 'Destination link cleared');
+        }
+
+        function copyAnnouncementText() {
+            const input = document.getElementById('announcement_text_input');
+            if (!input) return;
+            navigator.clipboard.writeText(input.value).then(() => {
+                showToast('Announcement text copied to clipboard!');
+            }).catch(() => {
+                input.select();
+                document.execCommand('copy');
+                showToast('Announcement text copied!');
+            });
+        }
+
+        function resetDefaultAnnouncement() {
+            const input = document.getElementById('announcement_text_input');
+            if (!input) return;
+            input.value = DEFAULT_COLLEGE_ANNOUNCEMENT;
+            handleAnnouncementInput(input.value);
+            showToast('Restored default college announcement');
+        }
+
+        function clearAnnouncementText() {
+            const input = document.getElementById('announcement_text_input');
+            if (!input) return;
+            input.value = '';
+            input.focus();
+            handleAnnouncementInput('');
+            showToast('Cleared announcement field');
+        }
+
+        function resetFormToSaved() {
+            const form = document.getElementById('formMainAnnouncement');
+            if (form) {
+                form.reset();
+                const textInput = document.getElementById('announcement_text_input');
+                if (textInput) handleAnnouncementInput(textInput.value);
+                showToast('Form reset to saved settings');
+            }
+        }
+
+        function showToast(message) {
+            let toast = document.getElementById('adminToast');
+            let msgSpan = document.getElementById('toastMsg');
+            if (!toast) {
+                toast = document.createElement('div');
+                toast.id = 'adminToast';
+                toast.className = 'toast-notice';
+                toast.innerHTML = '<i class="fas fa-check-circle"></i> <span id="toastMsg"></span>';
+                document.body.appendChild(toast);
+                msgSpan = document.getElementById('toastMsg');
+            }
+            if (msgSpan) msgSpan.innerText = message;
+            toast.classList.add('show');
+            clearTimeout(window.__toastTimeout);
+            window.__toastTimeout = setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
         }
 
         function updateLivePreviewText(text) {
@@ -2715,7 +3247,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             const linkInput = document.getElementById('link_url_input');
             const linkUrl = linkInput ? linkInput.value.trim() : '';
 
-            const safeText = text.trim() || 'Announcement text goes here...';
+            const safeText = (text || '').trim() || 'Announcement text goes here...';
             if (linkUrl) {
                 wrap.innerHTML = `<a href="${encodeURI(linkUrl)}" class="ticker-scroll-link">${escapeHtml(safeText)}</a>`;
             } else {
@@ -2729,14 +3261,13 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             updateLivePreviewText(text);
         }
 
-        function escapeHtml(str) {
-            return str
-                .replace(/&/g, "&amp;")
-                .replace(/</g, "&lt;")
-                .replace(/>/g, "&gt;")
-                .replace(/"/g, "&quot;")
-                .replace(/'/g, "&#039;");
-        }
+        // Initialize character counter on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            const textInput = document.getElementById('announcement_text_input');
+            if (textInput) {
+                updateCharCount(textInput.value);
+            }
+        });
 
         // Close modal on Escape key
         document.addEventListener('keydown', (e) => {
@@ -3394,6 +3925,14 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             if (urlParams.get('tab') === 'event_files' && urlParams.get('event_id')) {
                 openModal('modalEventMedia');
             }
+
+            // Real-Time Website Sync: broadcast update notification to visitors on changes
+            if (window.TCEK_Sync) {
+                const currentTab = urlParams.get('tab') || 'global';
+                if (urlParams.has('msg') || urlParams.has('success') || urlParams.has('status')) {
+                    TCEK_Sync.notify(currentTab);
+                }
+            }
         });
 
         function escapeHtml(text) {
@@ -3402,5 +3941,9 @@ $initials = strtoupper(substr($admin_name, 0, 2));
             return String(text).replace(/[&<>"']/g, function(m) { return map[m]; });
         }
     </script>
+    <!-- Live Synchronization Engine Script -->
+    <script src="../js/live-sync.js"></script>
+    <!-- Modern Floating Toast Notice -->
+    <div id="adminToast" class="toast-notice"><i class="fas fa-check-circle"></i> <span id="toastMsg">Action completed successfully</span></div>
 </body>
 </html>

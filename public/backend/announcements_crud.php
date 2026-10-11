@@ -14,6 +14,9 @@ if (!function_exists('get_announcements_store_file')) {
     }
 }
 
+require_once __DIR__ . '/sync.php';
+
+
 /**
  * Load announcement configuration from local store
  */
@@ -94,7 +97,11 @@ function save_announcements_data(array $data): bool {
         @mkdir($dir, 0755, true);
     }
     $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    return @file_put_contents($file, $json, LOCK_EX) !== false;
+    $saved = @file_put_contents($file, $json, LOCK_EX) !== false;
+    if ($saved && function_exists('record_content_update')) {
+        record_content_update('announcements');
+    }
+    return $saved;
 }
 
 /**

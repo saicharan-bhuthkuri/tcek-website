@@ -59,9 +59,64 @@
         </div>
     </div>
     <div class="footer-bottom">
-        <p>&copy; 2026 Trinity College of Engineering & Technology. All Rights Reserved. &bull; <a href="admin/login.php" style="color: #94a3b8; text-decoration: none; font-size: 0.85em; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'"><i class="fas fa-lock"></i> Staff Login</a></p>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; max-width: 1200px; margin: 0 auto; width: 100%;">
+            <p style="margin: 0;">&copy; 2026 Trinity College of Engineering &amp; Technology. All Rights Reserved. &bull; <a href="admin/login.php" style="color: #94a3b8; text-decoration: none; font-size: 0.85em; transition: color 0.2s;" onmouseover="this.style.color='#ffffff'" onmouseout="this.style.color='#94a3b8'"><i class="fas fa-lock"></i> Staff Login</a></p>
+            <div class="live-sync-pill" title="Live Real-Time Auto-Synchronization Active">
+                <span class="live-sync-pulse"></span>
+                <span class="live-sync-text">Live Sync</span>
+                <span class="live-sync-sep">&bull;</span>
+                <span class="live-sync-time">Updated: <?php echo date('d M Y, h:i A'); ?></span>
+            </div>
+        </div>
     </div>
 </footer>
+
+<style>
+.live-sync-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 9999px;
+    padding: 3px 11px;
+    font-size: 0.75rem;
+    color: #cbd5e1;
+    backdrop-filter: blur(8px);
+    transition: all 0.3s ease;
+}
+.live-sync-pulse {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+    animation: livePulseAnim 2s infinite ease-in-out;
+}
+@keyframes livePulseAnim {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.35); opacity: 0.6; }
+}
+.live-sync-pill.sync-flash {
+    border-color: #f59e0b;
+    background: rgba(245, 158, 11, 0.25);
+    color: #fef3c7;
+    box-shadow: 0 0 14px rgba(245, 158, 11, 0.5);
+}
+.live-sync-text {
+    font-weight: 600;
+    color: #38bdf8;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-size: 0.68rem;
+}
+.live-sync-sep {
+    color: #64748b;
+}
+.live-sync-time {
+    color: #94a3b8;
+}
+</style>
 
 <script>
     // Hamburger Menu Toggle

@@ -162,7 +162,7 @@
                     if (empty($slug)) {
                         $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $code));
                     }
-                    $target_url = 'department.php?slug=' . urlencode($slug);
+                    $target_url = !empty($dept['page_url']) ? $dept['page_url'] : ('department.php?slug=' . urlencode($slug));
 
                     // Dynamic tags from database / JSON
                     if (!empty($dept['tags'])) {
@@ -171,14 +171,14 @@
                         $tags = ['Core Curriculum', 'Modern Labs', 'Expert Mentorship'];
                     }
                     ?>
-                    <div class="course-card <?php echo $theme; ?><?php echo $code === 'MBA' ? ' flagship-card' : ''; ?>">
+                    <div class="course-card <?php echo $theme; ?><?php echo $code === 'MBA' ? ' flagship-card' : ''; ?>" onclick="window.location.href='<?php echo htmlspecialchars($target_url); ?>';" style="cursor: pointer;" role="link" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); window.location.href='<?php echo htmlspecialchars($target_url); ?>';}">
                         <div class="course-card-banner" <?php echo $code === 'MBA' ? 'style="height: 220px;"' : ''; ?>>
                             <span class="course-card-category-icon"><i class="<?php echo $icon; ?>"></i></span>
                             <span class="course-card-badge-top"><?php echo $degree_level; ?> &bull; <?php echo $duration; ?></span>
                             <img src="<?php echo $banner_img; ?>" alt="<?php echo $name; ?>" class="course-banner-img" <?php echo $code === 'MBA' ? 'style="max-height: 180px;"' : ''; ?>>
                         </div>
                         <div class="course-card-body">
-                            <h3><?php echo $name; ?> (<?php echo $code; ?>)</h3>
+                            <h3><a href="<?php echo htmlspecialchars($target_url); ?>" style="text-decoration:none; color:inherit;"><?php echo $name; ?> (<?php echo $code; ?>)</a></h3>
                             <div class="course-tags">
                                 <?php foreach ($tags as $idx => $t): ?>
                                     <span class="course-tag">

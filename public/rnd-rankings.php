@@ -1,5 +1,11 @@
 <?php
 $page = 'rnd-rankings';
+require_once __DIR__ . '/backend/rnd_crud.php';
+$rnd_periods          = function_exists('get_distinct_rnd_periods') ? get_distinct_rnd_periods(true) : [];
+$rnd_selected_year    = $_GET['rnd_year'] ?? ($rnd_periods[0]['academic_year'] ?? '2025-26');
+$rnd_selected_quarter = $_GET['rnd_quarter'] ?? ($rnd_periods[0]['quarter'] ?? 'Q4');
+$rnd_data             = function_exists('get_rnd_rankings_by_period') ? get_rnd_rankings_by_period($rnd_selected_year, $rnd_selected_quarter, 'published') : [];
+$rnd_rankings         = $rnd_data['rankings'] ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -29,7 +35,7 @@ $page = 'rnd-rankings';
     </section>
 
     <!-- Main Content Section -->
-    <main class="rnd-main-content">
+    <main class="rnd-main-content" data-sync-module="rnd">
         <div class="container">
 
             <!-- Official Bulletin Circular Banner -->
@@ -52,59 +58,33 @@ $page = 'rnd-rankings';
                 <div class="rnd-bulletin-body">
                     <div class="rnd-bulletin-greeting">Dear All,</div>
                     <h2 class="rnd-bulletin-headline">
-                        <span class="rnd-party-popper">🎉</span> Q4 (JAN 2026 – MAR 2026) R&amp;D Department Rankings Announced!
+                        <span class="rnd-party-popper">🎉</span> <?php echo htmlspecialchars($rnd_data['quarter_label'] ?: "{$rnd_selected_quarter} (AY {$rnd_selected_year})"); ?> R&amp;D Department Rankings Announced!
                     </h2>
                     <p class="rnd-bulletin-desc">
                         Congratulations to all the departments for their outstanding efforts in research, innovation, patents, publications, NPTEL, IIC and R&amp;D activities.
                     </p>
                 </div>
 
-                <!-- Quick Honor Roll Strip -->
+                <!-- Quick Honor Roll Strip (Dynamic) -->
                 <div class="rnd-quick-honor-strip">
-                    <div class="rnd-honor-item gold-tier">
-                        <div class="rnd-honor-icon">🥇</div>
-                        <div class="rnd-honor-info">
-                            <span class="rnd-honor-rank">1st Place</span>
-                            <strong>AIML</strong>
-                            <span class="rnd-honor-medal">🏅 Gold</span>
+                    <?php 
+                    $tierClasses = [1 => 'gold-tier', 2 => 'bronze-tier', 3 => 'bronze-tier', 4 => 'emerging-tier', 5 => 'emerging-tier'];
+                    $icons = [1 => '🥇', 2 => '🥈', 3 => '🥉', 4 => '🏅', 5 => '🏅'];
+                    foreach (array_slice($rnd_rankings, 0, 5) as $idx => $r): 
+                        $rank = (int)($r['rank'] ?? ($idx + 1));
+                        $tier = $tierClasses[$rank] ?? 'emerging-tier';
+                        $ico = $icons[$rank] ?? '🏅';
+                        $suffix = $rank === 1 ? 'st' : ($rank === 2 ? 'nd' : ($rank === 3 ? 'rd' : 'th'));
+                    ?>
+                        <div class="rnd-honor-item <?php echo $tier; ?>">
+                            <div class="rnd-honor-icon"><?php echo $ico; ?></div>
+                            <div class="rnd-honor-info">
+                                <span class="rnd-honor-rank"><?php echo $rank . $suffix; ?> Place</span>
+                                <strong><?php echo htmlspecialchars($r['department']); ?></strong>
+                                <span class="rnd-honor-medal"><?php echo htmlspecialchars($r['award_category'] ?? ''); ?></span>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="rnd-honor-item bronze-tier">
-                        <div class="rnd-honor-icon">🥈</div>
-                        <div class="rnd-honor-info">
-                            <span class="rnd-honor-rank">2nd Place</span>
-                            <strong>CSE &amp; CSM</strong>
-                            <span class="rnd-honor-medal">🥉 Bronze</span>
-                        </div>
-                    </div>
-
-                    <div class="rnd-honor-item bronze-tier">
-                        <div class="rnd-honor-icon">🥉</div>
-                        <div class="rnd-honor-info">
-                            <span class="rnd-honor-rank">3rd Place</span>
-                            <strong>EEE</strong>
-                            <span class="rnd-honor-medal">🥉 Bronze</span>
-                        </div>
-                    </div>
-
-                    <div class="rnd-honor-item emerging-tier">
-                        <div class="rnd-honor-icon">🏅</div>
-                        <div class="rnd-honor-info">
-                            <span class="rnd-honor-rank">4th Place</span>
-                            <strong>ECE</strong>
-                            <span class="rnd-honor-medal">🌱 Emerging</span>
-                        </div>
-                    </div>
-
-                    <div class="rnd-honor-item emerging-tier">
-                        <div class="rnd-honor-icon">🏅</div>
-                        <div class="rnd-honor-info">
-                            <span class="rnd-honor-rank">5th Place</span>
-                            <strong>MBA</strong>
-                            <span class="rnd-honor-medal">🌱 Emerging</span>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
             </div>
 
@@ -143,222 +123,142 @@ $page = 'rnd-rankings';
                 </div>
             </div>
 
-            <!-- Official Department Rankings: Q4 (JAN 2026 – MAR 2026) -->
+            <!-- Period Selector Bar for Archive & History -->
+            <?php if (!empty($rnd_periods)): ?>
+                <div class="rnd-period-selector-bar">
+                    <div class="rnd-selector-inner">
+                        <span class="rnd-selector-label"><i class="fas fa-history"></i> Select Evaluation Period:</span>
+                        <div class="rnd-period-tabs">
+                            <?php foreach ($rnd_periods as $p): 
+                                $isSelected = (strcasecmp($p['academic_year'], $rnd_selected_year) === 0 && strcasecmp($p['quarter'], $rnd_selected_quarter) === 0);
+                            ?>
+                                <a href="?rnd_year=<?php echo urlencode($p['academic_year']); ?>&rnd_quarter=<?php echo urlencode($p['quarter']); ?>#bulletin" 
+                                   class="rnd-period-btn <?php echo $isSelected ? 'active' : ''; ?>">
+                                    <?php if (!empty($p['is_latest'])): ?>
+                                        <span class="rnd-latest-tag">LATEST</span>
+                                    <?php endif; ?>
+                                    <span><?php echo htmlspecialchars($p['quarter']); ?> · AY <?php echo htmlspecialchars($p['academic_year']); ?></span>
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <!-- Official Department Rankings Header -->
             <div class="rnd-section-title-wrap" style="margin-bottom: 24px;">
                 <div class="rnd-badge-pill" style="display: inline-flex; align-items: center; gap: 6px; background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 6px 14px; border-radius: 999px; font-size: 12.5px; font-weight: 700; margin-bottom: 10px;">
-                    <i class="fas fa-calendar-check"></i> Official Evaluation Period: Q4 (JAN 2026 – MAR 2026)
+                    <i class="fas fa-calendar-check"></i> Official Evaluation Period: <?php echo htmlspecialchars($rnd_data['quarter_label'] ?: "{$rnd_selected_quarter} (AY {$rnd_selected_year})"); ?>
                 </div>
                 <h2 style="font-size: 26px; font-weight: 800; color: #0f172a; margin-bottom: 6px;">Departmental Standings &amp; Honors</h2>
                 <p style="font-size: 15px; color: #64748b; margin: 0;">Comprehensive rankings evaluated across research, innovation, patents, publications, NPTEL and IIC activities.</p>
             </div>
 
-                <!-- Podium Showcase Cards -->
+                <!-- Dynamic Podium Showcase Cards (Top 3) -->
                 <div class="rnd-podium-showcase">
-                    <!-- Rank 1: AIML (Gold) -->
-                    <div class="rnd-podium-card gold-champion">
-                        <div class="rnd-podium-badge-header">
-                            <span class="rnd-rank-tag gold">🥇 1st Rank · Gold Champion</span>
-                            <span class="rnd-score-pill">Score: 96.5 / 100</span>
-                        </div>
-                        <div class="rnd-podium-body">
-                            <div class="rnd-podium-dept-name">
-                                <h2>AIML</h2>
-                                <h4>Artificial Intelligence &amp; Machine Learning</h4>
-                            </div>
-                            <p class="rnd-podium-summary">
-                                Outstanding institutional leadership with maximum Scopus-indexed research publications, 
-                                active patent filings in Deep Learning &amp; Computer Vision, 
-                                and top-tier student participation in MoE IIC hackathons.
-                            </p>
-                            
-                            <div class="rnd-podium-stats">
-                                <div class="podium-stat">
-                                    <i class="fas fa-file-contract"></i>
-                                    <div><strong>18 Papers</strong><span>Scopus / IEEE</span></div>
-                                </div>
-                                <div class="podium-stat">
-                                    <i class="fas fa-award"></i>
-                                    <div><strong>4 Patents</strong><span>Published / Filed</span></div>
-                                </div>
-                                <div class="podium-stat">
-                                    <i class="fas fa-graduation-cap"></i>
-                                    <div><strong>85+ Elite</strong><span>NPTEL Certs</span></div>
-                                </div>
-                            </div>
+                    <?php 
+                    $top3 = array_slice($rnd_rankings, 0, 3);
+                    $podiumStyles = [
+                        1 => ['card' => 'gold-champion', 'tag' => 'gold', 'label' => 'gold', 'icon' => 'fa-trophy', 'prefix' => '🥇 1st Rank · '],
+                        2 => ['card' => 'silver-runner', 'tag' => 'silver', 'label' => 'silver', 'icon' => 'fa-award', 'prefix' => '🥈 2nd Rank · '],
+                        3 => ['card' => 'bronze-third', 'tag' => 'bronze', 'label' => 'bronze', 'icon' => 'fa-medal', 'prefix' => '🥉 3rd Rank · ']
+                    ];
 
-                            <div class="rnd-podium-highlights">
-                                <h6>Key Research Highlights:</h6>
-                                <ul>
-                                    <li><i class="fas fa-check"></i> High impact papers in Medical Imaging &amp; Natural Language Processing.</li>
-                                    <li><i class="fas fa-check"></i> 100% faculty engagement in SWAYAM / NPTEL certifications.</li>
-                                    <li><i class="fas fa-check"></i> IIC 5-Star internal project prototype evaluation.</li>
-                                </ul>
+                    foreach ($top3 as $idx => $r):
+                        $rank = (int)($r['rank'] ?? ($idx + 1));
+                        $style = $podiumStyles[$rank] ?? $podiumStyles[3];
+                        $deptCode = htmlspecialchars($r['department']);
+                        $deptSlug = strtolower(explode(' ', trim($deptCode))[0]);
+                        $score = isset($r['score']) && $r['score'] !== null ? number_format((float)$r['score'], 1) : null;
+                        $achievements = (array)($r['achievements'] ?? []);
+                    ?>
+                        <div class="rnd-podium-card <?php echo $style['card']; ?>">
+                            <div class="rnd-podium-badge-header">
+                                <span class="rnd-rank-tag <?php echo $style['tag']; ?>">
+                                    <?php echo $style['prefix'] . htmlspecialchars($r['award_category'] ?? "Rank {$rank}"); ?>
+                                </span>
+                                <?php if ($score !== null): ?>
+                                    <span class="rnd-score-pill">Score: <?php echo $score; ?> / 100</span>
+                                <?php endif; ?>
                             </div>
-                        </div>
-                        <div class="rnd-podium-footer">
-                            <span class="rnd-status-label gold"><i class="fas fa-trophy"></i> Gold Medal Department</span>
-                            <a href="departments.php?dept=aiml" class="btn-rnd-dept">Dept Portal <i class="fas fa-arrow-right"></i></a>
-                        </div>
-                    </div>
-
-                    <!-- Rank 2: CSE & CSM (Bronze) -->
-                    <div class="rnd-podium-card silver-runner">
-                        <div class="rnd-podium-badge-header">
-                            <span class="rnd-rank-tag silver">🥈 2nd Rank · Bronze Honor</span>
-                            <span class="rnd-score-pill">Score: 91.2 / 100</span>
-                        </div>
-                        <div class="rnd-podium-body">
-                            <div class="rnd-podium-dept-name">
-                                <h2>CSE &amp; CSM</h2>
-                                <h4>Computer Science &amp; Engineering</h4>
-                            </div>
-                            <p class="rnd-podium-summary">
-                                Robust excellence in software systems, full-stack prototypes, national hackathon podium finishes, 
-                                and international conference presentations.
-                            </p>
-                            
-                            <div class="rnd-podium-stats">
-                                <div class="podium-stat">
-                                    <i class="fas fa-file-contract"></i>
-                                    <div><strong>15 Papers</strong><span>Scopus / UGC CARE</span></div>
+                            <div class="rnd-podium-body">
+                                <div class="rnd-podium-dept-name">
+                                    <h2><?php echo $deptCode; ?></h2>
+                                    <h4><?php echo htmlspecialchars($r['department_name']); ?></h4>
                                 </div>
-                                <div class="podium-stat">
-                                    <i class="fas fa-award"></i>
-                                    <div><strong>3 Patents</strong><span>Filed &amp; Published</span></div>
-                                </div>
-                                <div class="podium-stat">
-                                    <i class="fas fa-graduation-cap"></i>
-                                    <div><strong>72+ Elite</strong><span>NPTEL Certs</span></div>
+                                <p class="rnd-podium-summary">
+                                    <?php echo htmlspecialchars($r['description'] ?: "Recognized for institutional excellence, high-impact research papers, patents, and active student innovation drives."); ?>
+                                </p>
+                                
+                                <div class="rnd-podium-highlights">
+                                    <h6>Key Research Highlights:</h6>
+                                    <ul>
+                                        <?php foreach ($achievements as $ach): ?>
+                                            <li><i class="fas fa-check"></i> <?php echo htmlspecialchars($ach); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
                                 </div>
                             </div>
-
-                            <div class="rnd-podium-highlights">
-                                <h6>Key Research Highlights:</h6>
-                                <ul>
-                                    <li><i class="fas fa-check"></i> High hackathon representation with Smart India Hackathon internal finals.</li>
-                                    <li><i class="fas fa-check"></i> Industry-linked R&amp;D projects in cloud computing and cyber defense.</li>
-                                    <li><i class="fas fa-check"></i> Continuous student coding sprint achievements.</li>
-                                </ul>
+                            <div class="rnd-podium-footer">
+                                <span class="rnd-status-label <?php echo $style['label']; ?>">
+                                    <i class="fas <?php echo $style['icon']; ?>"></i> <?php echo htmlspecialchars($r['award_badge'] ?? 'Honor Department'); ?>
+                                </span>
+                                <a href="departments.php?dept=<?php echo urlencode($deptSlug); ?>" class="btn-rnd-dept">Dept Portal <i class="fas fa-arrow-right"></i></a>
                             </div>
                         </div>
-                        <div class="rnd-podium-footer">
-                            <span class="rnd-status-label silver"><i class="fas fa-award"></i> Bronze Honor Department</span>
-                            <a href="departments.php?dept=cse" class="btn-rnd-dept">Dept Portal <i class="fas fa-arrow-right"></i></a>
-                        </div>
-                    </div>
-
-                    <!-- Rank 3: EEE (Bronze) -->
-                    <div class="rnd-podium-card bronze-third">
-                        <div class="rnd-podium-badge-header">
-                            <span class="rnd-rank-tag bronze">🥉 3rd Rank · Bronze Honor</span>
-                            <span class="rnd-score-pill">Score: 86.8 / 100</span>
-                        </div>
-                        <div class="rnd-podium-body">
-                            <div class="rnd-podium-dept-name">
-                                <h2>EEE</h2>
-                                <h4>Electrical &amp; Electronics Engineering</h4>
-                            </div>
-                            <p class="rnd-podium-summary">
-                                Noteworthy contributions in clean renewable energy, power grid simulations, 
-                                and patented innovations including the institutional Wave Energy Harnessing prototype.
-                            </p>
-                            
-                            <div class="rnd-podium-stats">
-                                <div class="podium-stat">
-                                    <i class="fas fa-file-contract"></i>
-                                    <div><strong>11 Papers</strong><span>Journals &amp; Confs</span></div>
-                                </div>
-                                <div class="podium-stat">
-                                    <i class="fas fa-award"></i>
-                                    <div><strong>2 Patents</strong><span>Design &amp; Utility</span></div>
-                                </div>
-                                <div class="podium-stat">
-                                    <i class="fas fa-graduation-cap"></i>
-                                    <div><strong>48+ Elite</strong><span>NPTEL Certs</span></div>
-                                </div>
-                            </div>
-
-                            <div class="rnd-podium-highlights">
-                                <h6>Key Research Highlights:</h6>
-                                <ul>
-                                    <li><i class="fas fa-check"></i> Patented Wave Energy Harnessing Device design implementation.</li>
-                                    <li><i class="fas fa-check"></i> Solar energy audit and campus renewable micro-grid research.</li>
-                                    <li><i class="fas fa-check"></i> IEEE Power &amp; Energy Society chapter workshops.</li>
-                                </ul>
-                            </div>
-                        </div>
-                        <div class="rnd-podium-footer">
-                            <span class="rnd-status-label bronze"><i class="fas fa-medal"></i> Bronze Honor Department</span>
-                            <a href="departments.php?dept=eee" class="btn-rnd-dept">Dept Portal <i class="fas fa-arrow-right"></i></a>
-                        </div>
-                    </div>
+                    <?php endforeach; ?>
                 </div>
 
-                <!-- 4th & 5th Emerging Departments Row -->
-                <div class="rnd-emerging-grid">
-                    <!-- Rank 4: ECE -->
-                    <div class="rnd-emerging-card">
-                        <div class="rnd-emerging-header">
-                            <div class="rnd-emerging-rank">
-                                <span class="rnd-emerging-num">4<sup>th</sup></span>
-                                <span class="rnd-emerging-badge">🏅 4th · Emerging</span>
+                <!-- Emerging Departments Grid (Rank 4, 5, and beyond) -->
+                <?php 
+                $emergingList = array_slice($rnd_rankings, 3);
+                if (!empty($emergingList)):
+                ?>
+                    <div class="rnd-emerging-grid">
+                        <?php foreach ($emergingList as $idx => $r): 
+                            $rank = (int)($r['rank'] ?? ($idx + 4));
+                            $deptCode = htmlspecialchars($r['department']);
+                            $deptSlug = strtolower(explode(' ', trim($deptCode))[0]);
+                            $score = isset($r['score']) && $r['score'] !== null ? number_format((float)$r['score'], 1) : null;
+                            $achievements = (array)($r['achievements'] ?? []);
+                        ?>
+                            <div class="rnd-emerging-card">
+                                <div class="rnd-emerging-header">
+                                    <div class="rnd-emerging-rank">
+                                        <span class="rnd-emerging-num"><?php echo $rank; ?><sup>th</sup></span>
+                                        <span class="rnd-emerging-badge">🏅 <?php echo htmlspecialchars($r['award_category'] ?? "{$rank}th · Emerging"); ?></span>
+                                    </div>
+                                    <?php if ($score !== null): ?>
+                                        <span class="rnd-score-pill small">Score: <?php echo $score; ?> / 100</span>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="rnd-emerging-info">
+                                    <h3><?php echo $deptCode; ?></h3>
+                                    <p class="rnd-emerging-fullname"><?php echo htmlspecialchars($r['department_name']); ?></p>
+                                    <p class="rnd-emerging-text">
+                                        <?php echo htmlspecialchars($r['description'] ?: "Commendable growth in departmental research, faculty publications, and innovation projects."); ?>
+                                    </p>
+                                </div>
+                                <div class="rnd-emerging-pills">
+                                    <?php foreach (array_slice($achievements, 0, 3) as $ach): ?>
+                                        <span><i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($ach); ?></span>
+                                    <?php endforeach; ?>
+                                </div>
+                                <div class="rnd-emerging-footer">
+                                    <span class="rnd-status-tag emerging"><?php echo htmlspecialchars($r['award_badge'] ?? '🌱 Emerging Department'); ?></span>
+                                    <a href="departments.php?dept=<?php echo urlencode($deptSlug); ?>" class="btn-link-sm">View Dept →</a>
+                                </div>
                             </div>
-                            <span class="rnd-score-pill small">Score: 82.4 / 100</span>
-                        </div>
-                        <div class="rnd-emerging-info">
-                            <h3>ECE</h3>
-                            <p class="rnd-emerging-fullname">Electronics &amp; Communication Engineering</p>
-                            <p class="rnd-emerging-text">
-                                Commendable momentum in IoT sensors, VLSI circuit designs, embedded robotics, 
-                                and growing faculty journal publications.
-                            </p>
-                        </div>
-                        <div class="rnd-emerging-pills">
-                            <span><i class="fas fa-microchip"></i> IoT &amp; Embedded</span>
-                            <span><i class="fas fa-file-alt"></i> 8 Papers</span>
-                            <span><i class="fas fa-graduation-cap"></i> 40+ NPTEL</span>
-                        </div>
-                        <div class="rnd-emerging-footer">
-                            <span class="rnd-status-tag emerging">🌱 Emerging Department</span>
-                            <a href="departments.php?dept=ece" class="btn-link-sm">View Dept →</a>
-                        </div>
+                        <?php endforeach; ?>
                     </div>
-
-                    <!-- Rank 5: MBA -->
-                    <div class="rnd-emerging-card">
-                        <div class="rnd-emerging-header">
-                            <div class="rnd-emerging-rank">
-                                <span class="rnd-emerging-num">5<sup>th</sup></span>
-                                <span class="rnd-emerging-badge">🏅 5th · Emerging</span>
-                            </div>
-                            <span class="rnd-score-pill small">Score: 78.9 / 100</span>
-                        </div>
-                        <div class="rnd-emerging-info">
-                            <h3>MBA</h3>
-                            <p class="rnd-emerging-fullname">Department of Management Studies</p>
-                            <p class="rnd-emerging-text">
-                                Promising research in entrepreneurial ecosystems, management case studies, 
-                                rural economy surveys, and MoE IIC startup incubation drives.
-                            </p>
-                        </div>
-                        <div class="rnd-emerging-pills">
-                            <span><i class="fas fa-briefcase"></i> Case Studies</span>
-                            <span><i class="fas fa-lightbulb"></i> ED-Cell Startups</span>
-                            <span><i class="fas fa-graduation-cap"></i> 32+ NPTEL</span>
-                        </div>
-                        <div class="rnd-emerging-footer">
-                            <span class="rnd-status-tag emerging">🌱 Emerging Department</span>
-                            <a href="departments.php?dept=mba" class="btn-link-sm">View Dept →</a>
-                        </div>
-                    </div>
-                </div>
+                <?php endif; ?>
 
                 <!-- Comprehensive Official Scorecard Table -->
                 <div class="rnd-scorecard-section" id="scorecard-table">
                     <div class="rnd-table-header">
                         <div>
                             <h3>Comprehensive Departmental Evaluation Scorecard</h3>
-                            <p>Audited performance breakdown across all five core R&amp;D dimensions (Q4 Jan – Mar 2026)</p>
+                            <p>Audited performance breakdown across all core R&amp;D dimensions (<?php echo htmlspecialchars("{$rnd_selected_quarter} AY {$rnd_selected_year}"); ?>)</p>
                         </div>
                         <span class="rnd-table-badge"><i class="fas fa-shield-alt"></i> Directorate Audited</span>
                     </div>
@@ -370,130 +270,66 @@ $page = 'rnd-rankings';
                                     <th style="width: 80px;">Rank</th>
                                     <th>Department</th>
                                     <th>Honor Tier</th>
-                                    <th>Research &amp; Innovation (25)</th>
-                                    <th>Patents &amp; IPR (20)</th>
-                                    <th>Publications (25)</th>
-                                    <th>NPTEL / MOOCs (15)</th>
-                                    <th>IIC &amp; Events (15)</th>
+                                    <th>Key Achievements</th>
+                                    <th>Publication Date</th>
                                     <th>Composite Score</th>
                                     <th>Official Status</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr class="rnd-row-gold">
-                                    <td class="text-center font-bold">
-                                        <span class="rnd-rank-circle rank-gold">🥇 1</span>
-                                    </td>
-                                    <td>
-                                        <strong class="rnd-dept-title">AIML</strong>
-                                        <div class="rnd-dept-sub">Artificial Intelligence &amp; Machine Learning</div>
-                                    </td>
-                                    <td><span class="rnd-badge-gold">🏅 Gold</span></td>
-                                    <td><strong>24.5</strong> / 25</td>
-                                    <td><strong>19.0</strong> / 20</td>
-                                    <td><strong>24.2</strong> / 25</td>
-                                    <td><strong>14.6</strong> / 15</td>
-                                    <td><strong>14.2</strong> / 15</td>
-                                    <td>
-                                        <div class="rnd-total-score">
-                                            <span class="score-num">96.5</span>
-                                            <div class="score-bar"><div class="score-fill" style="width: 96.5%;"></div></div>
-                                        </div>
-                                    </td>
-                                    <td><span class="rnd-status-pill pill-gold"><i class="fas fa-crown"></i> 1st · Gold</span></td>
-                                </tr>
-
-                                <tr class="rnd-row-silver">
-                                    <td class="text-center font-bold">
-                                        <span class="rnd-rank-circle rank-silver">🥈 2</span>
-                                    </td>
-                                    <td>
-                                        <strong class="rnd-dept-title">CSE &amp; CSM</strong>
-                                        <div class="rnd-dept-sub">Computer Science &amp; Engineering</div>
-                                    </td>
-                                    <td><span class="rnd-badge-bronze">🥉 Bronze</span></td>
-                                    <td><strong>22.8</strong> / 25</td>
-                                    <td><strong>18.0</strong> / 20</td>
-                                    <td><strong>23.0</strong> / 25</td>
-                                    <td><strong>13.8</strong> / 15</td>
-                                    <td><strong>13.6</strong> / 15</td>
-                                    <td>
-                                        <div class="rnd-total-score">
-                                            <span class="score-num">91.2</span>
-                                            <div class="score-bar"><div class="score-fill" style="width: 91.2%;"></div></div>
-                                        </div>
-                                    </td>
-                                    <td><span class="rnd-status-pill pill-bronze"><i class="fas fa-award"></i> 2nd · Bronze</span></td>
-                                </tr>
-
-                                <tr class="rnd-row-bronze">
-                                    <td class="text-center font-bold">
-                                        <span class="rnd-rank-circle rank-bronze">🥉 3</span>
-                                    </td>
-                                    <td>
-                                        <strong class="rnd-dept-title">EEE</strong>
-                                        <div class="rnd-dept-sub">Electrical &amp; Electronics Engineering</div>
-                                    </td>
-                                    <td><span class="rnd-badge-bronze">🥉 Bronze</span></td>
-                                    <td><strong>21.5</strong> / 25</td>
-                                    <td><strong>17.5</strong> / 20</td>
-                                    <td><strong>21.2</strong> / 25</td>
-                                    <td><strong>13.2</strong> / 15</td>
-                                    <td><strong>13.4</strong> / 15</td>
-                                    <td>
-                                        <div class="rnd-total-score">
-                                            <span class="score-num">86.8</span>
-                                            <div class="score-bar"><div class="score-fill" style="width: 86.8%;"></div></div>
-                                        </div>
-                                    </td>
-                                    <td><span class="rnd-status-pill pill-bronze"><i class="fas fa-medal"></i> 3rd · Bronze</span></td>
-                                </tr>
-
-                                <tr>
-                                    <td class="text-center font-bold">
-                                        <span class="rnd-rank-circle rank-emerging">4</span>
-                                    </td>
-                                    <td>
-                                        <strong class="rnd-dept-title">ECE</strong>
-                                        <div class="rnd-dept-sub">Electronics &amp; Communication Engineering</div>
-                                    </td>
-                                    <td><span class="rnd-badge-emerging">🌱 Emerging</span></td>
-                                    <td><strong>20.0</strong> / 25</td>
-                                    <td><strong>16.0</strong> / 20</td>
-                                    <td><strong>20.5</strong> / 25</td>
-                                    <td><strong>13.0</strong> / 15</td>
-                                    <td><strong>12.9</strong> / 15</td>
-                                    <td>
-                                        <div class="rnd-total-score">
-                                            <span class="score-num">82.4</span>
-                                            <div class="score-bar"><div class="score-fill" style="width: 82.4%;"></div></div>
-                                        </div>
-                                    </td>
-                                    <td><span class="rnd-status-pill pill-emerging"><i class="fas fa-seedling"></i> 4th · Emerging</span></td>
-                                </tr>
-
-                                <tr>
-                                    <td class="text-center font-bold">
-                                        <span class="rnd-rank-circle rank-emerging">5</span>
-                                    </td>
-                                    <td>
-                                        <strong class="rnd-dept-title">MBA</strong>
-                                        <div class="rnd-dept-sub">Department of Management Studies</div>
-                                    </td>
-                                    <td><span class="rnd-badge-emerging">🌱 Emerging</span></td>
-                                    <td><strong>19.2</strong> / 25</td>
-                                    <td><strong>14.5</strong> / 20</td>
-                                    <td><strong>19.8</strong> / 25</td>
-                                    <td><strong>12.6</strong> / 15</td>
-                                    <td><strong>12.8</strong> / 15</td>
-                                    <td>
-                                        <div class="rnd-total-score">
-                                            <span class="score-num">78.9</span>
-                                            <div class="score-bar"><div class="score-fill" style="width: 78.9%;"></div></div>
-                                        </div>
-                                    </td>
-                                    <td><span class="rnd-status-pill pill-emerging"><i class="fas fa-seedling"></i> 5th · Emerging</span></td>
-                                </tr>
+                                <?php if (empty($rnd_rankings)): ?>
+                                    <tr>
+                                        <td colspan="7" style="text-align: center; padding: 40px; color: #94a3b8;">
+                                            No published ranking results for this evaluation period.
+                                        </td>
+                                    </tr>
+                                <?php else: ?>
+                                    <?php foreach ($rnd_rankings as $idx => $r): 
+                                        $rank = (int)($r['rank'] ?? ($idx + 1));
+                                        $dept = htmlspecialchars($r['department']);
+                                        $deptName = htmlspecialchars($r['department_name']);
+                                        $score = isset($r['score']) && $r['score'] !== null ? number_format((float)$r['score'], 1) : null;
+                                        $achievements = (array)($r['achievements'] ?? []);
+                                        $rowClass = ($rank === 1) ? 'rnd-row-gold' : (($rank === 2) ? 'rnd-row-silver' : (($rank === 3) ? 'rnd-row-bronze' : ''));
+                                        $circleClass = ($rank === 1) ? 'rank-gold' : (($rank === 2) ? 'rank-silver' : (($rank === 3) ? 'rank-bronze' : 'rank-emerging'));
+                                        $badgeClass = ($rank === 1) ? 'rnd-badge-gold' : (($rank <= 3) ? 'rnd-badge-bronze' : 'rnd-badge-emerging');
+                                        $statusClass = ($rank === 1) ? 'pill-gold' : (($rank <= 3) ? 'pill-bronze' : 'pill-emerging');
+                                    ?>
+                                        <tr class="<?php echo $rowClass; ?>">
+                                            <td class="text-center font-bold">
+                                                <span class="rnd-rank-circle <?php echo $circleClass; ?>"><?php echo $rank; ?></span>
+                                            </td>
+                                            <td>
+                                                <strong class="rnd-dept-title"><?php echo $dept; ?></strong>
+                                                <div class="rnd-dept-sub"><?php echo $deptName; ?></div>
+                                            </td>
+                                            <td><span class="<?php echo $badgeClass; ?>"><?php echo htmlspecialchars($r['award_category'] ?? ''); ?></span></td>
+                                            <td>
+                                                <div style="font-size: 13px; color: #334155;">
+                                                    <?php echo htmlspecialchars(implode(' · ', array_slice($achievements, 0, 2))); ?>
+                                                </div>
+                                            </td>
+                                            <td style="font-size: 13px; color: #64748b; white-space: nowrap;">
+                                                <i class="far fa-calendar-alt"></i> <?php echo htmlspecialchars($r['publication_date'] ?? 'N/A'); ?>
+                                            </td>
+                                            <td>
+                                                <?php if ($score !== null): ?>
+                                                    <div class="rnd-total-score">
+                                                        <span class="score-num"><?php echo $score; ?></span>
+                                                        <div class="score-bar"><div class="score-fill" style="width: <?php echo min(100, $score); ?>%;"></div></div>
+                                                    </div>
+                                                <?php else: ?>
+                                                    <span style="color:#94a3b8;">—</span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <span class="rnd-status-pill <?php echo $statusClass; ?>">
+                                                    <?php echo htmlspecialchars($r['award_badge'] ?? 'Ranked'); ?>
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </tbody>
                         </table>
                     </div>

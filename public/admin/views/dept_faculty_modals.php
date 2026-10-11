@@ -17,7 +17,7 @@
             <h3><i class="fas fa-plus-circle" style="color:#00b894;"></i> Add New Department</h3>
             <button type="button" class="modal-close-btn" onclick="closeModal('modalAddDepartment')">&times;</button>
         </div>
-        <form action="../backend/crud.php" method="POST">
+        <form action="../backend/crud.php" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="action" value="add_department">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
 
@@ -80,6 +80,26 @@
                     </div>
                 </div>
 
+                <!-- Department Logo / Emblem -->
+                <div class="form-group" style="margin-bottom:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">
+                    <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:8px;">
+                        <i class="fas fa-image" style="color:#00b894; margin-right:4px;"></i> Department Logo / Emblem
+                    </label>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:54px; height:54px; border-radius:10px; border:2px dashed #cbd5e1; background:#ffffff; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+                            <img id="add_dept_logo_preview" src="../assets/courses/cse.png" alt="Dept Logo" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.src='../assets/courses/cse.png';">
+                        </div>
+                        <div style="flex:1;">
+                            <input type="file" name="dept_logo" id="add_dept_logo_file" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" style="padding:6px 12px; height:auto; font-size:12px;" onchange="previewDeptLogo(this, 'add_dept_logo_preview')">
+                            <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                                <span style="font-size:11px; color:#64748b; white-space:nowrap;">Or Asset Path:</span>
+                                <input type="text" name="banner_image" id="add_dept_banner_image" class="form-control" placeholder="assets/courses/cse.png" style="padding:3px 8px; font-size:11.5px; height:28px;" oninput="updateLogoPreviewFromText(this.value, 'add_dept_logo_preview')">
+                            </div>
+                            <span style="font-size:11px; color:#94a3b8; display:block; margin-top:4px;">Recommended: Transparent PNG emblem (JPG, PNG, WEBP, GIF supported).</span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group" style="margin-bottom:14px;">
                     <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:5px;">Department Description / Tagline</label>
                     <textarea name="description" class="form-control" rows="2" placeholder="Brief academic overview of the department..."></textarea>
@@ -123,7 +143,7 @@
             <h3><i class="fas fa-edit" style="color:#00b894;"></i> Edit Department Details</h3>
             <button type="button" class="modal-close-btn" onclick="closeModal('modalEditDepartment')">&times;</button>
         </div>
-        <form action="../backend/crud.php" method="POST">
+        <form action="../backend/crud.php" method="POST" enctype="multipart/form-data">
             <input type="hidden" name="action" value="update_department">
             <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
             <input type="hidden" name="id" id="edit_dept_id">
@@ -184,6 +204,26 @@
                             <option value="theme-hs">H&amp;S (Indigo / Slate)</option>
                             <option value="theme-mba">MBA (Crimson / Rose)</option>
                         </select>
+                    </div>
+                </div>
+
+                <!-- Department Logo / Emblem -->
+                <div class="form-group" style="margin-bottom:14px; background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:12px 16px;">
+                    <label style="display:block; font-size:12.5px; font-weight:700; color:#334155; margin-bottom:8px;">
+                        <i class="fas fa-image" style="color:#00b894; margin-right:4px;"></i> Department Logo / Emblem
+                    </label>
+                    <div style="display:flex; align-items:center; gap:16px;">
+                        <div style="width:54px; height:54px; border-radius:10px; border:2px dashed #cbd5e1; background:#ffffff; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0;">
+                            <img id="edit_dept_logo_preview" src="../assets/courses/cse.png" alt="Dept Logo" style="max-width:100%; max-height:100%; object-fit:contain;" onerror="this.src='../assets/courses/cse.png';">
+                        </div>
+                        <div style="flex:1;">
+                            <input type="file" name="dept_logo" id="edit_dept_logo_file" accept="image/jpeg,image/png,image/webp,image/gif" class="form-control" style="padding:6px 12px; height:auto; font-size:12px;" onchange="previewDeptLogo(this, 'edit_dept_logo_preview')">
+                            <div style="display:flex; gap:8px; align-items:center; margin-top:6px;">
+                                <span style="font-size:11px; color:#64748b; white-space:nowrap;">Or Asset Path:</span>
+                                <input type="text" name="banner_image" id="edit_dept_banner_image" class="form-control" placeholder="assets/courses/cse.png" style="padding:3px 8px; font-size:11.5px; height:28px;" oninput="updateLogoPreviewFromText(this.value, 'edit_dept_logo_preview')">
+                            </div>
+                            <span style="font-size:11px; color:#94a3b8; display:block; margin-top:4px;">Upload new emblem or update image path (leave blank to keep current).</span>
+                        </div>
                     </div>
                 </div>
 
@@ -624,6 +664,33 @@ function onRoleCategoryChange(selectElem, prefix) {
     }
 }
 
+// Helper to preview selected file image
+function previewDeptLogo(input, previewId) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const preview = document.getElementById(previewId);
+        if (preview) {
+            preview.src = URL.createObjectURL(file);
+        }
+    }
+}
+
+// Helper to preview path/URL typed in text input
+function updateLogoPreviewFromText(val, previewId) {
+    const preview = document.getElementById(previewId);
+    if (!preview) return;
+    val = (val || '').trim();
+    if (!val) {
+        preview.src = '../assets/courses/cse.png';
+        return;
+    }
+    if (val.startsWith('http') || val.startsWith('/')) {
+        preview.src = val;
+    } else {
+        preview.src = '../' + val.replace(/^\.\.\//, '');
+    }
+}
+
 // Populate and open Edit Department Modal
 function openEditDepartmentModal(d) {
     if (!d) return;
@@ -642,6 +709,21 @@ function openEditDepartmentModal(d) {
     document.getElementById('edit_dept_page_url').value    = d.page_url || '';
     document.getElementById('edit_dept_order').value       = d.display_order || 0;
     document.getElementById('edit_dept_active').value      = (d.is_active !== undefined) ? d.is_active : 1;
+
+    // Logo & Banner
+    const logoVal = d.banner_image || d.dept_logo || d.logo || '';
+    const logoInput = document.getElementById('edit_dept_banner_image');
+    if (logoInput) logoInput.value = logoVal;
+    const logoPreview = document.getElementById('edit_dept_logo_preview');
+    if (logoPreview) {
+        if (logoVal) {
+            logoPreview.src = (logoVal.startsWith('http') || logoVal.startsWith('/')) ? logoVal : '../' + logoVal.replace(/^\.\.\//, '');
+        } else {
+            logoPreview.src = '../assets/courses/cse.png';
+        }
+    }
+    const fileInput = document.getElementById('edit_dept_logo_file');
+    if (fileInput) fileInput.value = '';
 
     openModal('modalEditDepartment');
 }

@@ -48,6 +48,7 @@ $description  = $dept['description'] ?? '';
 $vision       = $dept['vision'] ?? '';
 $mission      = $dept['mission'] ?? '';
 $active_dept  = $dept_slug;
+$dept_logo    = !empty($dept['dept_logo']) ? $dept['dept_logo'] : (!empty($dept['banner_image']) ? $dept['banner_image'] : (!empty($dept['logo']) ? $dept['logo'] : ''));
 
 // Dynamic syllabus and PEOs documents from department record
 $dept_syllabus_link = !empty($dept['syllabus_url']) ? htmlspecialchars($dept['syllabus_url']) : 'assets/Dept/peos_psos.docx';
@@ -74,10 +75,19 @@ $dept_peos_link     = !empty($dept['peos_url']) ? htmlspecialchars($dept['peos_u
                 <span class="sep"><i class="fas fa-chevron-right"></i></span>
                 <span><?php echo $dept_name; ?></span>
             </div>
-            <span class="dept-hero-badge">
-                <i class="<?php echo $icon_class; ?>"></i> <?php echo $degree_level; ?> Program &bull; UGC Autonomous
-            </span>
-            <h1 class="dept-hero-title">Department of <?php echo $dept_name; ?></h1>
+            <div style="display: flex; align-items: center; gap: 20px; margin-bottom: 12px; flex-wrap: wrap;">
+                <?php if (!empty($dept_logo)): ?>
+                    <div class="dept-hero-emblem" style="width: 72px; height: 72px; border-radius: 16px; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; padding: 6px; box-shadow: 0 10px 25px rgba(0,0,0,0.12); border: 2px solid rgba(255,255,255,0.7); flex-shrink: 0;">
+                        <img src="<?php echo htmlspecialchars($dept_logo); ?>" alt="<?php echo $dept_code; ?> Logo" style="max-width: 100%; max-height: 100%; object-fit: contain;" onerror="this.parentElement.style.display='none';">
+                    </div>
+                <?php endif; ?>
+                <div>
+                    <span class="dept-hero-badge">
+                        <i class="<?php echo $icon_class; ?>"></i> <?php echo $degree_level; ?> Program &bull; UGC Autonomous
+                    </span>
+                    <h1 class="dept-hero-title" style="margin-top: 6px;">Department of <?php echo $dept_name; ?></h1>
+                </div>
+            </div>
             <p class="dept-hero-tagline">
                 <?php echo htmlspecialchars($description ?: 'Excellence in education, technical innovation, high-end laboratories, and student mentorship.'); ?>
             </p>

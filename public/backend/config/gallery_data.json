@@ -1,0 +1,170 @@
+[
+    {
+        "id": 1,
+        "title": "Grand Academic Felicitation Ceremony",
+        "media_type": "image",
+        "category": "events",
+        "file_path": "assets/College Event/feli1.jpg",
+        "description": "Felicitation of top rankers and university gold medalists."
+    },
+    {
+        "id": 2,
+        "title": "Faculty & Student Honors Presentation",
+        "media_type": "image",
+        "category": "events",
+        "file_path": "assets/College Event/feli2.jpg",
+        "description": "Annual academic accolades and faculty research citations."
+    },
+    {
+        "id": 3,
+        "title": "College Assembly & Annual Gathering",
+        "media_type": "image",
+        "category": "events",
+        "file_path": "assets/College Event/all1.jpg",
+        "description": "Campus-wide gathering at the main college auditorium."
+    },
+    {
+        "id": 4,
+        "title": "Cultural Fest & Student Celebrations",
+        "media_type": "image",
+        "category": "events",
+        "file_path": "assets/Gallery/im.jpg",
+        "description": "Vibrant stage performances and student dance competitions."
+    },
+    {
+        "id": 5,
+        "title": "Traditional Day Celebrations",
+        "media_type": "image",
+        "category": "events",
+        "file_path": "assets/Gallery/im1.jpg",
+        "description": "Celebrating rich cultural heritage and student harmony."
+    },
+    {
+        "id": 6,
+        "title": "Annual Sports Meet & Athletics",
+        "media_type": "image",
+        "category": "events",
+        "file_path": "assets/Gallery/im2.jpg",
+        "description": "Inter-college cricket, volleyball, and athletics championships."
+    },
+    {
+        "id": 7,
+        "title": "Campus Day Festival Celebrations",
+        "media_type": "image",
+        "category": "events",
+        "file_path": "assets/Gallery/im3.jpg",
+        "description": "Joyous graduation and campus day celebration."
+    },
+    {
+        "id": 8,
+        "title": "UGC Autonomous Status Announcement",
+        "media_type": "image",
+        "category": "milestones",
+        "file_path": "assets/Gallery/autonomous.jpg",
+        "description": "UGC confers Autonomous Institution status to Trinity College."
+    },
+    {
+        "id": 9,
+        "title": "NAAC B++ Grade Accreditation Recognition",
+        "media_type": "image",
+        "category": "milestones",
+        "file_path": "assets/Gallery/naac2.jpg",
+        "description": "National Assessment and Accreditation Council B++ Grade accreditation."
+    },
+    {
+        "id": 10,
+        "title": "Infosys & Multi-Company Campus Drive",
+        "media_type": "image",
+        "category": "milestones",
+        "file_path": "assets/Gallery/infosys.jpg",
+        "description": "Prestigious corporate recruitment drives and top placement packages."
+    },
+    {
+        "id": 11,
+        "title": "Advanced Computer Science Lab",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/im4.jpg",
+        "description": "State-of-the-art computational lab equipped with high-end workstations."
+    },
+    {
+        "id": 12,
+        "title": "Electronics & VLSI Testing Workstation",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/im5.jpg",
+        "description": "Electronics hardware prototyping and microchip design lab."
+    },
+    {
+        "id": 13,
+        "title": "Central Library & Knowledge Resource Center",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/im6.jpg",
+        "description": "Over 50,000 volumes, international IEEE journals, and digital e-learning zone."
+    },
+    {
+        "id": 14,
+        "title": "Main College Campus & Lawns",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/im8.jpg",
+        "description": "Lush green campus environment designed for holistic learning."
+    },
+    {
+        "id": 15,
+        "title": "Engineering Innovation Workshops",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/IMG-1.jpg",
+        "description": "Hands-on machine fabrication, robotic welding, and additive manufacturing."
+    },
+    {
+        "id": 16,
+        "title": "Air-Conditioned Seminar Hall",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/IMG-4.jpg",
+        "description": "Modern seminar hall with integrated surround sound & projection systems."
+    },
+    {
+        "id": 17,
+        "title": "Smart Classrooms & Digital Projectors",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/IMG-5.jpg",
+        "description": "Interactive smart teaching boards and digital multimedia classrooms."
+    },
+    {
+        "id": 18,
+        "title": "Sports Grounds & Physical Education",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/IMG-6.jpg",
+        "description": "Full-sized cricket ground, basketball, and volleyball courts."
+    },
+    {
+        "id": 19,
+        "title": "Student Technical Project Exhibition",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/IMG-7.jpg",
+        "description": "Annual technical symposium and prototype project demonstration."
+    },
+    {
+        "id": 20,
+        "title": "Central Auditorium & Cultural Stage",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/IMG-8.jpg",
+        "description": "1,500 capacity auditorium hosting international conferences."
+    },
+    {
+        "id": 21,
+        "title": "College Administrative Complex",
+        "media_type": "image",
+        "category": "campus",
+        "file_path": "assets/Gallery/IMG2.jpg",
+        "description": "Single-window student service cell and administrative headquarters."
+    }
+]

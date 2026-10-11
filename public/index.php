@@ -14,43 +14,67 @@
     // Dynamic notifications & marquee ticker from GoDaddy MySQL backend
     @include_once __DIR__ . '/backend/config/database.php';
     @include_once __DIR__ . '/backend/crud.php';
+    @include_once __DIR__ . '/backend/hero_crud.php';
+    @include_once __DIR__ . '/backend/rnd_crud.php';
     $live_notices    = function_exists('get_notifications') ? get_notifications(5, false) : [];
     $marquee_notices = function_exists('get_notifications') ? get_notifications(3, true) : [];
     $live_events     = function_exists('get_events') ? get_events(10, false) : [];
     $live_news       = function_exists('get_news') ? get_news(30) : [];
+    $hero_data       = function_exists('load_hero_data') ? load_hero_data() : [];
+    $hero_content    = $hero_data['content'] ?? [];
+    $hero_slides     = array_values(array_filter($hero_data['slides'] ?? [], function($s) { return !empty($s['is_active']); }));
+
+    // R&D Department Rankings data
+    $rnd_periods          = function_exists('get_distinct_rnd_periods') ? get_distinct_rnd_periods(true) : [];
+    $rnd_selected_year    = $_GET['rnd_year'] ?? ($rnd_periods[0]['academic_year'] ?? '2025-26');
+    $rnd_selected_quarter = $_GET['rnd_quarter'] ?? ($rnd_periods[0]['quarter'] ?? 'Q4');
+    $rnd_data             = function_exists('get_rnd_rankings_by_period') ? get_rnd_rankings_by_period($rnd_selected_year, $rnd_selected_quarter, 'published') : [];
+    $rnd_rankings         = $rnd_data['rankings'] ?? [];
     ?>
     <!-- Main Content -->
     <main>
         <!-- Hero Section -->
-        <section class="hero hero-full-landscape">
+        <section class="hero hero-full-landscape" data-sync-module="hero">
             <div class="hero-stage-container">
                 <div class="hero-stage">
                     <!-- Badges (Floating on top) -->
                     <div class="hero-top-badges">
                         <div class="hero-glass-badge">
-                            <span class="live-pulse-dot"></span>
-                            <span>Campus Highlights</span>
+                            <?php if (!empty($hero_content['badge_left_pulse'])): ?>
+                                <span class="live-pulse-dot"></span>
+                            <?php endif; ?>
+                            <span><?php echo htmlspecialchars($hero_content['badge_left_text'] ?? 'Campus Highlights'); ?></span>
                         </div>
                         <div class="hero-glass-badge badge-accent">
-                            <i class="fas fa-certificate"></i>
-                            <span>NAAC 'B++' Grade &amp; Autonomous</span>
+                            <i class="<?php echo htmlspecialchars($hero_content['badge_right_icon'] ?? 'fas fa-certificate'); ?>"></i>
+                            <span><?php echo htmlspecialchars($hero_content['badge_right_text'] ?? "NAAC 'B++' Grade & Autonomous"); ?></span>
                         </div>
                     </div>
 
                     <!-- Slide Media Items -->
                     <div class="hero-slides-track">
-                        <img src="assets/College Event/all1.jpg" alt="College Event" class="hero-slide active">
-                        <img src="assets/College Event/caps.jpg" alt="Graduation" class="hero-slide">
-                        <img src="assets/College Event/feli1.jpg" alt="Felicitation 1" class="hero-slide">
-                        <img src="assets/College Event/feli2.jpg" alt="Felicitation 2" class="hero-slide">
-                        <video src="assets/College Event/autonomus.mp4" class="hero-slide" muted playsinline></video>
+                        <?php if (!empty($hero_slides)): ?>
+                            <?php $slideIdx = 0; foreach ($hero_slides as $slide): ?>
+                                <?php if (($slide['media_type'] ?? 'image') === 'video'): ?>
+                                    <video src="<?php echo htmlspecialchars($slide['file_path']); ?>" class="hero-slide <?php echo $slideIdx === 0 ? 'active' : ''; ?>" muted playsinline></video>
+                                <?php else: ?>
+                                    <img src="<?php echo htmlspecialchars($slide['file_path']); ?>" alt="<?php echo htmlspecialchars($slide['title'] ?? 'College Event'); ?>" class="hero-slide <?php echo $slideIdx === 0 ? 'active' : ''; ?>">
+                                <?php endif; ?>
+                            <?php $slideIdx++; endforeach; ?>
+                        <?php else: ?>
+                            <img src="assets/College Event/all1.jpg" alt="College Event" class="hero-slide active">
+                            <img src="assets/College Event/caps.jpg" alt="Graduation" class="hero-slide">
+                            <img src="assets/College Event/feli1.jpg" alt="Felicitation 1" class="hero-slide">
+                            <img src="assets/College Event/feli2.jpg" alt="Felicitation 2" class="hero-slide">
+                            <video src="assets/College Event/autonomus.mp4" class="hero-slide" muted playsinline></video>
+                        <?php endif; ?>
                     </div>
 
                     <!-- Cinematic Bottom Overlay Bar -->
                     <div class="hero-bottom-bar">
                         <div class="hero-bar-text">
-                            <h3>Excellence in Education</h3>
-                            <p><i class="fas fa-shield-halved"></i> Inspiring Future Innovators Since 2008</p>
+                            <h3><?php echo htmlspecialchars($hero_content['title'] ?? 'Excellence in Education'); ?></h3>
+                            <p><i class="<?php echo htmlspecialchars($hero_content['subtitle_icon'] ?? 'fas fa-shield-halved'); ?>"></i> <?php echo htmlspecialchars($hero_content['subtitle'] ?? 'Inspiring Future Innovators Since 2008'); ?></p>
                         </div>
 
                         <!-- Controls: Arrows + Dots -->
@@ -66,8 +90,8 @@
 
                         <!-- Quick Action CTA -->
                         <div class="hero-bar-cta">
-                            <a href="admission.php" class="hero-pill-btn">
-                                <span>Admissions Open</span>
+                            <a href="<?php echo htmlspecialchars($hero_content['cta_link'] ?? 'admission.php'); ?>" class="hero-pill-btn">
+                                <span><?php echo htmlspecialchars($hero_content['cta_text'] ?? 'Admissions Open'); ?></span>
                                 <i class="fas fa-arrow-right"></i>
                             </a>
                         </div>
@@ -135,99 +159,8 @@
                             </div>
                         </div>
 
-                        <div class="bulletin-items-list">
-                            <?php if (!empty($live_notices)): ?>
-                                <?php foreach ($live_notices as $notice): 
-                                    $filePath = !empty($notice['attachment_path']) ? $notice['attachment_path'] : (!empty($notice['file_path']) ? $notice['file_path'] : '');
-                                    $link = !empty($filePath) ? htmlspecialchars($filePath) : (!empty($notice['link_url']) ? htmlspecialchars($notice['link_url']) : '#');
-                                    $target = (!empty($filePath) || !empty($notice['link_url'])) ? 'target="_blank"' : '';
-                                    
-                                    $fileType = strtolower($notice['attachment_type'] ?? '');
-                                    if (empty($fileType) || $fileType === 'none') {
-                                        if (!empty($filePath)) {
-                                            $ext = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
-                                            if ($ext === 'pdf') $fileType = 'pdf';
-                                            elseif (in_array($ext, ['doc', 'docx'])) $fileType = 'docx';
-                                            elseif (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) $fileType = 'image';
-                                            else $fileType = 'doc';
-                                        }
-                                    }
-                                    
-                                    $badge = !empty($fileType) && $fileType !== 'none' ? strtoupper($fileType) : ($notice['badge'] ?? 'NOTICE');
-                                ?>
-                                    <a href="<?php echo $link; ?>" <?php echo $target; ?> class="bulletin-item-card">
-                                        <div class="bulletin-date-badge theme-<?php echo strtolower($badge); ?>">
-                                            <span class="date-month"><?php echo $badge; ?></span>
-                                            <span class="date-day"><?php echo date('d M', strtotime($notice['publish_date'] ?? date('Y-m-d'))); ?></span>
-                                        </div>
-                                        <div class="bulletin-content">
-                                            <span class="bulletin-category cat-<?php echo strtolower($notice['category'] ?? 'circular'); ?>"><?php echo htmlspecialchars($notice['category'] ?? 'Circular'); ?></span>
-                                            <h5><?php echo htmlspecialchars($notice['title']); ?></h5>
-                                            <?php if (!empty($notice['description'])): ?>
-                                                <p><?php echo htmlspecialchars($notice['description']); ?></p>
-                                            <?php endif; ?>
-                                            <span class="bulletin-link-text">
-                                                <?php 
-                                                if (!empty($filePath)) {
-                                                    if ($fileType === 'pdf') echo 'View PDF Document <i class="fas fa-file-pdf"></i>';
-                                                    elseif ($fileType === 'docx') echo 'Download DOCX Circular <i class="fas fa-file-word"></i>';
-                                                    elseif ($fileType === 'image') echo 'View Attached Image <i class="fas fa-file-image"></i>';
-                                                    else echo 'View Attached File <i class="fas fa-paperclip"></i>';
-                                                } else {
-                                                    echo 'Read Circular Notice <i class="fas fa-arrow-right"></i>';
-                                                }
-                                                ?>
-                                            </span>
-                                        </div>
-                                    </a>
-                                <?php endforeach; ?>
-                            <?php else: ?>
-                                <!-- Static Fallback Bulletins -->
-                                <a href="naac.php" class="bulletin-item-card">
-                                    <div class="bulletin-date-badge theme-naac">
-                                        <span class="date-month">NAAC</span>
-                                        <span class="date-day">B++</span>
-                                    </div>
-                                    <div class="bulletin-content">
-                                        <span class="bulletin-category cat-naac">Accreditation</span>
-                                        <h5>First &amp; Only NAAC Accredited College in Peddapalli</h5>
-                                        <p>Recognized for world-class laboratory infrastructure, experienced faculty, and
-                                            strong student outcomes.</p>
-                                        <span class="bulletin-link-text">View Certificate <i
-                                                class="fas fa-arrow-right"></i></span>
-                                    </div>
-                                </a>
-
-                                <a href="admission.php" class="bulletin-item-card">
-                                    <div class="bulletin-date-badge theme-adms">
-                                        <span class="date-month">CODE</span>
-                                        <span class="date-day">TCEK</span>
-                                    </div>
-                                    <div class="bulletin-content">
-                                        <span class="bulletin-category cat-adms">Admissions 2024–25</span>
-                                        <h5>B.Tech, Diploma &amp; MBA Counseling Open</h5>
-                                        <p>Seat allotments through TS EAPCET, POLYCET &amp; ICET. Merit scholarship fee
-                                            concessions available.</p>
-                                        <span class="bulletin-link-text">Admissions Details <i
-                                                class="fas fa-arrow-right"></i></span>
-                                    </div>
-                                </a>
-
-                                <a href="placement-cell.php" class="bulletin-item-card">
-                                    <div class="bulletin-date-badge theme-jobs">
-                                        <span class="date-month">DRIVE</span>
-                                        <span class="date-day">100%</span>
-                                    </div>
-                                    <div class="bulletin-content">
-                                        <span class="bulletin-category cat-jobs">Campus Placements</span>
-                                        <h5>Recruitment Drives: TCS, Capgemini, Infosys</h5>
-                                        <p>Pre-placement training, coding bootcamps, and top multinational recruitment
-                                            opportunities.</p>
-                                        <span class="bulletin-link-text">Placement Reports <i
-                                                class="fas fa-arrow-right"></i></span>
-                                    </div>
-                                </a>
-                            <?php endif; ?>
+                        <div class="bulletin-items-list" id="bulletin-list-container" data-sync-module="notifications">
+                            <?php include __DIR__ . '/backend/snippets/bulletin_list.php'; ?>
                         </div>
                     </div>
                 </div>
@@ -247,46 +180,8 @@
                         </div>
                     </div>
 
-                    <div class="press-clippings-grid">
-                        <?php if (!empty($live_news)): ?>
-                            <?php foreach ($live_news as $nws_item): 
-                                $raw_path   = !empty($nws_item['image_path']) ? $nws_item['image_path'] : 'assets/Gallery/paper1.jpg';
-                                $img_url    = htmlspecialchars($raw_path);
-                                $nws_title  = htmlspecialchars($nws_item['title']);
-                                $nws_source = !empty($nws_item['source']) ? htmlspecialchars($nws_item['source']) : 'Press Coverage';
-                                $nws_date   = !empty($nws_item['publish_date']) ? date('d M Y', strtotime($nws_item['publish_date'])) : '';
-                                $nws_desc   = !empty($nws_item['description']) ? $nws_item['description'] : ($nws_item['summary'] ?? '');
-                                $caption    = $nws_source . ': ' . $nws_title . ($nws_date ? ' (' . $nws_date . ')' : '');
-                            ?>
-                                <div class="press-card" onclick="openNewsLightbox('<?php echo $img_url; ?>', '<?php echo addslashes($caption); ?>', '<?php echo addslashes($nws_desc); ?>')">
-                                    <div class="press-thumb-wrap">
-                                        <img src="<?php echo $img_url; ?>" alt="<?php echo $nws_title; ?>" loading="lazy" onerror="this.src='assets/Gallery/paper1.jpg'">
-                                        <div class="press-overlay-badge">
-                                            <span class="zoom-pill"><i class="fas fa-search-plus"></i> View Article</span>
-                                        </div>
-                                    </div>
-                                    <div class="press-info">
-                                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                                            <span class="press-source"><?php echo $nws_source; ?></span>
-                                            <?php if (!empty($nws_date)): ?>
-                                                <span style="font-size:11px; color:#64748b;"><i class="far fa-calendar-alt"></i> <?php echo $nws_date; ?></span>
-                                            <?php endif; ?>
-                                        </div>
-                                        <h6 class="press-headline"><?php echo $nws_title; ?></h6>
-                                        <?php if (!empty($nws_desc)): ?>
-                                            <p style="font-size:12px; color:#64748b; margin:6px 0 0; line-height:1.4; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">
-                                                <?php echo htmlspecialchars($nws_desc); ?>
-                                            </p>
-                                        <?php endif; ?>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #64748b;">
-                                <i class="fas fa-newspaper" style="font-size: 32px; color: #cbd5e1; margin-bottom: 8px; display: block;"></i>
-                                No newspaper clippings published yet.
-                            </div>
-                        <?php endif; ?>
+                    <div class="press-clippings-grid" data-sync-module="news">
+                        <?php include __DIR__ . '/backend/snippets/news_press_grid.php'; ?>
                     </div>
                 </div>
             </div>
@@ -752,385 +647,9 @@ foreach ($live_events as $ev) {
                     <p>World-class academic programmes designed for future leaders</p>
                 </div>
 
-                <!-- Tab Buttons -->
-                <div class="tabs-container">
-                    <button class="tab-btn active" onclick="openCourseTab(event, 'btech')">B.Tech</button>
-                    <button class="tab-btn" onclick="openCourseTab(event, 'diploma')">Diploma</button>
-                    <button class="tab-btn" onclick="openCourseTab(event, 'mba')">MBA</button>
-                </div>
-
-                <!-- B.Tech Content -->
-                <div id="btech" class="tab-content" style="display: block;">
-                    <div class="courses-modern-grid">
-                        <!-- EEE -->
-                        <div class="course-card theme-eee">
-                            <div class="course-card-banner">
-                                <span class="course-card-category-icon"><i class="fas fa-bolt"></i></span>
-                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
-                                <img src="assets/courses/eee.png" alt="Electrical & Electronics Engineering (EEE)"
-                                    class="course-banner-img">
-                            </div>
-                            <div class="course-card-body">
-                                <h3>Electrical &amp; Electronics Engineering (EEE)</h3>
-                                <div class="course-tags">
-                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Smart Grids</span>
-                                    <span class="course-tag">Power Systems</span>
-                                    <span class="course-tag">EV Tech</span>
-                                </div>
-                                <div class="course-metrics-row">
-                                    <div class="metric-block">
-                                        <span class="metric-num">60</span>
-                                        <span class="metric-name">Intake</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">4 Years</span>
-                                        <span class="metric-name">Duration</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2008</span>
-                                        <span class="metric-name">Established</span>
-                                    </div>
-                                </div>
-                                <div class="course-card-footer">
-                                    <a href="department.php?slug=eee" class="btn-course-explore">
-                                        <span>Explore Department</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ECE -->
-                        <div class="course-card theme-ece">
-                            <div class="course-card-banner">
-                                <span class="course-card-category-icon"><i class="fas fa-microchip"></i></span>
-                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
-                                <img src="assets/courses/ece.png" alt="Electronics & Communication Engineering (ECE)"
-                                    class="course-banner-img">
-                            </div>
-                            <div class="course-card-body">
-                                <h3>Electronics &amp; Communication Engineering (ECE)</h3>
-                                <div class="course-tags">
-                                    <span class="course-tag"><i class="fas fa-check-circle"></i> VLSI Design</span>
-                                    <span class="course-tag">Embedded Systems</span>
-                                    <span class="course-tag">5G &amp; IoT</span>
-                                </div>
-                                <div class="course-metrics-row">
-                                    <div class="metric-block">
-                                        <span class="metric-num">60</span>
-                                        <span class="metric-name">Intake</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">4 Years</span>
-                                        <span class="metric-name">Duration</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2008</span>
-                                        <span class="metric-name">Established</span>
-                                    </div>
-                                </div>
-                                <div class="course-card-footer">
-                                    <a href="department.php?slug=ece" class="btn-course-explore">
-                                        <span>Explore Department</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CSE -->
-                        <div class="course-card theme-cse">
-                            <div class="course-card-banner">
-                                <span class="course-card-category-icon"><i class="fas fa-laptop-code"></i></span>
-                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
-                                <img src="assets/courses/cse.png" alt="Computer Science & Engineering (CSE)"
-                                    class="course-banner-img">
-                            </div>
-                            <div class="course-card-body">
-                                <h3>Computer Science &amp; Engineering (CSE)</h3>
-                                <div class="course-tags">
-                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Cloud &amp;
-                                        DevOps</span>
-                                    <span class="course-tag">Full Stack</span>
-                                    <span class="course-tag">Cyber Security</span>
-                                </div>
-                                <div class="course-metrics-row">
-                                    <div class="metric-block">
-                                        <span class="metric-num">60</span>
-                                        <span class="metric-name">Intake</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">4 Years</span>
-                                        <span class="metric-name">Duration</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2008</span>
-                                        <span class="metric-name">Established</span>
-                                    </div>
-                                </div>
-                                <div class="course-card-footer">
-                                    <a href="department.php?slug=cse" class="btn-course-explore">
-                                        <span>Explore Department</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- AIML -->
-                        <div class="course-card theme-aiml">
-                            <div class="course-card-banner">
-                                <span class="course-card-category-icon"><i class="fas fa-brain"></i></span>
-                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
-                                <img src="assets/courses/aiml.png"
-                                    alt="Artificial Intelligence & Machine Learning (AIML)" class="course-banner-img">
-                            </div>
-                            <div class="course-card-body">
-                                <h3>Artificial Intelligence &amp; Machine Learning (AIML)</h3>
-                                <div class="course-tags">
-                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Deep Learning</span>
-                                    <span class="course-tag">Neural Nets</span>
-                                    <span class="course-tag">Computer Vision</span>
-                                </div>
-                                <div class="course-metrics-row">
-                                    <div class="metric-block">
-                                        <span class="metric-num">60</span>
-                                        <span class="metric-name">Intake</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">4 Years</span>
-                                        <span class="metric-name">Duration</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2021</span>
-                                        <span class="metric-name">Established</span>
-                                    </div>
-                                </div>
-                                <div class="course-card-footer">
-                                    <a href="department.php?slug=aiml" class="btn-course-explore">
-                                        <span>Explore Department</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- CSE (AI & ML) -->
-                        <div class="course-card theme-cse-aiml">
-                            <div class="course-card-banner">
-                                <span class="course-card-category-icon"><i class="fas fa-robot"></i></span>
-                                <span class="course-card-badge-top">B.Tech · 4 Yrs</span>
-                                <img src="assets/courses/cse-aiml.jpg" alt="Computer Science and Engineering (AI & ML)"
-                                    class="course-banner-img">
-                            </div>
-                            <div class="course-card-body">
-                                <h3>Computer Science and Engineering (AI &amp; ML)</h3>
-                                <div class="course-tags">
-                                    <span class="course-tag"><i class="fas fa-check-circle"></i> GenAI &amp; LLMs</span>
-                                    <span class="course-tag">Data Science</span>
-                                    <span class="course-tag">Smart Systems</span>
-                                </div>
-                                <div class="course-metrics-row">
-                                    <div class="metric-block">
-                                        <span class="metric-num">60</span>
-                                        <span class="metric-name">Intake</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">4 Years</span>
-                                        <span class="metric-name">Duration</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2024</span>
-                                        <span class="metric-name">Established</span>
-                                    </div>
-                                </div>
-                                <div class="course-card-footer">
-                                    <a href="department.php?slug=cse-aiml" class="btn-course-explore">
-                                        <span>Explore Department</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Diploma Content -->
-                <div id="diploma" class="tab-content">
-                    <div class="courses-modern-grid">
-                        <div class="course-card theme-eee">
-                            <div class="course-card-banner">
-                                <span class="course-card-category-icon"><i class="fas fa-plug"></i></span>
-                                <span class="course-card-badge-top">Polytechnic · 3 Yrs</span>
-                                <img src="assets/courses/eee.png" alt="Electrical & Electronics Engineering (DEEE)"
-                                    class="course-banner-img">
-                            </div>
-                            <div class="course-card-body">
-                                <h3>Electrical &amp; Electronics Engineering (DEEE)</h3>
-                                <div class="course-tags">
-                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Circuit Design</span>
-                                    <span class="course-tag">Power Wiring</span>
-                                    <span class="course-tag">Automation</span>
-                                </div>
-                                <div class="course-metrics-row">
-                                    <div class="metric-block">
-                                        <span class="metric-num">60</span>
-                                        <span class="metric-name">Intake</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">3 Years</span>
-                                        <span class="metric-name">Duration</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2013</span>
-                                        <span class="metric-name">Established</span>
-                                    </div>
-                                </div>
-                                <div class="course-card-footer">
-                                    <a href="departments.php" class="btn-course-explore">
-                                        <span>Course Details</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="course-card theme-ece">
-                            <div class="course-card-banner">
-                                <span class="course-card-category-icon"><i class="fas fa-satellite-dish"></i></span>
-                                <span class="course-card-badge-top">Polytechnic · 3 Yrs</span>
-                                <img src="assets/courses/ece.png" alt="Electronics & Communication Engineering (DECE)"
-                                    class="course-banner-img">
-                            </div>
-                            <div class="course-card-body">
-                                <h3>Electronics &amp; Communication Engineering (DECE)</h3>
-                                <div class="course-tags">
-                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Digital Circuits</span>
-                                    <span class="course-tag">Microcontrollers</span>
-                                    <span class="course-tag">Comms</span>
-                                </div>
-                                <div class="course-metrics-row">
-                                    <div class="metric-block">
-                                        <span class="metric-num">60</span>
-                                        <span class="metric-name">Intake</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">3 Years</span>
-                                        <span class="metric-name">Duration</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2013</span>
-                                        <span class="metric-name">Established</span>
-                                    </div>
-                                </div>
-                                <div class="course-card-footer">
-                                    <a href="departments.php" class="btn-course-explore">
-                                        <span>Course Details</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="course-card theme-cse">
-                            <div class="course-card-banner">
-                                <span class="course-card-category-icon"><i class="fas fa-desktop"></i></span>
-                                <span class="course-card-badge-top">Polytechnic · 3 Yrs</span>
-                                <img src="assets/courses/cse.png" alt="Computer Science Engineering (DCSE)"
-                                    class="course-banner-img">
-                            </div>
-                            <div class="course-card-body">
-                                <h3>Computer Science Engineering (DCSE)</h3>
-                                <div class="course-tags">
-                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Programming</span>
-                                    <span class="course-tag">Web Technologies</span>
-                                    <span class="course-tag">Database</span>
-                                </div>
-                                <div class="course-metrics-row">
-                                    <div class="metric-block">
-                                        <span class="metric-num">60</span>
-                                        <span class="metric-name">Intake</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">3 Years</span>
-                                        <span class="metric-name">Duration</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2023</span>
-                                        <span class="metric-name">Established</span>
-                                    </div>
-                                </div>
-                                <div class="course-card-footer">
-                                    <a href="departments.php" class="btn-course-explore">
-                                        <span>Course Details</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- MBA Content -->
-                <div id="mba" class="tab-content">
-                    <div class="courses-modern-grid mba-single-grid">
-                        <div class="course-card theme-mba flagship-card">
-                            <div class="course-card-banner" style="height: 220px;">
-                                <span class="course-card-category-icon"><i class="fas fa-briefcase"></i></span>
-                                <span class="course-card-badge-top">Post Graduate · 2 Yrs</span>
-                                <img src="assets/courses/mba.jpg" alt="Masters in Business Administration (MBA)"
-                                    class="course-banner-img" style="max-height: 180px;">
-                            </div>
-                            <div class="course-card-body">
-                                <h3>Masters in Business Administration (MBA)</h3>
-                                <div class="course-tags">
-                                    <span class="course-tag"><i class="fas fa-check-circle"></i> Financial
-                                        Analytics</span>
-                                    <span class="course-tag">Digital Marketing</span>
-                                    <span class="course-tag">Strategic HR</span>
-                                    <span class="course-tag">Corporate Leadership</span>
-                                </div>
-                                <div class="course-metrics-row">
-                                    <div class="metric-block">
-                                        <span class="metric-num">120</span>
-                                        <span class="metric-name">Total Seats</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2 Years</span>
-                                        <span class="metric-name">Full Time</span>
-                                    </div>
-                                    <div class="metric-divider"></div>
-                                    <div class="metric-block">
-                                        <span class="metric-num">2009</span>
-                                        <span class="metric-name">Established</span>
-                                    </div>
-                                </div>
-                                <div class="course-card-footer">
-                                    <a href="department.php?slug=mba" class="btn-course-explore">
-                                        <span>Explore MBA Department</span>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Dynamic Courses Tabs & Grid from Department Store / Database -->
+                <div id="dynamic-courses-container" data-sync-module="courses">
+                    <?php include __DIR__ . '/backend/snippets/courses_grid.php'; ?>
                 </div>
             </div>
         </section>
@@ -1491,18 +1010,43 @@ foreach ($live_events as $ev) {
             </div>
         </section>
 
-        <!-- R&D Department Rankings Section (Q4 Announcement) -->
-        <section id="rnd-rankings">
+        <!-- R&D Department Rankings Section (Dynamic Database-Driven) -->
+        <section id="rnd-rankings" data-sync-module="rnd">
             <div class="container">
                 <div class="rnd-header-wrap">
                     <div class="rnd-pill">
                         <span class="rnd-pill-icon"><i class="fas fa-atom"></i></span>
-                        <span>Q4 (JAN 2026 – MAR 2026) Official Announcement</span>
+                        <span id="rndHeaderPeriodLabel"><?php echo htmlspecialchars($rnd_data['quarter_label'] ?: "{$rnd_selected_quarter} (AY {$rnd_selected_year}) Official Announcement"); ?></span>
                     </div>
                     <h2>R&amp;D Department Rankings</h2>
                     <p>Congratulations to all academic departments for outstanding achievements in research, innovation,
                         patents, international publications, NPTEL benchmarks, IIC and R&amp;D activities.</p>
                 </div>
+
+                <!-- Interactive Evaluation Period Selector Strip -->
+                <?php if (!empty($rnd_periods)): ?>
+                    <div class="rnd-period-selector-bar">
+                        <div class="rnd-selector-inner">
+                            <span class="rnd-selector-label"><i class="fas fa-history"></i> Evaluation Period:</span>
+                            <div class="rnd-period-tabs" id="rndPeriodTabs">
+                                <?php foreach ($rnd_periods as $p): 
+                                    $isSelected = (strcasecmp($p['academic_year'], $rnd_selected_year) === 0 && strcasecmp($p['quarter'], $rnd_selected_quarter) === 0);
+                                ?>
+                                    <button type="button" 
+                                            class="rnd-period-btn <?php echo $isSelected ? 'active' : ''; ?>"
+                                            data-year="<?php echo htmlspecialchars($p['academic_year']); ?>"
+                                            data-quarter="<?php echo htmlspecialchars($p['quarter']); ?>"
+                                            onclick="switchRndPeriod('<?php echo htmlspecialchars($p['academic_year']); ?>', '<?php echo htmlspecialchars($p['quarter']); ?>', this)">
+                                        <?php if (!empty($p['is_latest'])): ?>
+                                            <span class="rnd-latest-tag">LATEST</span>
+                                        <?php endif; ?>
+                                        <span><?php echo htmlspecialchars($p['quarter']); ?> · AY <?php echo htmlspecialchars($p['academic_year']); ?></span>
+                                    </button>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                <?php endif; ?>
 
                 <!-- Criteria Pills Strip -->
                 <div class="rnd-criteria-strip">
@@ -1513,107 +1057,43 @@ foreach ($live_events as $ev) {
                     <span class="rnd-crit-tag"><i class="fas fa-lightbulb"></i> IIC Initiatives</span>
                 </div>
 
-                <!-- 5 Department Rankings Grid -->
-                <div class="rnd-podium-grid">
-                    <!-- 1st Rank: AIML (Gold) -->
-                    <div class="rnd-card rank-1">
-                        <div>
-                            <div class="rnd-card-top">
-                                <span class="rnd-rank-num">1<sup>st</sup></span>
-                                <span class="rnd-medal-badge">🥇 1st · Gold</span>
+                <!-- Dynamic 5 Department Rankings Grid -->
+                <div class="rnd-podium-grid" id="rndPodiumGrid">
+                    <?php if (empty($rnd_rankings)): ?>
+                        <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #64748b; background: #f8fafc; border-radius: 16px;">
+                            <i class="fas fa-medal" style="font-size: 32px; color: #94a3b8; margin-bottom: 12px; display: block;"></i>
+                            No ranking results published yet for this period.
+                        </div>
+                    <?php else: ?>
+                        <?php foreach ($rnd_rankings as $idx => $r): 
+                            $rank = (int)($r['rank'] ?? ($idx + 1));
+                            $rankClass = 'rank-' . min(5, $rank);
+                            $suffix = 'th';
+                            if ($rank === 1) $suffix = 'st';
+                            elseif ($rank === 2) $suffix = 'nd';
+                            elseif ($rank === 3) $suffix = 'rd';
+                            $achievements = $r['achievements'] ?? [];
+                        ?>
+                            <div class="rnd-card <?php echo $rankClass; ?>">
+                                <div>
+                                    <div class="rnd-card-top">
+                                        <span class="rnd-rank-num"><?php echo $rank; ?><sup><?php echo $suffix; ?></sup></span>
+                                        <span class="rnd-medal-badge"><?php echo htmlspecialchars($r['award_category'] ?? "Rank {$rank}"); ?></span>
+                                    </div>
+                                    <h3 class="rnd-dept-code"><?php echo htmlspecialchars($r['department']); ?></h3>
+                                    <div class="rnd-dept-full"><?php echo htmlspecialchars($r['department_name']); ?></div>
+                                    <ul class="rnd-dept-perks">
+                                        <?php foreach ($achievements as $ach): ?>
+                                            <li><i class="fas fa-check-circle"></i> <?php echo htmlspecialchars($ach); ?></li>
+                                        <?php endforeach; ?>
+                                    </ul>
+                                </div>
+                                <div class="rnd-status-tag">
+                                    <?php echo htmlspecialchars($r['award_badge'] ?? 'Emerging'); ?>
+                                </div>
                             </div>
-                            <h3 class="rnd-dept-code">AIML</h3>
-                            <div class="rnd-dept-full">Artificial Intelligence &amp; Machine Learning</div>
-                            <ul class="rnd-dept-perks">
-                                <li><i class="fas fa-check-circle"></i> High-Impact Research Papers</li>
-                                <li><i class="fas fa-check-circle"></i> Patents &amp; Innovation Leads</li>
-                                <li><i class="fas fa-check-circle"></i> NPTEL &amp; IIC Star Rating</li>
-                            </ul>
-                        </div>
-                        <div class="rnd-status-tag">
-                            <i class="fas fa-trophy"></i> Gold Champion
-                        </div>
-                    </div>
-
-                    <!-- 2nd Rank: CSE & CSM (Bronze) -->
-                    <div class="rnd-card rank-2">
-                        <div>
-                            <div class="rnd-card-top">
-                                <span class="rnd-rank-num">2<sup>nd</sup></span>
-                                <span class="rnd-medal-badge">🥈 2nd · Bronze</span>
-                            </div>
-                            <h3 class="rnd-dept-code">CSE &amp; CSM</h3>
-                            <div class="rnd-dept-full">Computer Science &amp; Engineering / CSM</div>
-                            <ul class="rnd-dept-perks">
-                                <li><i class="fas fa-check-circle"></i> Coding &amp; Hackathon Projects</li>
-                                <li><i class="fas fa-check-circle"></i> Technical Publications</li>
-                                <li><i class="fas fa-check-circle"></i> Active IIC Engagement</li>
-                            </ul>
-                        </div>
-                        <div class="rnd-status-tag">
-                            <i class="fas fa-award"></i> Bronze Honor
-                        </div>
-                    </div>
-
-                    <!-- 3rd Rank: EEE (Bronze) -->
-                    <div class="rnd-card rank-3">
-                        <div>
-                            <div class="rnd-card-top">
-                                <span class="rnd-rank-num">3<sup>rd</sup></span>
-                                <span class="rnd-medal-badge">🥉 3rd · Bronze</span>
-                            </div>
-                            <h3 class="rnd-dept-code">EEE</h3>
-                            <div class="rnd-dept-full">Electrical &amp; Electronics Engineering</div>
-                            <ul class="rnd-dept-perks">
-                                <li><i class="fas fa-check-circle"></i> Mini Hydel &amp; Power Labs</li>
-                                <li><i class="fas fa-check-circle"></i> Green Energy Innovations</li>
-                                <li><i class="fas fa-check-circle"></i> Faculty Research Papers</li>
-                            </ul>
-                        </div>
-                        <div class="rnd-status-tag">
-                            <i class="fas fa-medal"></i> Bronze Honor
-                        </div>
-                    </div>
-
-                    <!-- 4th Rank: ECE (Emerging) -->
-                    <div class="rnd-card rank-4">
-                        <div>
-                            <div class="rnd-card-top">
-                                <span class="rnd-rank-num">4<sup>th</sup></span>
-                                <span class="rnd-medal-badge">🏅 4th · Emerging</span>
-                            </div>
-                            <h3 class="rnd-dept-code">ECE</h3>
-                            <div class="rnd-dept-full">Electronics &amp; Communication Engineering</div>
-                            <ul class="rnd-dept-perks">
-                                <li><i class="fas fa-check-circle"></i> Embedded &amp; IoT Systems</li>
-                                <li><i class="fas fa-check-circle"></i> Signal Processing Projects</li>
-                                <li><i class="fas fa-check-circle"></i> Rising NPTEL Enrolments</li>
-                            </ul>
-                        </div>
-                        <div class="rnd-status-tag">
-                            🌱 Emerging
-                        </div>
-                    </div>
-
-                    <!-- 5th Rank: MBA (Emerging) -->
-                    <div class="rnd-card rank-5">
-                        <div>
-                            <div class="rnd-card-top">
-                                <span class="rnd-rank-num">5<sup>th</sup></span>
-                                <span class="rnd-medal-badge">🏅 5th · Emerging</span>
-                            </div>
-                            <h3 class="rnd-dept-code">MBA</h3>
-                            <div class="rnd-dept-full">Department of Management Studies</div>
-                            <ul class="rnd-dept-perks">
-                                <li><i class="fas fa-check-circle"></i> Business Case Studies</li>
-                                <li><i class="fas fa-check-circle"></i> Entrepreneurship Cell</li>
-                                <li><i class="fas fa-check-circle"></i> Startup Incubation Meets</li>
-                            </ul>
-                        </div>
-                        <div class="rnd-status-tag">
-                            🌱 Emerging
-                        </div>
-                    </div>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
 
                 <!-- Motivation & Acknowledgement Card -->
@@ -1786,4 +1266,102 @@ foreach ($live_events as $ev) {
     <script src="js/tabs.js"></script>
     <script src="js/achievements.js"></script>
     <script src="js/slideshow.js"></script>
+    <script>
+    function switchRndPeriod(year, quarter, btnEl) {
+        if (btnEl) {
+            document.querySelectorAll('#rndPeriodTabs .rnd-period-btn').forEach(b => b.classList.remove('active'));
+            btnEl.classList.add('active');
+        }
+
+        const grid = document.getElementById('rndPodiumGrid');
+        const headerLabel = document.getElementById('rndHeaderPeriodLabel');
+        if (!grid) return;
+
+        grid.style.opacity = '0.35';
+        grid.style.transition = 'opacity 0.2s ease';
+
+        fetch(`backend/rnd_crud.php?action=get_rnd_rankings_json&academic_year=${encodeURIComponent(year)}&quarter=${encodeURIComponent(quarter)}`)
+            .then(res => res.json())
+            .then(res => {
+                if (res.success && res.data) {
+                    const data = res.data;
+                    if (headerLabel && data.quarter_label) {
+                        headerLabel.textContent = data.quarter_label;
+                    } else if (headerLabel) {
+                        headerLabel.textContent = `${quarter} (AY ${year}) Official Announcement`;
+                    }
+
+                    const rankings = data.rankings || [];
+                    if (rankings.length === 0) {
+                        grid.innerHTML = `
+                            <div style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #64748b; background: #f8fafc; border-radius: 16px;">
+                                <i class="fas fa-medal" style="font-size: 32px; color: #94a3b8; margin-bottom: 12px; display: block;"></i>
+                                No ranking results published yet for this period.
+                            </div>
+                        `;
+                    } else {
+                        let html = '';
+                        rankings.forEach((r, idx) => {
+                            const rank = parseInt(r.rank) || (idx + 1);
+                            const rankClass = 'rank-' + Math.min(5, rank);
+                            let suffix = 'th';
+                            if (rank === 1) suffix = 'st';
+                            else if (rank === 2) suffix = 'nd';
+                            else if (rank === 3) suffix = 'rd';
+
+                            const perks = (r.achievements || []).map(p => `<li><i class="fas fa-check-circle"></i> ${escapeHtml(p)}</li>`).join('');
+
+                            html += `
+                                <div class="rnd-card ${rankClass}">
+                                    <div>
+                                        <div class="rnd-card-top">
+                                            <span class="rnd-rank-num">${rank}<sup>${suffix}</sup></span>
+                                            <span class="rnd-medal-badge">${escapeHtml(r.award_category || ('Rank ' + rank))}</span>
+                                        </div>
+                                        <h3 class="rnd-dept-code">${escapeHtml(r.department || '')}</h3>
+                                        <div class="rnd-dept-full">${escapeHtml(r.department_name || '')}</div>
+                                        <ul class="rnd-dept-perks">
+                                            ${perks}
+                                        </ul>
+                                    </div>
+                                    <div class="rnd-status-tag">
+                                        ${escapeHtml(r.award_badge || 'Emerging')}
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        grid.innerHTML = html;
+                    }
+                }
+                grid.style.opacity = '1';
+            })
+            .catch(err => {
+                console.error('Failed to load rankings:', err);
+                grid.style.opacity = '1';
+            });
+    }
+
+    // Auto-sync updates from dashboard in real time without manual page reload
+    if (window.BroadcastChannel) {
+        try {
+            const rndChannel = new BroadcastChannel('tcek_rnd_sync');
+            rndChannel.onmessage = function(e) {
+                if (e.data && e.data.type === 'rnd_updated') {
+                    const activeBtn = document.querySelector('#rndPeriodTabs .rnd-period-btn.active');
+                    const year = activeBtn ? activeBtn.getAttribute('data-year') : null;
+                    const quarter = activeBtn ? activeBtn.getAttribute('data-quarter') : null;
+                    if (year && quarter) {
+                        switchRndPeriod(year, quarter, activeBtn);
+                    }
+                }
+            };
+        } catch(e) {}
+    }
+
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    </script>
     <?php include 'footer.php'; ?>

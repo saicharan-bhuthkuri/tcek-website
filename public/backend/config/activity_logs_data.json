@@ -1,5 +1,82 @@
 [
     {
+        "id": 97,
+        "admin_name": "Charan",
+        "action": "Updated",
+        "module": "Departments",
+        "record_name": "Humanities & Sciences",
+        "record_id": 6,
+        "description": "Updated department H&S",
+        "ip_address": "::1",
+        "created_at": "2026-10-11 12:22:20"
+    },
+    {
+        "id": 96,
+        "admin_name": "Charan",
+        "action": "Login",
+        "module": "Users",
+        "record_name": "Charan",
+        "record_id": 1,
+        "description": "User authenticated into admin portal (Local Store)",
+        "ip_address": "::1",
+        "created_at": "2026-10-11 11:08:31"
+    },
+    {
+        "id": 95,
+        "admin_name": "Charan",
+        "action": "DELETE",
+        "module": "R&D Rankings",
+        "record_name": "Deleted Ranking #10",
+        "record_id": 10,
+        "description": "Removed R&D ranking record for MECH",
+        "ip_address": "::1",
+        "created_at": "2026-10-11 11:03:01"
+    },
+    {
+        "id": 94,
+        "admin_name": "Charan",
+        "action": "Updated",
+        "module": "Announcements",
+        "record_name": "Announcement Bar",
+        "record_id": null,
+        "description": "Visibility set to Enabled",
+        "ip_address": "::1",
+        "created_at": "2026-10-11 09:51:04"
+    },
+    {
+        "id": 93,
+        "admin_name": "Charan",
+        "action": "Updated",
+        "module": "Announcements",
+        "record_name": "Announcement Bar",
+        "record_id": null,
+        "description": "Visibility set to Disabled",
+        "ip_address": "::1",
+        "created_at": "2026-10-11 09:49:46"
+    },
+    {
+        "id": 92,
+        "admin_name": "Charan",
+        "action": "Login",
+        "module": "Users",
+        "record_name": "Charan",
+        "record_id": 1,
+        "description": "User authenticated into admin portal (Local Store)",
+        "ip_address": "::1",
+        "created_at": "2026-10-11 09:42:21"
+    },
+    {
+        "id": 91,
+        "admin_name": "Charan",
+        "action": "Login",
+        "module": "Users",
+        "record_name": "Charan",
+        "record_id": 1,
+        "description": "User authenticated into admin portal (Local Store)",
+        "ip_address": "::1",
+        "created_at": "2026-10-11 09:41:54"
+    },
+    {
         "id": 90,
         "admin_name": "Charan",
         "action": "Updated",
