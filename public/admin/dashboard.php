@@ -348,7 +348,7 @@ $initials = strtoupper(substr($admin_name, 0, 2));
 
             <!-- Bottom Profile Card - Strictly Matching Image 2 Bottom Left -->
             <div class="sidebar-user-card">
-                <div class="user-avatar-circle">
+                <div class="user-avatar-circle" style="border-radius: 50%;">
                     <?php echo htmlspecialchars($initials); ?>
                 </div>
                 <div class="user-meta-wrap">
