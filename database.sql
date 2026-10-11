@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `users` (
   `password` VARCHAR(255) NOT NULL,
   `full_name` VARCHAR(100) NOT NULL,
   `email` VARCHAR(100) DEFAULT NULL,
-  `role` ENUM('admin', 'editor', 'staff') NOT NULL DEFAULT 'admin',
+  `role` VARCHAR(50) NOT NULL DEFAULT 'admin',
   `is_active` TINYINT(1) DEFAULT 1,
   `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -179,10 +179,10 @@ CREATE TABLE IF NOT EXISTS `uploads` (
 -- Default Administrator & Staff Users (Password: tcek@developer)
 INSERT INTO `users` (`username`, `password`, `full_name`, `email`, `role`, `is_active`)
 VALUES 
+('Charan', '$2y$12$4UEnf0l1e/dEsA8PtrujXOjWsH3movWizobG5vHq.INjW/t65lg/i', 'Charan', 'saivortex.dev@gmail.com', 'developer', 1),
 ('tcek', '$2y$12$8EoDxDbWZn1SygecaSJ4uO3ffa2.wAgsSzl1GWshCe6G9qIwAQ5Hq', 'TCEK Administrator', 'officetcek@gmail.com', 'admin', 1),
-('Charan', '$2y$12$8EoDxDbWZn1SygecaSJ4uO3ffa2.wAgsSzl1GWshCe6G9qIwAQ5Hq', 'Charan (Lead Admin)', 'charan@tcek.in', 'admin', 1),
 ('staff_user', '$2y$12$8EoDxDbWZn1SygecaSJ4uO3ffa2.wAgsSzl1GWshCe6G9qIwAQ5Hq', 'Faculty Coordinator', 'faculty@tcek.in', 'staff', 1)
-ON DUPLICATE KEY UPDATE `username` = VALUES(`username`);
+ON DUPLICATE KEY UPDATE `role` = VALUES(`role`), `email` = VALUES(`email`);
 
 INSERT INTO `admins` (`username`, `password`, `full_name`, `email`)
 VALUES ('tcek', '$2y$12$8EoDxDbWZn1SygecaSJ4uO3ffa2.wAgsSzl1GWshCe6G9qIwAQ5Hq', 'TCEK Administrator', 'officetcek@gmail.com')

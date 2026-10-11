@@ -353,7 +353,12 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                 </div>
                 <div class="user-meta-wrap">
                     <span class="user-display-name"><?php echo htmlspecialchars($admin_name); ?></span>
-                    <span class="user-role-badge">&bull; <?php echo strtoupper($admin['role'] === 'admin' ? 'DEVELOPER' : $admin['role']); ?></span>
+                    <span class="user-role-badge" style="display:inline-flex; align-items:center; gap:5px; font-weight:700;">
+                        <?php if (!empty($admin['is_protected'])): ?>
+                            <i class="fas fa-shield-alt" style="color:#00b894; font-size:10px;"></i>
+                        <?php endif; ?>
+                        &bull; <?php echo strtoupper($admin['role']); ?>
+                    </span>
                 </div>
                 <a href="logout.php" class="user-logout-btn" title="Sign Out">
                     <i class="fas fa-sign-out-alt"></i>
@@ -503,23 +508,74 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                                                 </td>
                                             </tr>
                                     <?php else: ?>
-                                            <?php foreach ($users_list as $usr): ?>
-                                                    <tr>
-                                                        <td><code><?php echo htmlspecialchars($usr['username']); ?></code></td>
-                                                        <td><strong><?php echo htmlspecialchars($usr['full_name']); ?></strong></td>
-                                                        <td><span class="status-pill-dot status-active">&bull; <?php echo strtoupper($usr['role']); ?></span></td>
+                                            <?php foreach ($users_list as $usr): 
+                                                $uProtected = function_exists('is_protected_account') ? is_protected_account($usr) : (strcasecmp($usr['email'] ?? '', 'saivortex.dev@gmail.com') === 0 || strcasecmp($usr['username'] ?? '', 'Charan') === 0);
+                                                $uRole = strtolower(trim((string)($usr['role'] ?? 'staff')));
+                                                if ($uProtected) {
+                                                    $uRole = 'developer';
+                                                }
+                                            ?>
+                                                    <tr style="<?php echo $uProtected ? 'background: linear-gradient(90deg, rgba(99, 102, 241, 0.04) 0%, rgba(255, 255, 255, 0) 100%);' : ''; ?>">
+                                                        <td>
+                                                            <div style="display:flex; align-items:center; gap:8px;">
+                                                                <code><?php echo htmlspecialchars($usr['username']); ?></code>
+                                                                <?php if ($uProtected): ?>
+                                                                    <span title="Permanent Top-Level Protected Account &bull; Cannot be deleted, demoted, or deactivated" style="display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:12px; font-size:10.5px; font-weight:700; background:#ede9fe; color:#6366f1; border:1px solid #c7d2fe;">
+                                                                        <i class="fas fa-shield-alt"></i> PROTECTED
+                                                                    </span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <strong><?php echo htmlspecialchars($usr['full_name']); ?></strong>
+                                                            <?php if ($uProtected): ?>
+                                                                <div style="font-size:11px; color:#6366f1; font-weight:600; margin-top:2px;">Lead System Developer &amp; Root Owner</div>
+                                                            <?php endif; ?>
+                                                        </td>
+                                                        <td>
+                                                            <?php if ($uRole === 'developer'): ?>
+                                                                <span class="status-pill-dot" style="background:#ede9fe; color:#6366f1; border:1px solid #c7d2fe; font-weight:800; padding:4px 10px; border-radius:14px; letter-spacing:0.5px;">
+                                                                    <i class="fas fa-terminal" style="font-size:10px;"></i> DEVELOPER
+                                                                </span>
+                                                            <?php elseif ($uRole === 'superadmin' || $uRole === 'super_admin'): ?>
+                                                                <span class="status-pill-dot" style="background:#fef3c7; color:#b45309; border:1px solid #fde68a; font-weight:800; padding:4px 10px; border-radius:14px; letter-spacing:0.5px;">
+                                                                    <i class="fas fa-crown" style="font-size:10px;"></i> SUPERADMIN
+                                                                </span>
+                                                            <?php elseif ($uRole === 'admin'): ?>
+                                                                <span class="status-pill-dot" style="background:#e0f2fe; color:#0369a1; border:1px solid #bae6fd; font-weight:700; padding:4px 10px; border-radius:14px;">
+                                                                    <i class="fas fa-user-shield" style="font-size:10px;"></i> ADMIN
+                                                                </span>
+                                                            <?php elseif ($uRole === 'editor'): ?>
+                                                                <span class="status-pill-dot" style="background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; font-weight:700; padding:4px 10px; border-radius:14px;">
+                                                                    <i class="fas fa-edit" style="font-size:10px;"></i> EDITOR
+                                                                </span>
+                                                            <?php else: ?>
+                                                                <span class="status-pill-dot" style="background:#f1f5f9; color:#475569; border:1px solid #cbd5e1; font-weight:600; padding:4px 10px; border-radius:14px;">
+                                                                    &bull; <?php echo strtoupper($uRole); ?>
+                                                                </span>
+                                                            <?php endif; ?>
+                                                        </td>
                                                         <td><?php echo htmlspecialchars($usr['email'] ?? 'officetcek@gmail.com'); ?></td>
-                                                        <td><span class="status-pill-dot status-active">&bull; ACTIVE</span></td>
+                                                        <td>
+                                                            <span class="status-pill-dot status-active" style="display:inline-flex; align-items:center; gap:5px;">
+                                                                <span style="width:6px; height:6px; border-radius:50%; background:#10b981; display:inline-block;"></span> ACTIVE
+                                                            </span>
+                                                        </td>
                                                         <td>
                                                             <div class="action-icons-wrap">
-                                                                <button type="button" class="btn-icon-circle btn-icon-check"><i class="fas fa-check"></i></button>
-                                                                <button type="button" class="btn-icon-circle btn-icon-edit" onclick="openModal('modalUser')"><i class="fas fa-pencil-alt"></i></button>
-                                                                <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Delete this user?');" style="display:inline;">
-                                                                    <input type="hidden" name="action" value="delete_user">
-                                                                    <input type="hidden" name="id" value="<?php echo $usr['id']; ?>">
-                                                                    <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
-                                                                    <button type="submit" class="btn-icon-circle btn-icon-trash"><i class="fas fa-trash-alt"></i></button>
-                                                                </form>
+                                                                <?php if ($uProtected): ?>
+                                                                    <span title="Account is permanently protected against deletion, demotion, or deactivation" style="display:inline-flex; align-items:center; gap:5px; font-size:11.5px; font-weight:700; color:#6366f1; background:#f5f3ff; border:1px solid #ddd6fe; padding:4px 10px; border-radius:6px; cursor:default;">
+                                                                        <i class="fas fa-lock"></i> Permanent Root
+                                                                    </span>
+                                                                <?php else: ?>
+                                                                    <button type="button" class="btn-icon-circle btn-icon-check" title="Active Account"><i class="fas fa-check"></i></button>
+                                                                    <form action="../backend/crud.php" method="POST" onsubmit="return confirm('Are you sure you want to delete this user? This action cannot be undone.');" style="display:inline; margin:0;">
+                                                                        <input type="hidden" name="action" value="delete_user">
+                                                                        <input type="hidden" name="id" value="<?php echo $usr['id']; ?>">
+                                                                        <input type="hidden" name="csrf_token" value="<?php echo $csrf_token; ?>">
+                                                                        <button type="submit" class="btn-icon-circle btn-icon-trash" title="Delete User"><i class="fas fa-trash-alt"></i></button>
+                                                                    </form>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </td>
                                                     </tr>
@@ -2814,14 +2870,18 @@ $initials = strtoupper(substr($admin_name, 0, 2));
                             <label>Full Name *</label>
                             <input type="text" name="full_name" class="form-control" placeholder="e.g. Charan" required>
                         </div>
-                        <div class="form-group">
-                            <label>Role</label>
-                            <select name="role" class="form-control">
-                                <option value="admin">Administrator (Full Access)</option>
-                                <option value="editor">Editor (Uploads &amp; Notices)</option>
-                                <option value="staff">Staff (Standard)</option>
-                            </select>
-                        </div>
+                            <div class="form-group">
+                                <label>Role</label>
+                                <select name="role" class="form-control">
+                                    <?php if (function_exists('is_developer_role') && is_developer_role()): ?>
+                                        <option value="developer">Developer (System Owner &amp; Root)</option>
+                                        <option value="superadmin">Superadmin (Master Access)</option>
+                                    <?php endif; ?>
+                                    <option value="admin" selected>Administrator (Full Access)</option>
+                                    <option value="editor">Editor (Uploads &amp; Notices)</option>
+                                    <option value="staff">Staff (Standard)</option>
+                                </select>
+                            </div>
                     </div>
 
                     <div class="form-group">

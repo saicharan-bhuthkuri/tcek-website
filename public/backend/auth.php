@@ -48,12 +48,68 @@ function require_admin_login(): void {
 }
 
 /**
- * Check if the currently logged in user is an Admin
+ * Check if the currently logged in user is an Admin, Superadmin, or Developer
  * @return bool
  */
 function is_admin_role(): bool {
-    $role = $_SESSION['tcek_admin_role'] ?? 'admin';
-    return in_array($role, ['admin', 'super_admin'], true);
+    $role = strtolower(trim((string)($_SESSION['tcek_admin_role'] ?? 'admin')));
+    return in_array($role, ['developer', 'superadmin', 'super_admin', 'admin'], true);
+}
+
+/**
+ * Check if the currently logged in user is the Developer / Superadmin (Root)
+ * @return bool
+ */
+function is_developer_role(): bool {
+    $role = strtolower(trim((string)($_SESSION['tcek_admin_role'] ?? '')));
+    return in_array($role, ['developer', 'superadmin', 'super_admin'], true);
+}
+
+/**
+ * Check if a user record or identifier corresponds to the permanent protected developer account
+ * @param mixed $user User array, email string, username string, or ID integer
+ * @return bool
+ */
+function is_protected_account($user): bool {
+    if (empty($user)) return false;
+
+    if (is_numeric($user)) {
+        $id = (int)$user;
+        $usersFile = __DIR__ . '/config/users_data.json';
+        if (file_exists($usersFile)) {
+            $json = @file_get_contents($usersFile);
+            if ($json) {
+                $list = json_decode($json, true);
+                if (is_array($list)) {
+                    foreach ($list as $u) {
+                        if ((int)($u['id'] ?? 0) === $id) {
+                            return is_protected_account($u);
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    if (is_string($user)) {
+        $val = trim($user);
+        if (strcasecmp($val, 'saivortex.dev@gmail.com') === 0 || strcasecmp($val, 'Charan') === 0) {
+            return true;
+        }
+        return false;
+    }
+
+    $email = is_array($user) ? ($user['email'] ?? '') : '';
+    $username = is_array($user) ? ($user['username'] ?? '') : '';
+
+    if (!empty($email) && strcasecmp(trim($email), 'saivortex.dev@gmail.com') === 0) {
+        return true;
+    }
+    if (!empty($username) && strcasecmp(trim($username), 'Charan') === 0) {
+        return true;
+    }
+    return false;
 }
 
 /**
@@ -74,12 +130,20 @@ function require_admin_role(): void {
  * @return array
  */
 function get_current_admin(): array {
+    $email = $_SESSION['tcek_admin_email'] ?? 'saivortex.dev@gmail.com';
+    $username = $_SESSION['tcek_admin_username'] ?? 'Charan';
+    $role = $_SESSION['tcek_admin_role'] ?? 'developer';
+    $isProtected = is_protected_account(['email' => $email, 'username' => $username]);
+    if ($isProtected) {
+        $role = 'developer';
+    }
     return [
-        'id'        => $_SESSION['tcek_admin_id'] ?? null,
-        'username'  => $_SESSION['tcek_admin_username'] ?? 'tcek',
-        'full_name' => $_SESSION['tcek_admin_name'] ?? 'TCEK Administrator',
-        'email'     => $_SESSION['tcek_admin_email'] ?? 'saivortex.dev@gmail.com',
-        'role'      => $_SESSION['tcek_admin_role'] ?? 'admin'
+        'id'           => $_SESSION['tcek_admin_id'] ?? null,
+        'username'     => $username,
+        'full_name'    => $_SESSION['tcek_admin_name'] ?? ($isProtected ? 'Charan' : 'TCEK Administrator'),
+        'email'        => $email,
+        'role'         => $role,
+        'is_protected' => $isProtected
     ];
 }
 
@@ -201,24 +265,32 @@ function verify_admin_login($username, $password): array {
             $isValid = true;
             $isTcek = (strcasecmp($username, 'tcek') === 0 || strcasecmp($username, 'officetcek@gmail.com') === 0);
             $matchedUser = [
-                'id' => 1,
+                'id' => $isTcek ? 2 : 1,
                 'username' => $isTcek ? 'tcek' : 'Charan',
                 'full_name' => $isTcek ? 'TCEK Administrator' : 'Charan',
                 'email' => $isTcek ? 'officetcek@gmail.com' : 'saivortex.dev@gmail.com',
-                'role' => 'admin'
+                'role' => $isTcek ? 'admin' : 'developer',
+                'is_protected' => $isTcek ? 0 : 1
             ];
         }
 
         if ($isValid && $matchedUser) {
             RateLimiter::resetAuthLimits($username);
-            session_regenerate_id(true);
+            if (!headers_sent()) {
+                @session_regenerate_id(true);
+            }
+
+            $userRole = $matchedUser['role'] ?? 'admin';
+            if (is_protected_account($matchedUser)) {
+                $userRole = 'developer';
+            }
 
             $_SESSION['tcek_admin_logged_in'] = true;
             $_SESSION['tcek_admin_id']        = (int)($matchedUser['id'] ?? 1);
             $_SESSION['tcek_admin_username']  = $matchedUser['username'] ?? $username;
             $_SESSION['tcek_admin_name']      = $matchedUser['full_name'] ?? ($matchedUser['username'] ?? $username);
             $_SESSION['tcek_admin_email']     = $matchedUser['email'] ?? 'saivortex.dev@gmail.com';
-            $_SESSION['tcek_admin_role']      = $matchedUser['role'] ?? 'admin';
+            $_SESSION['tcek_admin_role']      = $userRole;
 
             log_activity('Login', 'Users', $matchedUser['username'] ?? $username, 'User authenticated into admin portal (Local Store)', (int)$_SESSION['tcek_admin_id'], $_SESSION['tcek_admin_name']);
 
@@ -269,19 +341,21 @@ function verify_admin_login($username, $password): array {
                 $isTcek = (strcasecmp($username, 'tcek') === 0 || strcasecmp($username, 'officetcek@gmail.com') === 0);
                 $devUser = $isTcek ? 'tcek' : 'Charan';
                 $devEmail = $isTcek ? 'officetcek@gmail.com' : 'saivortex.dev@gmail.com';
-                $ins = $pdo->prepare("INSERT INTO users (username, password, full_name, email, role, is_active) VALUES (:u, :p, :n, :e, 'admin', 1)");
+                $devRole = $isTcek ? 'admin' : 'developer';
+                $ins = $pdo->prepare("INSERT INTO users (username, password, full_name, email, role, is_active) VALUES (:u, :p, :n, :e, :r, 1)");
                 $ins->execute([
                     ':u' => $devUser,
                     ':p' => $hash,
                     ':n' => ($devUser === 'Charan') ? 'Charan' : 'TCEK Administrator',
-                    ':e' => $devEmail
+                    ':e' => $devEmail,
+                    ':r' => $devRole
                 ]);
                 $user = [
                     'id' => (int)$pdo->lastInsertId(),
                     'username' => $devUser,
                     'full_name' => ($devUser === 'Charan') ? 'Charan' : 'TCEK Administrator',
                     'email' => $devEmail,
-                    'role' => 'admin',
+                    'role' => $devRole,
                     'password' => $hash
                 ];
             } catch (Exception $e) {
@@ -295,14 +369,26 @@ function verify_admin_login($username, $password): array {
             RateLimiter::resetAuthLimits($username);
 
             // Prevent session fixation
-            session_regenerate_id(true);
+            if (!headers_sent()) {
+                @session_regenerate_id(true);
+            }
+
+            $userRole = $user['role'] ?? 'admin';
+            if (is_protected_account($user)) {
+                $userRole = 'developer';
+                if ($pdo instanceof PDO && ($user['role'] !== 'developer')) {
+                    try {
+                        $pdo->prepare("UPDATE users SET role = 'developer' WHERE id = :id")->execute([':id' => $user['id']]);
+                    } catch (Exception $e) {}
+                }
+            }
 
             $_SESSION['tcek_admin_logged_in'] = true;
             $_SESSION['tcek_admin_id']        = (int)$user['id'];
             $_SESSION['tcek_admin_username']  = $user['username'];
             $_SESSION['tcek_admin_name']      = $user['full_name'] ?? $user['username'];
             $_SESSION['tcek_admin_email']     = $user['email'] ?? 'saivortex.dev@gmail.com';
-            $_SESSION['tcek_admin_role']      = $user['role'] ?? 'admin';
+            $_SESSION['tcek_admin_role']      = $userRole;
 
             log_activity('Login', 'Users', $user['username'], 'User authenticated into admin portal', (int)$user['id'], $_SESSION['tcek_admin_name']);
 

