@@ -1025,8 +1025,8 @@ function add_faculty_member($full_name, $dept_code = '', $designation = '', $rol
     }
 
     // Default image if none provided
-    if (empty($profile_image)) {
-        $profile_image = 'assets/Dept/faculty-avatar.png';
+    if (empty($profile_image) || $profile_image === 'assets/Dept/faculty-avatar.png') {
+        $profile_image = null;
     }
 
     $dept_obj = get_department_by_code($dept_code);
@@ -1167,7 +1167,10 @@ function update_faculty_member($id, $full_name, $dept_code = '', $designation = 
         $is_rnd = 0;
     }
 
-    $existing_img = $all[$found_key]['profile_image'] ?? 'assets/Dept/faculty-avatar.png';
+    $existing_img = $all[$found_key]['profile_image'] ?? null;
+    if ($existing_img === 'assets/Dept/faculty-avatar.png') {
+        $existing_img = null;
+    }
     $final_img = (!empty($profile_image)) ? $profile_image : $existing_img;
 
     $dept_obj = get_department_by_code($dept_code);

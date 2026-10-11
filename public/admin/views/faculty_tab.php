@@ -261,18 +261,29 @@ $export_url_all     = '../backend/crud.php?action=export_faculty_excel&departmen
                         $regId = htmlspecialchars($f['jntuh_reg_id'] ?? 'N/A');
                         $email = htmlspecialchars($f['email'] ?? '');
                         $phone = htmlspecialchars($f['phone'] ?? '');
-                        $avatar = !empty($f['profile_image']) ? htmlspecialchars($f['profile_image']) : 'assets/Dept/faculty-avatar.png';
-                        $initial = strtoupper(substr(trim($f['full_name']), 0, 1));
+                        $raw_avatar = trim($f['profile_image'] ?? '');
+                        $has_real_avatar = (!empty($raw_avatar) && $raw_avatar !== 'assets/Dept/faculty-avatar.png' && file_exists(__DIR__ . '/../../' . ltrim($raw_avatar, '/')));
+                        $initial = strtoupper(mb_substr(trim($f['full_name']), 0, 1, 'UTF-8')) ?: 'F';
+                        $adminGrads = [
+                            'linear-gradient(135deg, #3b82f6, #1d4ed8)',
+                            'linear-gradient(135deg, #10b981, #059669)',
+                            'linear-gradient(135deg, #8b5cf6, #6d28d9)',
+                            'linear-gradient(135deg, #06b6d4, #0891b2)',
+                            'linear-gradient(135deg, #ec4899, #be185d)',
+                            'linear-gradient(135deg, #f97316, #c2410c)'
+                        ];
+                        $adminBg = $isHod ? 'linear-gradient(135deg, #f59e0b, #d97706)' : $adminGrads[abs(crc32($f['full_name'])) % count($adminGrads)];
                     ?>
                         <tr style="<?php echo $isHod ? 'background:#fbfefc;' : ''; ?>">
                             <td style="text-align: center;"><span style="font-weight:600; color:#64748b;"><?php echo $sno; ?></span></td>
                             <td>
                                 <div style="display:flex; align-items:center; gap:10px;">
-                                    <div style="width:38px; height:38px; border-radius:50%; background:#e2e8f0; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; border:2px solid <?php echo $isHod ? '#f59e0b' : '#00b894'; ?>;">
-                                        <?php if (!empty($f['profile_image']) && file_exists(__DIR__ . '/../../' . $f['profile_image'])): ?>
-                                            <img src="../<?php echo $avatar; ?>" alt="<?php echo $name; ?>" style="width:100%; height:100%; object-fit:cover;">
+                                    <div style="width:38px; height:38px; border-radius:50%; background:<?php echo $has_real_avatar ? '#e2e8f0' : $adminBg; ?>; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; border:2px solid <?php echo $isHod ? '#f59e0b' : '#00b894'; ?>; box-shadow:0 2px 6px rgba(0,0,0,0.08);">
+                                        <?php if ($has_real_avatar): ?>
+                                            <img src="../<?php echo htmlspecialchars($raw_avatar); ?>" alt="<?php echo $name; ?>" style="width:100%; height:100%; object-fit:cover;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-flex';">
+                                            <span style="display:none; font-size:14px; font-weight:700; color:#ffffff; align-items:center; justify-content:center; width:100%; height:100%; background:<?php echo $adminBg; ?>;"><?php echo $initial; ?></span>
                                         <?php else: ?>
-                                            <span style="font-size:14px; font-weight:700; color:#334155;"><?php echo $initial; ?></span>
+                                            <span style="font-size:14px; font-weight:700; color:#ffffff;"><?php echo $initial; ?></span>
                                         <?php endif; ?>
                                     </div>
                                     <div>
