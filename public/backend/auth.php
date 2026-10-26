@@ -294,17 +294,21 @@ function verify_admin_login($username, $password): array {
 
     try {
         // Query users table first by username OR email
-        $stmt = $pdo->prepare("SELECT * FROM users WHERE (username = :identifier OR email = :identifier) AND is_active = 1 LIMIT 1");
-        $stmt->execute([':identifier' => $username]);
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE (username = :u_name OR email = :u_email) AND is_active = 1 LIMIT 1");
+        $stmt->execute([':u_name' => $username, ':u_email' => $username]);
         $user = $stmt->fetch();
 
         // If not in users, check admins table by username OR email
         if (!$user) {
-            $stmt2 = $pdo->prepare("SELECT * FROM admins WHERE (username = :identifier OR email = :identifier) LIMIT 1");
-            $stmt2->execute([':identifier' => $username]);
-            $user = $stmt2->fetch();
-            if ($user) {
-                $user['role'] = 'admin';
+            try {
+                $stmt2 = $pdo->prepare("SELECT * FROM admins WHERE (username = :a_name OR email = :a_email) LIMIT 1");
+                $stmt2->execute([':a_name' => $username, ':a_email' => $username]);
+                $user = $stmt2->fetch();
+                if ($user) {
+                    $user['role'] = 'admin';
+                }
+            } catch (Throwable $t) {
+                // Ignore if admins table has issues
             }
         }
 
