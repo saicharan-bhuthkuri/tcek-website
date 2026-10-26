@@ -368,6 +368,11 @@ assert_test("Settings - Update Global 404 Setting in MySQL", !empty($upd_sett_re
 $status_404 = get_global_404_status();
 assert_test("Settings - Read Global 404 Status from MySQL", $status_404 === true, $results);
 
+// Restore 404 status back to 0
+$restore_404_res = update_global_404_setting(0, 'saivortex.dev@gmail.com');
+assert_test("Settings - Restore Global 404 Setting to 0 in MySQL", !empty($restore_404_res['success']), $results);
+assert_test("Settings - Verify Global 404 Setting is 0", get_global_404_status() === false, $results);
+
 // -------------------------------------------------------------
 // 12. Content Version Tracking & Activity Logs
 // -------------------------------------------------------------

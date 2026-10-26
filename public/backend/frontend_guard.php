@@ -71,6 +71,8 @@ if (!function_exists('is_frontend_guard_excluded_request')) {
     }
 }
 
+require_once __DIR__ . '/settings_crud.php';
+
 if (!function_exists('check_and_enforce_frontend_404_mode')) {
     /**
      * Central enforcement function
@@ -80,8 +82,6 @@ if (!function_exists('check_and_enforce_frontend_404_mode')) {
         if (is_frontend_guard_excluded_request()) {
             return;
         }
-
-        require_once __DIR__ . '/settings_crud.php';
 
         if (get_global_404_status()) {
             // Discard any output buffered before this middleware

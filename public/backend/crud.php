@@ -180,6 +180,7 @@ function get_activity_logs_store_file() {
 
 function load_activity_logs_from_store() {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if ($pdo instanceof PDO) {
         try {
             $stmt = $pdo->query("SELECT * FROM activity_logs ORDER BY created_at DESC, id DESC LIMIT 200");
@@ -224,6 +225,7 @@ function add_json_activity_log($action, $module, $record_name, $description = ''
  */
 function get_activity_logs($module = null, $action = null, $limit = 100) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return [];
     }
@@ -269,6 +271,7 @@ function get_activity_logs($module = null, $action = null, $limit = 100) {
  */
 function get_activity_logs_paginated($page = 1, $per_page = 10, $module = null, $action = null, $search = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $per_page = max(1, (int)$per_page);
     $page = max(1, (int)$page);
 
@@ -333,6 +336,7 @@ function get_activity_logs_paginated($page = 1, $per_page = 10, $module = null, 
  */
 function get_activity_logs_count($module = null, $action = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return 0;
     }
@@ -391,6 +395,7 @@ function save_users_to_store($users) {
  */
 function get_users($limit = 50) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return [];
     }
@@ -427,6 +432,7 @@ function get_users($limit = 50) {
  */
 function add_user($username, $password, $full_name, $email, $role = 'staff') {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $username  = trim($username);
     $full_name = trim($full_name);
     $email     = trim($email);
@@ -471,6 +477,7 @@ function add_user($username, $password, $full_name, $email, $role = 'staff') {
  */
 function get_user_by_id($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     if (!($pdo instanceof PDO)) {
         return null;
@@ -500,6 +507,7 @@ function get_user_by_id($id) {
  */
 function update_user($id, $data) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     if (!($pdo instanceof PDO)) {
         return ['success' => false, 'message' => 'Database connection unavailable.'];
@@ -571,6 +579,7 @@ function update_user($id, $data) {
  */
 function delete_user($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     $uName = 'User #' . $id;
 
@@ -648,6 +657,7 @@ function save_gallery_to_store($items) {
  */
 function get_gallery_items($media_type = null, $category = null, $limit = 60) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return [];
     }
@@ -691,6 +701,7 @@ function get_gallery_items($media_type = null, $category = null, $limit = 60) {
  */
 function add_gallery_item($title, $media_type, $category, $file_path = null, $video_url = null, $description = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $title       = trim($title);
     $media_type  = in_array($media_type, ['image', 'video']) ? $media_type : 'image';
     $category    = in_array($category, ['events', 'campus', 'milestones', 'press']) ? $category : 'events';
@@ -731,6 +742,7 @@ function add_gallery_item($title, $media_type, $category, $file_path = null, $vi
  */
 function delete_gallery_item($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     $title = 'Gallery Item #' . $id;
 
@@ -798,6 +810,7 @@ function save_events_to_store($events) {
  */
 function get_events($limit = 50, $featured_only = false) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return [];
     }
@@ -847,6 +860,7 @@ function get_events($limit = 50, $featured_only = false) {
  */
 function get_events_paginated($page = 1, $per_page = 10, $search = null, $featured_only = false) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $per_page = max(1, (int)$per_page);
     $page = max(1, (int)$page);
 
@@ -923,6 +937,7 @@ function get_events_paginated($page = 1, $per_page = 10, $search = null, $featur
  */
 function get_events_count($search = null, $featured_only = false) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return 0;
     }
@@ -952,6 +967,7 @@ function get_events_count($search = null, $featured_only = false) {
  */
 function get_event_by_id($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     if (!($pdo instanceof PDO) || $id <= 0) {
         return null;
@@ -988,6 +1004,7 @@ function get_event_by_id($id) {
  */
 function add_event($title, $event_date, $event_time = '10:00 AM', $description = '', $venue = 'Trinity Campus Auditorium', $image_path = null, $video_path = null, $is_featured = 0) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $title       = trim($title);
     $venue       = trim($venue ?: 'Trinity Campus Auditorium');
     $event_time  = trim($event_time ?: '10:00 AM');
@@ -1039,6 +1056,7 @@ function add_event($title, $event_date, $event_time = '10:00 AM', $description =
  */
 function update_event($id, $title, $event_date, $event_time = '10:00 AM', $venue = 'Trinity Campus Auditorium', $description = '', $image_path = null, $video_path = null, $is_featured = 0) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
 
     if (!($pdo instanceof PDO)) {
@@ -1089,6 +1107,7 @@ function update_event($id, $title, $event_date, $event_time = '10:00 AM', $venue
  */
 function add_event_media($event_id, $file, $media_title, $media_description = '') {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
 
     $event_id          = (int)$event_id;
     $media_title       = trim($media_title);
@@ -1170,6 +1189,7 @@ function add_event_media($event_id, $file, $media_title, $media_description = ''
  */
 function get_all_event_media($limit = 100) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $limit = (int)$limit;
 
     if (!($pdo instanceof PDO)) {
@@ -1203,6 +1223,7 @@ function get_all_event_media($limit = 100) {
  */
 function get_event_media_paginated($page = 1, $per_page = 10, $search = null, $event_id = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $per_page = max(1, (int)$per_page);
     $page = max(1, (int)$page);
 
@@ -1274,6 +1295,7 @@ function get_event_media_paginated($page = 1, $per_page = 10, $search = null, $e
  */
 function get_event_media_count($event_id = null, $search = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return 0;
     }
@@ -1309,6 +1331,7 @@ function get_event_media_count($event_id = null, $search = null) {
  */
 function update_event_media($media_id, $media_title, $media_description = '', $event_id = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $media_id          = (int)$media_id;
     $media_title       = trim($media_title);
     $media_description = trim($media_description);
@@ -1348,6 +1371,7 @@ function update_event_media($media_id, $media_title, $media_description = '', $e
  */
 function delete_event_media($media_id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $media_id = (int)$media_id;
 
     if (!($pdo instanceof PDO)) {
@@ -1384,6 +1408,7 @@ function delete_event_media($media_id) {
  */
 function delete_event($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
 
     if (!($pdo instanceof PDO)) {
@@ -1454,6 +1479,7 @@ function save_notifications_to_store($notifications) {
  */
 function get_notifications($limit = 50, $marquee_only = false) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return [];
     }
@@ -1491,6 +1517,7 @@ function get_notifications($limit = 50, $marquee_only = false) {
  */
 function get_notifications_paginated($page = 1, $per_page = 10, $search = null, $marquee_only = false) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $per_page = max(1, (int)$per_page);
     $page = max(1, (int)$page);
 
@@ -1559,6 +1586,7 @@ function get_notifications_paginated($page = 1, $per_page = 10, $search = null, 
  */
 function get_notifications_count($search = null, $marquee_only = false) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return 0;
     }
@@ -1588,6 +1616,7 @@ function get_notifications_count($search = null, $marquee_only = false) {
  */
 function get_notification_by_id($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     if (!($pdo instanceof PDO) || $id <= 0) {
         return null;
@@ -1649,6 +1678,7 @@ function get_notices($limit = 20, $active_only = true) {
  */
 function add_notification($title, $category, $description, $attachment_type = 'none', $attachment_path = null, $link_url = null, $is_marquee = 0, $publish_date = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $title        = trim($title);
     $category     = trim($category ?: 'Circular');
     $description  = trim($description);
@@ -1721,6 +1751,7 @@ function add_notification($title, $category, $description, $attachment_type = 'n
  */
 function update_notification($id, $title, $publish_date, $description, $file = null, $category = 'Circular', $link_url = null, $is_marquee = 0) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     if ($id <= 0) return ['success' => false, 'message' => 'Invalid circular ID.'];
 
@@ -1812,6 +1843,7 @@ function update_notification($id, $title, $publish_date, $description, $file = n
  */
 function delete_notification($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
 
     $existing = get_notification_by_id($id);
@@ -1860,6 +1892,7 @@ function delete_notification($id) {
  */
 function get_staff($department = null, $limit = 50) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) return [];
 
     try {
@@ -1892,6 +1925,7 @@ function get_staff($department = null, $limit = 50) {
  */
 function add_staff($full_name, $designation, $department, $qualification, $email = null, $phone = null, $profile_image = null, $bio = null, $display_order = 0) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
 
     try {
@@ -1934,6 +1968,7 @@ function add_staff($full_name, $designation, $department, $qualification, $email
  */
 function update_staff($id, $full_name, $designation, $department, $qualification, $email, $phone, $profile_image = null, $bio = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
 
     try {
@@ -1971,6 +2006,7 @@ function update_staff($id, $full_name, $designation, $department, $qualification
  */
 function delete_staff($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) return ['success' => false, 'message' => 'Database not connected.'];
 
     try {
@@ -2001,6 +2037,7 @@ function delete_staff($id) {
  */
 function get_all_uploads($type = null, $limit = 100) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return [
             ['id' => 1, 'file_name' => 'autonomous_notification_ay2026.pdf', 'file_type' => 'pdf', 'file_path' => 'uploads/pdfs/autonomous_notification_ay2026.pdf', 'file_size' => 1425600, 'original_name' => 'autonomous_notification_ay2026.pdf', 'uploaded_by' => 'Charan', 'created_at' => '2026-10-01 10:30:00'],
@@ -2070,6 +2107,7 @@ function save_workshops_to_store($workshops) {
  */
 function get_workshops($limit = 50) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return [];
     }
@@ -2096,6 +2134,7 @@ function get_workshops($limit = 50) {
  */
 function get_workshops_paginated($page = 1, $per_page = 10, $search = null, $category = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $per_page = max(1, (int)$per_page);
     $page = max(1, (int)$page);
 
@@ -2153,6 +2192,7 @@ function get_workshops_paginated($page = 1, $per_page = 10, $search = null, $cat
  */
 function get_workshops_count($search = null, $category = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return 0;
     }
@@ -2185,6 +2225,7 @@ function get_workshops_count($search = null, $category = null) {
  */
 function get_workshop_by_id($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     if (!($pdo instanceof PDO) || $id <= 0) {
         return null;
@@ -2213,6 +2254,7 @@ function get_workshop_by_id($id) {
  */
 function add_workshop($title, $instructor, $category, $event_date, $venue, $description, $status = 'UPCOMING') {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $title       = trim($title);
     $instructor  = trim($instructor);
     $category    = trim($category ?: 'Technical');
@@ -2262,6 +2304,7 @@ function add_workshop($title, $instructor, $category, $event_date, $venue, $desc
  */
 function update_workshop($id, $title, $instructor, $category, $event_date, $venue, $description, $status = 'UPCOMING') {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id          = (int)$id;
     $title       = trim($title);
     $instructor  = trim($instructor);
@@ -2309,6 +2352,7 @@ function update_workshop($id, $title, $instructor, $category, $event_date, $venu
  */
 function delete_workshop($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
 
     if (!($pdo instanceof PDO)) {
@@ -2368,6 +2412,7 @@ function save_news_to_store($news) {
  */
 function get_news($limit = 50) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return [];
     }
@@ -2393,6 +2438,7 @@ function get_news($limit = 50) {
  */
 function get_news_paginated($page = 1, $per_page = 10, $search = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $per_page = max(1, (int)$per_page);
     $page = max(1, (int)$page);
 
@@ -2447,6 +2493,7 @@ function get_news_paginated($page = 1, $per_page = 10, $search = null) {
  */
 function get_news_count($search = null) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     if (!($pdo instanceof PDO)) {
         return 0;
     }
@@ -2475,6 +2522,7 @@ function get_news_count($search = null) {
  */
 function get_news_by_id($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     if (!($pdo instanceof PDO) || $id <= 0) {
         return null;
@@ -2501,6 +2549,7 @@ function get_news_by_id($id) {
  */
 function add_news($title, $publish_date, $description, $image_file = null, $source = 'Press & Media') {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $title = trim($title);
     $publish_date = !empty($publish_date) ? trim($publish_date) : date('Y-m-d');
     $description = trim($description);
@@ -2566,6 +2615,7 @@ function add_news($title, $publish_date, $description, $image_file = null, $sour
  */
 function update_news($id, $title, $publish_date, $description, $image_file = null, $source = 'Press & Media') {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     $title = trim($title);
     $publish_date = !empty($publish_date) ? trim($publish_date) : date('Y-m-d');
@@ -2620,6 +2670,7 @@ function update_news($id, $title, $publish_date, $description, $image_file = nul
  */
 function delete_news($id) {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     $existing = get_news_by_id($id);
     $title = $existing ? ($existing['title'] ?? 'News #' . $id) : 'News #' . $id;

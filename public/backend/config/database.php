@@ -16,6 +16,7 @@ $username = env('DB_USER', 'tcek');
 $password = env('DB_PASS', 'tcek@developer');
 $charset  = env('DB_CHARSET', 'utf8mb4');
 
+global $pdo, $db_error;
 $pdo = null;
 $db_error = null;
 
@@ -27,6 +28,7 @@ try {
         PDO::ATTR_EMULATE_PREPARES   => true
     ];
     $pdo = new PDO($dsn, $username, $password, $options);
+    $GLOBALS['pdo'] = $pdo;
 } catch (PDOException $e) {
     // Log failure securely without exposing credentials or internal paths
     ErrorHandler::log('CRITICAL', 'TCEK Database Connection Failed', $e);
@@ -42,7 +44,14 @@ try {
  */
 function getDB() {
     global $pdo;
-    return $pdo;
+    if ($pdo instanceof PDO) {
+        return $pdo;
+    }
+    if (isset($GLOBALS['pdo']) && $GLOBALS['pdo'] instanceof PDO) {
+        $pdo = $GLOBALS['pdo'];
+        return $pdo;
+    }
+    return null;
 }
 
 /**
@@ -51,5 +60,5 @@ function getDB() {
  */
 function isDbConnected() {
     global $pdo;
-    return ($pdo instanceof PDO);
+    return (getDB() instanceof PDO);
 }

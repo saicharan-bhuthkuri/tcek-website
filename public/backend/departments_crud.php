@@ -42,6 +42,7 @@ function get_valid_faculty_roles(): array
 function get_departments($active_only = false)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $departments = [];
 
     if ($pdo instanceof PDO) {
@@ -113,6 +114,7 @@ function get_departments_paginated($page = 1, $per_page = 10, $search = '')
 function get_department_by_id($id)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     if ($id <= 0) return null;
 
@@ -146,6 +148,7 @@ function get_department_by_id($id)
 function get_department_by_code($code)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $code = strtoupper(trim((string)$code));
     if (empty($code)) return null;
 
@@ -179,6 +182,7 @@ function get_department_by_code($code)
 function get_department_by_slug($slug)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $slug = strtolower(trim((string)$slug));
     if (empty($slug)) return null;
 
@@ -212,6 +216,7 @@ function get_department_by_slug($slug)
 function count_department_faculty($dept_code)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $dept_code = strtoupper(trim((string)$dept_code));
     if ($pdo instanceof PDO) {
         try {
@@ -231,6 +236,7 @@ function count_department_faculty($dept_code)
 function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.Tech', $intake = '60 Seats', $duration = '4 Years', $established_year = 2008, $icon_class = 'fas fa-graduation-cap', $theme_class = 'theme-cse', $description = '', $vision = '', $mission = '', $page_url = '', $display_order = 0, $banner_image = null)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
 
     $default_banner = 'assets/courses/cse.png';
     $tags = [];
@@ -349,6 +355,7 @@ function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.T
 function update_department($id, $dept_code, $name = '', $slug = '', $degree_level = 'B.Tech', $intake = '60 Seats', $duration = '4 Years', $established_year = 2008, $icon_class = 'fas fa-graduation-cap', $theme_class = 'theme-cse', $description = '', $vision = '', $mission = '', $page_url = '', $display_order = 0, $is_active = 1, $banner_image = null)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int) $id;
 
     if ($id <= 0) {
@@ -509,6 +516,7 @@ function update_department($id, $dept_code, $name = '', $slug = '', $degree_leve
 function delete_department($id)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int) $id;
     $dept = get_department_by_id($id);
     if (!$dept) {
@@ -553,6 +561,7 @@ function delete_department($id)
 function demote_existing_department_hod($dept_code, $exclude_id = null)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $dept_code = strtoupper(trim((string) $dept_code));
     if ($pdo instanceof PDO) {
         try {
@@ -592,6 +601,7 @@ function demote_existing_department_hod($dept_code, $exclude_id = null)
 function get_faculty_members($filters = [])
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $faculty = [];
 
     $dept_filter = trim((string) ($filters['department'] ?? ($filters['dept_code'] ?? 'all')));
@@ -689,6 +699,7 @@ function get_faculty_paginated($page = 1, $per_page = 10, $filters = [])
 function get_faculty_by_id($id)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int)$id;
     if ($id <= 0) return null;
 
@@ -744,6 +755,7 @@ function get_department_hod($dept_code)
 function add_faculty_member($full_name, $dept_code = '', $designation = '', $role_category = 'Faculty – Junior (JR)', $is_hod = 0, $is_rnd = 0, $qualification = 'M.Tech', $jntuh_reg_id = 'N/A', $experience = '5+ Years', $email = '', $phone = '', $profile_image = null, $bio = '', $display_order = 0)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
 
     if (is_array($full_name)) {
         $data = $full_name;
@@ -851,6 +863,7 @@ function add_faculty_member($full_name, $dept_code = '', $designation = '', $rol
 function update_faculty_member($id, $full_name, $dept_code = '', $designation = '', $role_category = 'Faculty – Junior (JR)', $is_hod = 0, $is_rnd = 0, $qualification = '', $jntuh_reg_id = '', $experience = '', $email = '', $phone = '', $profile_image = null, $bio = '', $display_order = 0, $is_active = 1)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int) $id;
 
     if ($id <= 0) {
@@ -982,6 +995,7 @@ function update_faculty_member($id, $full_name, $dept_code = '', $designation = 
 function delete_faculty_member($id)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $id = (int) $id;
     if ($id <= 0) {
         return ['success' => false, 'message' => 'Invalid faculty ID.'];
@@ -1020,6 +1034,7 @@ function delete_faculty_member($id)
 function assign_department_hod($dept_code, $faculty_id)
 {
     global $pdo;
+    if (!($pdo instanceof PDO)) { $pdo = getDB(); }
     $dept_code = strtoupper(trim((string) $dept_code));
     $faculty_id = (int) $faculty_id;
 
