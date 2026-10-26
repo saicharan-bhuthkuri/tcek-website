@@ -17,9 +17,16 @@ require_once __DIR__ . '/../public/backend/rnd_crud.php';
 require_once __DIR__ . '/../public/backend/departments_crud.php';
 require_once __DIR__ . '/../public/backend/settings_crud.php';
 
+$pdo = getDB();
 $results = [];
 
-function assert_test($label, $condition, &$results) {
+/**
+ * @param string $label
+ * @param bool $condition
+ * @param array $results
+ * @return void
+ */
+function assert_test(string $label, bool $condition, array &$results): void {
     if ($condition) {
         $results[] = ["PASS", $label];
         echo " [PASS] $label\n";
@@ -380,7 +387,9 @@ echo "\n12. Testing Content Versions & Activity Logs...\n";
 record_content_update('test_module');
 $versions = load_content_versions();
 assert_test("Sync - Update & Read Content Version in MySQL", isset($versions['test_module']), $results);
-$pdo->query("DELETE FROM `content_versions` WHERE `module` = 'test_module'");
+if ($pdo instanceof PDO) {
+    $pdo->query("DELETE FROM `content_versions` WHERE `module` = 'test_module'");
+}
 
 $log_res = log_activity('Test Action', 'Test Suite', 'Unit Record', 'Executed automated verification suite');
 assert_test("Activity Logs - Insert Audit Log in MySQL", $log_res === true, $results);

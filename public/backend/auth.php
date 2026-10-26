@@ -212,9 +212,20 @@ function get_current_admin(): array {
 
 /**
  * Record an entry into activity_logs
+ *
+ * @param string $action
+ * @param string $module
+ * @param string $record_name
+ * @param string $description
+ * @param int|null $record_id
+ * @param string|null $admin_name
+ * @return bool
  */
-function log_activity($action, $module, $record_name, $description = '', $record_id = null, $admin_name = null): bool {
+function log_activity(string $action, string $module, string $record_name, string $description = '', ?int $record_id = null, ?string $admin_name = null): bool {
     global $pdo;
+    if (!($pdo instanceof PDO)) {
+        $pdo = getDB();
+    }
 
     if (!$admin_name) {
         $admin_name = $_SESSION['tcek_admin_name'] ?? ($_SESSION['tcek_admin_username'] ?? 'System');
