@@ -5,6 +5,8 @@
  * admin dashboard and public website without page reloads.
  */
 
+require_once __DIR__ . '/config/database.php';
+
 if (!function_exists('get_sync_versions_file')) {
     function get_sync_versions_file(): string {
         return __DIR__ . '/config/content_versions.json';
@@ -12,19 +14,35 @@ if (!function_exists('get_sync_versions_file')) {
 }
 
 /**
- * Load all module version timestamps
+ * Load all module version timestamps directly from MySQL
  */
 function load_content_versions(): array {
-    $file = get_sync_versions_file();
-    if (file_exists($file)) {
-        $json = @file_get_contents($file);
-        if ($json) {
-            $data = json_decode($json, true);
-            if (is_array($data)) {
-                return $data;
+    global $pdo;
+    $versions = [];
+    if ($pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->query("SELECT module, version_timestamp, updated_at FROM content_versions");
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $latest = 0;
+            $latestFormatted = date('d M Y, h:i A');
+            foreach ($rows as $r) {
+                $versions[$r['module']] = (int)$r['version_timestamp'];
+                $ts = strtotime($r['updated_at'] ?? '');
+                if ($ts > $latest) {
+                    $latest = $ts;
+                    $latestFormatted = date('d M Y, h:i A', $ts);
+                }
             }
+            if (!empty($versions)) {
+                $versions['last_updated'] = date('Y-m-d H:i:s', $latest ?: time());
+                $versions['last_updated_formatted'] = $latestFormatted;
+                return $versions;
+            }
+        } catch (Throwable $t) {
+            error_log("Error loading content_versions from DB: " . $t->getMessage());
         }
     }
+
     return [
         'announcements' => time(),
         'hero'          => time(),
@@ -46,39 +64,37 @@ function load_content_versions(): array {
 }
 
 /**
- * Atomically record a content change for a module
+ * Atomically record a content change for a module in MySQL
  */
 function record_content_update(string $module): bool {
-    $file = get_sync_versions_file();
-    $versions = load_content_versions();
+    global $pdo;
     $now = time();
-
-    $versions[$module] = $now;
-    $versions['global'] = $now;
-    $versions['last_updated'] = date('Y-m-d H:i:s');
-    $versions['last_updated_formatted'] = date('d M Y, h:i A');
+    $modulesToUpdate = [$module, 'global'];
 
     // Cross-module linkages
     if (in_array($module, ['departments', 'faculty'], true)) {
-        $versions['courses'] = $now;
+        $modulesToUpdate[] = 'courses';
     }
     if (in_array($module, ['events', 'event_media'], true)) {
-        $versions['gallery'] = $now;
+        $modulesToUpdate[] = 'gallery';
     }
 
-    $json = json_encode($versions, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    if ($json === false) {
-        return false;
-    }
-
-    $tmp = $file . '.tmp.' . bin2hex(random_bytes(4));
-    if (@file_put_contents($tmp, $json, LOCK_EX) !== false) {
-        if (@rename($tmp, $file)) {
+    if ($pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->prepare("
+                INSERT INTO content_versions (module, version_timestamp, updated_at)
+                VALUES (:m, :ts, NOW())
+                ON DUPLICATE KEY UPDATE version_timestamp = VALUES(version_timestamp), updated_at = NOW()
+            ");
+            foreach (array_unique($modulesToUpdate) as $mod) {
+                $stmt->execute([':m' => $mod, ':ts' => $now]);
+            }
             return true;
+        } catch (Throwable $t) {
+            error_log("Failed to update content_versions in DB: " . $t->getMessage());
         }
-        @unlink($tmp);
     }
-    return (@file_put_contents($file, $json, LOCK_EX) !== false);
+    return false;
 }
 
 // -------------------------------------------------------------

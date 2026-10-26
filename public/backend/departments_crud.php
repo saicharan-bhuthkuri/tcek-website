@@ -4,6 +4,7 @@
  * Handles: Department CRUD, Faculty Directory CRUD, Role & Designation Assignments,
  * HOD Single-Active Enforcement, Search/Filters, Excel SpreadsheetML Export with Formula Sanitization,
  * and Public Website Synchronization.
+ * 100% MySQL Database Powered Storage & Retrieval
  */
 
 if (!defined('TCEK_FACULTY_ROLES')) {
@@ -17,6 +18,7 @@ if (!defined('TCEK_FACULTY_ROLES')) {
     ]);
 }
 
+require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/sync.php';
 
 /**
@@ -28,85 +30,11 @@ function get_valid_faculty_roles(): array
 }
 
 // ==============================================================
-// 1. DATA STORES (FILE FALLBACK HELPERS)
-// ==============================================================
-
-function get_departments_store_file()
-{
-    return __DIR__ . '/config/departments_data.json';
-}
-
-function get_staff_store_file()
-{
-    return __DIR__ . '/config/staff_data.json';
-}
-
-function load_departments_from_store()
-{
-    $file = get_departments_store_file();
-    if (file_exists($file)) {
-        $json = @file_get_contents($file);
-        if ($json) {
-            $data = json_decode($json, true);
-            if (is_array($data) && !empty($data)) {
-                return $data;
-            }
-        }
-    }
-    return [];
-}
-
-function save_departments_to_store($departments)
-{
-    $file = get_departments_store_file();
-    $dir = dirname($file);
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0755, true);
-    }
-    $saved = @file_put_contents($file, json_encode(array_values($departments), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
-    if ($saved && function_exists('record_content_update')) {
-        record_content_update('departments');
-        record_content_update('courses');
-    }
-    return $saved;
-}
-
-function load_staff_from_store()
-{
-    $file = get_staff_store_file();
-    if (file_exists($file)) {
-        $json = @file_get_contents($file);
-        if ($json) {
-            $data = json_decode($json, true);
-            if (is_array($data) && !empty($data)) {
-                return $data;
-            }
-        }
-    }
-    return [];
-}
-
-function save_staff_to_store($staff)
-{
-    $file = get_staff_store_file();
-    $dir = dirname($file);
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0755, true);
-    }
-    $saved = @file_put_contents($file, json_encode(array_values($staff), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES)) !== false;
-    if ($saved && function_exists('record_content_update')) {
-        record_content_update('faculty');
-        record_content_update('departments');
-    }
-    return $saved;
-}
-
-// ==============================================================
-// 2. DEPARTMENT MANAGEMENT CORE FUNCTIONS
+// 1. DEPARTMENT MANAGEMENT CORE FUNCTIONS (MYSQL POWERED)
 // ==============================================================
 
 /**
- * Retrieve all departments, with attached faculty counts and active HOD name
+ * Retrieve all departments directly from MySQL, with attached faculty counts and active HOD name
  *
  * @param bool $active_only
  * @return array
@@ -127,68 +55,52 @@ function get_departments($active_only = false)
             }
             $sql .= " ORDER BY d.display_order ASC, d.name ASC";
             $stmt = $pdo->query($sql);
-            $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            $departments = [];
-        }
-    }
-
-    if (empty($departments)) {
-        $all = load_departments_from_store();
-        $staff = load_staff_from_store();
-
-        $departments = [];
-        foreach ($all as $d) {
-            if ($active_only && empty($d['is_active'])) {
-                continue;
-            }
-            $code = strtoupper(trim($d['dept_code'] ?? ''));
-
-            $count = 0;
-            $hod_name = null;
-            foreach ($staff as $s) {
-                if (strtoupper(trim($s['dept_code'] ?? '')) === $code && !empty($s['is_active'])) {
-                    $count++;
-                    if (!empty($s['is_hod']) && !$hod_name) {
-                        $hod_name = $s['full_name'] ?? '';
+            if ($stmt) {
+                $departments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($departments as &$d) {
+                    $d['id'] = (int)$d['id'];
+                    $d['is_active'] = (int)($d['is_active'] ?? 1);
+                    $d['display_order'] = (int)($d['display_order'] ?? 0);
+                    $d['faculty_count'] = (int)($d['faculty_count'] ?? 0);
+                    if (!isset($d['tags'])) $d['tags'] = [];
+                    elseif (is_string($d['tags'])) {
+                        $d['tags'] = array_filter(array_map('trim', explode(',', $d['tags'])));
+                    }
+                    if (isset($d['gallery_images']) && is_string($d['gallery_images'])) {
+                        $dec = json_decode($d['gallery_images'], true);
+                        $d['gallery_images'] = is_array($dec) ? $dec : array_filter(array_map('trim', explode(',', $d['gallery_images'])));
                     }
                 }
+                unset($d);
             }
-            $d['faculty_count'] = $count;
-            $d['hod_name'] = $hod_name;
-            $departments[] = $d;
+        } catch (Throwable $e) {
+            error_log("Failed to query departments from MySQL: " . $e->getMessage());
         }
-
-        usort($departments, function ($a, $b) {
-            $ordA = (int) ($a['display_order'] ?? 0);
-            $ordB = (int) ($b['display_order'] ?? 0);
-            if ($ordA === $ordB) {
-                return strcasecmp($a['name'] ?? '', $b['name'] ?? '');
-            }
-            return $ordA <=> $ordB;
-        });
     }
 
     return $departments;
 }
 
 /**
- * Retrieve paginated departments list with search filter
+ * Paginated department query for administration dashboard
+ *
+ * @param int $page
+ * @param int $per_page
+ * @param string $search
+ * @return array
  */
 function get_departments_paginated($page = 1, $per_page = 10, $search = '')
 {
     $all = get_departments(false);
-    $search = trim((string) $search);
-
-    if ($search !== '') {
-        $all = array_filter($all, function ($d) use ($search) {
-            return stripos($d['name'] ?? '', $search) !== false ||
-                stripos($d['dept_code'] ?? '', $search) !== false ||
-                stripos($d['degree_level'] ?? '', $search) !== false ||
-                stripos($d['hod_name'] ?? '', $search) !== false;
+    if (!empty($search)) {
+        $s = strtolower(trim($search));
+        $all = array_filter($all, function ($d) use ($s) {
+            return (stripos($d['name'] ?? '', $s) !== false ||
+                stripos($d['dept_code'] ?? '', $s) !== false ||
+                stripos($d['degree_level'] ?? '', $s) !== false);
         });
+        $all = array_values($all);
     }
-
     $total = count($all);
     $pagination = build_pagination_meta($total, $page, $per_page);
     $pagination['items'] = array_values(array_slice($all, $pagination['offset'], $pagination['per_page']));
@@ -196,116 +108,125 @@ function get_departments_paginated($page = 1, $per_page = 10, $search = '')
 }
 
 /**
- * Retrieve a department by its ID
+ * Retrieve single department record by primary key ID
  */
 function get_department_by_id($id)
 {
     global $pdo;
-    $id = (int) $id;
+    $id = (int)$id;
     if ($id <= 0) return null;
 
     if ($pdo instanceof PDO) {
         try {
             $stmt = $pdo->prepare("SELECT * FROM departments WHERE id = :id LIMIT 1");
             $stmt->execute([':id' => $id]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) return $row;
-        } catch (PDOException $e) {}
-    }
-
-    $all = get_departments(false);
-    foreach ($all as $d) {
-        if ((int) ($d['id'] ?? 0) === $id) {
-            return $d;
+            $d = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($d) {
+                $d['id'] = (int)$d['id'];
+                $d['is_active'] = (int)($d['is_active'] ?? 1);
+                if (isset($d['tags']) && is_string($d['tags'])) {
+                    $d['tags'] = array_filter(array_map('trim', explode(',', $d['tags'])));
+                }
+                if (isset($d['gallery_images']) && is_string($d['gallery_images'])) {
+                    $dec = json_decode($d['gallery_images'], true);
+                    $d['gallery_images'] = is_array($dec) ? $dec : array_filter(array_map('trim', explode(',', $d['gallery_images'])));
+                }
+                return $d;
+            }
+        } catch (Throwable $e) {
+            error_log("Failed to query department by ID: " . $e->getMessage());
         }
     }
     return null;
 }
 
 /**
- * Retrieve a department by its code (e.g. 'CSE', 'ECE')
+ * Retrieve single department by its unique dept_code
  */
 function get_department_by_code($code)
 {
     global $pdo;
-    $code = strtoupper(trim((string) $code));
-    if ($code === '') return null;
+    $code = strtoupper(trim((string)$code));
+    if (empty($code)) return null;
 
     if ($pdo instanceof PDO) {
         try {
-            $stmt = $pdo->prepare("SELECT * FROM departments WHERE UPPER(dept_code) = :code OR UPPER(slug) = :code LIMIT 1");
+            $stmt = $pdo->prepare("SELECT * FROM departments WHERE UPPER(dept_code) = :code LIMIT 1");
             $stmt->execute([':code' => $code]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) return $row;
-        } catch (PDOException $e) {}
-    }
-
-    $all = get_departments(false);
-    foreach ($all as $d) {
-        if (strtoupper(trim($d['dept_code'] ?? '')) === $code || strtoupper(trim($d['slug'] ?? '')) === $code) {
-            return $d;
+            $d = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($d) {
+                $d['id'] = (int)$d['id'];
+                $d['is_active'] = (int)($d['is_active'] ?? 1);
+                if (isset($d['tags']) && is_string($d['tags'])) {
+                    $d['tags'] = array_filter(array_map('trim', explode(',', $d['tags'])));
+                }
+                if (isset($d['gallery_images']) && is_string($d['gallery_images'])) {
+                    $dec = json_decode($d['gallery_images'], true);
+                    $d['gallery_images'] = is_array($dec) ? $dec : array_filter(array_map('trim', explode(',', $d['gallery_images'])));
+                }
+                return $d;
+            }
+        } catch (Throwable $e) {
+            error_log("Failed to query department by code: " . $e->getMessage());
         }
     }
     return null;
 }
 
 /**
- * Retrieve a department by slug
+ * Retrieve single department by URL slug
  */
 function get_department_by_slug($slug)
 {
     global $pdo;
-    $slug = strtolower(trim((string) $slug));
-    if ($slug === '') return null;
+    $slug = strtolower(trim((string)$slug));
+    if (empty($slug)) return null;
 
     if ($pdo instanceof PDO) {
         try {
-            $stmt = $pdo->prepare("SELECT * FROM departments WHERE LOWER(slug) = :slug OR LOWER(dept_code) = :slug LIMIT 1");
+            $stmt = $pdo->prepare("SELECT * FROM departments WHERE LOWER(slug) = :slug LIMIT 1");
             $stmt->execute([':slug' => $slug]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            if ($row) return $row;
-        } catch (PDOException $e) {}
-    }
-
-    $all = get_departments(false);
-    foreach ($all as $d) {
-        if (strtolower(trim($d['slug'] ?? '')) === $slug || strtolower(trim($d['dept_code'] ?? '')) === $slug) {
-            return $d;
+            $d = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($d) {
+                $d['id'] = (int)$d['id'];
+                $d['is_active'] = (int)($d['is_active'] ?? 1);
+                if (isset($d['tags']) && is_string($d['tags'])) {
+                    $d['tags'] = array_filter(array_map('trim', explode(',', $d['tags'])));
+                }
+                if (isset($d['gallery_images']) && is_string($d['gallery_images'])) {
+                    $dec = json_decode($d['gallery_images'], true);
+                    $d['gallery_images'] = is_array($dec) ? $dec : array_filter(array_map('trim', explode(',', $d['gallery_images'])));
+                }
+                return $d;
+            }
+        } catch (Throwable $e) {
+            error_log("Failed to query department by slug: " . $e->getMessage());
         }
     }
     return null;
 }
 
 /**
- * Count total faculty assigned to a department
+ * Calculate total active faculty assigned to a specific department code
  */
 function count_department_faculty($dept_code)
 {
     global $pdo;
-    $dept_code = strtoupper(trim((string) $dept_code));
-
+    $dept_code = strtoupper(trim((string)$dept_code));
     if ($pdo instanceof PDO) {
         try {
-            $stmt = $pdo->prepare("SELECT COUNT(*) FROM staff WHERE UPPER(dept_code) = :code");
+            $stmt = $pdo->prepare("SELECT COUNT(*) FROM staff WHERE UPPER(dept_code) = :code AND is_active = 1");
             $stmt->execute([':code' => $dept_code]);
-            return (int) $stmt->fetchColumn();
-        } catch (PDOException $e) {
-            // fallback below
+            return (int)$stmt->fetchColumn();
+        } catch (Throwable $e) {
+            error_log("Failed to count department faculty: " . $e->getMessage());
         }
     }
-
-    $staff = load_staff_from_store();
-    $count = 0;
-    foreach ($staff as $s) {
-        if (strtoupper(trim($s['dept_code'] ?? '')) === $dept_code) {
-            $count++;
-        }
-    }
-    return $count;
+    return 0;
 }
 
 /**
- * Create a new department with uniqueness checks and activity logging
+ * Create a new department with uniqueness checks in MySQL
  */
 function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.Tech', $intake = '60 Seats', $duration = '4 Years', $established_year = 2008, $icon_class = 'fas fa-graduation-cap', $theme_class = 'theme-cse', $description = '', $vision = '', $mission = '', $page_url = '', $display_order = 0, $banner_image = null)
 {
@@ -351,107 +272,88 @@ function add_department($dept_code, $name = '', $slug = '', $degree_level = 'B.T
         return ['success' => false, 'message' => 'Department Code and Department Name are required.'];
     }
 
-    // Uniqueness validation (check both code and name)
-    $all = load_departments_from_store();
-    foreach ($all as $d) {
-        if (strtoupper(trim($d['dept_code'] ?? '')) === $dept_code) {
-            return ['success' => false, 'message' => "Department code '{$dept_code}' is already registered."];
-        }
-        if (strcasecmp(trim($d['name'] ?? ''), $name) === 0) {
+    if ($pdo instanceof PDO) {
+        // Uniqueness validation
+        $check = $pdo->prepare("SELECT dept_code, name FROM departments WHERE UPPER(dept_code) = :c OR LOWER(name) = :n LIMIT 1");
+        $check->execute([':c' => $dept_code, ':n' => strtolower($name)]);
+        $existing = $check->fetch(PDO::FETCH_ASSOC);
+
+        if ($existing) {
+            if (strtoupper($existing['dept_code']) === $dept_code) {
+                return ['success' => false, 'message' => "Department code '{$dept_code}' is already registered."];
+            }
             return ['success' => false, 'message' => "Department name '{$name}' is already registered."];
         }
-    }
 
-    if (empty($slug)) {
-        $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $dept_code));
-    } else {
-        $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $slug));
-    }
-
-    if (empty($page_url)) {
-        $page_url = 'department.php?slug=' . $slug;
-    }
-
-    $max_id = 0;
-    foreach ($all as $d) {
-        if ((int) ($d['id'] ?? 0) > $max_id) {
-            $max_id = (int) $d['id'];
+        if (empty($slug)) {
+            $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $dept_code));
+        } else {
+            $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $slug));
         }
-    }
-    $new_id = $max_id + 1;
 
-    $record = [
-        'id' => $new_id,
-        'dept_code' => $dept_code,
-        'name' => $name,
-        'slug' => $slug,
-        'degree_level' => $degree_level ?: 'B.Tech',
-        'intake' => $intake ?: '60 Seats',
-        'duration' => $duration ?: '4 Years',
-        'established_year' => (int) ($established_year ?: 2008),
-        'icon_class' => $icon_class ?: 'fas fa-graduation-cap',
-        'theme_class' => $theme_class ?: 'theme-cse',
-        'banner_image' => $banner_image ?: 'assets/courses/cse.png',
-        'dept_logo' => $banner_image ?: 'assets/courses/cse.png',
-        'logo' => $banner_image ?: 'assets/courses/cse.png',
-        'tags' => is_array($tags) ? $tags : (empty($tags) ? [] : array_map('trim', explode(',', $tags))),
-        'syllabus_url' => $syllabus_url ?: 'assets/Dept/peos_psos.docx',
-        'peos_url' => $peos_url ?: 'assets/Dept/peos_psos.docx',
-        'gallery_images' => is_array($gallery_images) ? $gallery_images : ['1.jpeg', '2.jpeg', '3.jpeg', '4.jpeg', '5.jpeg', '6.jpeg', '7.jpeg', '8.jpeg', '9.jpeg', '10.jpeg'],
-        'description' => $description,
-        'vision' => $vision,
-        'mission' => $mission,
-        'page_url' => $page_url,
-        'display_order' => (int) $display_order,
-        'is_active' => 1,
-        'created_at' => date('Y-m-d H:i:s'),
-        'updated_at' => date('Y-m-d H:i:s')
-    ];
+        if (empty($page_url)) {
+            $page_url = 'department.php?slug=' . $slug;
+        }
 
-    if ($pdo instanceof PDO) {
+        $tagStr = is_array($tags) ? implode(', ', $tags) : (string)$tags;
+        $galStr = is_array($gallery_images) ? json_encode($gallery_images) : (string)$gallery_images;
+
         try {
             $stmt = $pdo->prepare("INSERT INTO departments 
-                (dept_code, name, slug, degree_level, intake, duration, established_year, icon_class, theme_class, banner_image, description, vision, mission, page_url, display_order, is_active, created_at)
+                (dept_code, name, slug, degree_level, intake, duration, established_year, icon_class, theme_class, banner_image, tags, syllabus_url, peos_url, gallery_images, description, vision, mission, page_url, display_order, is_active, created_at)
                 VALUES 
-                (:dept_code, :name, :slug, :degree_level, :intake, :duration, :established_year, :icon_class, :theme_class, :banner_image, :description, :vision, :mission, :page_url, :display_order, 1, NOW())");
+                (:dept_code, :name, :slug, :degree_level, :intake, :duration, :established_year, :icon_class, :theme_class, :banner_image, :tags, :syll, :peos, :gal, :description, :vision, :mission, :page_url, :display_order, 1, NOW())");
             $stmt->execute([
-                ':dept_code' => $dept_code,
-                ':name' => $name,
-                ':slug' => $slug,
-                ':degree_level' => $record['degree_level'],
-                ':intake' => $record['intake'],
-                ':duration' => $record['duration'],
-                ':established_year' => $record['established_year'],
-                ':icon_class' => $record['icon_class'],
-                ':theme_class' => $record['theme_class'],
-                ':banner_image' => $record['banner_image'],
-                ':description' => $description,
-                ':vision' => $vision,
-                ':mission' => $mission,
-                ':page_url' => $page_url,
-                ':display_order' => (int) $display_order
+                ':dept_code'        => $dept_code,
+                ':name'             => $name,
+                ':slug'             => $slug,
+                ':degree_level'     => $degree_level ?: 'B.Tech',
+                ':intake'           => $intake ?: '60 Seats',
+                ':duration'         => $duration ?: '4 Years',
+                ':established_year' => (int) ($established_year ?: 2008),
+                ':icon_class'       => $icon_class ?: 'fas fa-graduation-cap',
+                ':theme_class'      => $theme_class ?: 'theme-cse',
+                ':banner_image'     => $banner_image ?: 'assets/courses/cse.png',
+                ':tags'             => $tagStr,
+                ':syll'             => $syllabus_url ?: 'assets/Dept/peos_psos.docx',
+                ':peos'             => $peos_url ?: 'assets/Dept/peos_psos.docx',
+                ':gal'              => $galStr,
+                ':description'      => $description,
+                ':vision'           => $vision,
+                ':mission'          => $mission,
+                ':page_url'         => $page_url,
+                ':display_order'    => (int) $display_order
             ]);
-            $record['id'] = (int) $pdo->lastInsertId();
-            $new_id = $record['id'];
-        } catch (PDOException $e) {
+            $new_id = (int) $pdo->lastInsertId();
+
+            if (function_exists('record_content_update')) {
+                record_content_update('departments');
+                record_content_update('courses');
+            }
+            if (function_exists('log_activity')) {
+                log_activity('Added', 'Departments', $name, "Created new department ({$dept_code})", $new_id);
+            }
+            return ['success' => true, 'message' => "Department '{$name}' ({$dept_code}) created successfully.", 'id' => $new_id];
+        } catch (Throwable $e) {
             error_log("Failed to insert department into MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    $all[] = $record;
-    save_departments_to_store($all);
-
-    log_activity('Added', 'Departments', $name, "Created new department ({$dept_code})", $new_id);
-    return ['success' => true, 'message' => "Department '{$name}' ({$dept_code}) created successfully.", 'id' => $new_id];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**
- * Update department details with uniqueness check
+ * Update department details with uniqueness check in MySQL
  */
 function update_department($id, $dept_code, $name = '', $slug = '', $degree_level = 'B.Tech', $intake = '60 Seats', $duration = '4 Years', $established_year = 2008, $icon_class = 'fas fa-graduation-cap', $theme_class = 'theme-cse', $description = '', $vision = '', $mission = '', $page_url = '', $display_order = 0, $is_active = 1, $banner_image = null)
 {
     global $pdo;
     $id = (int) $id;
+
+    if ($id <= 0) {
+        return ['success' => false, 'message' => 'Invalid department ID.'];
+    }
 
     $tags = null;
     $syllabus_url = null;
@@ -470,11 +372,11 @@ function update_department($id, $dept_code, $name = '', $slug = '', $degree_leve
         $icon_class = $data['icon_class'] ?? 'fas fa-graduation-cap';
         $theme_class = $data['theme_class'] ?? 'theme-cse';
         $banner_image = $data['banner_image'] ?? $data['dept_logo'] ?? $data['logo'] ?? ($banner_image ?: null);
-        $tags = isset($data['tags']) ? (is_array($data['tags']) ? $data['tags'] : array_map('trim', explode(',', $data['tags']))) : null;
+        $tags = isset($data['tags']) ? (is_array($data['tags']) ? implode(', ', $data['tags']) : (string)$data['tags']) : null;
         $syllabus_url = $data['syllabus_url'] ?? null;
         $peos_url = $data['peos_url'] ?? null;
         if (isset($data['gallery_images'])) {
-            $gallery_images = is_array($data['gallery_images']) ? $data['gallery_images'] : array_map('trim', explode(',', $data['gallery_images']));
+            $gallery_images = is_array($data['gallery_images']) ? json_encode($data['gallery_images']) : (string)$data['gallery_images'];
         }
         $description = $data['description'] ?? '';
         $vision = $data['vision'] ?? '';
@@ -487,41 +389,36 @@ function update_department($id, $dept_code, $name = '', $slug = '', $degree_leve
     $dept_code = strtoupper(trim((string) $dept_code));
     $name = trim((string) $name);
 
-    $all = load_departments_from_store();
-    $found_key = null;
-    $old_code = null;
-    foreach ($all as $k => $d) {
-        if ((int) ($d['id'] ?? 0) === $id) {
-            $found_key = $k;
-            $old_code = strtoupper(trim($d['dept_code'] ?? ''));
-            break;
+    if ($pdo instanceof PDO) {
+        $cur = $pdo->prepare("SELECT * FROM departments WHERE id = :id LIMIT 1");
+        $cur->execute([':id' => $id]);
+        $existing = $cur->fetch(PDO::FETCH_ASSOC);
+
+        if (!$existing) {
+            return ['success' => false, 'message' => 'Department not found.'];
         }
-    }
 
-    if ($found_key === null) {
-        return ['success' => false, 'message' => 'Department not found.'];
-    }
+        $old_code = strtoupper($existing['dept_code']);
 
-    // Check duplicate code or name against other records
-    foreach ($all as $k => $d) {
-        if ($k !== $found_key) {
-            if (strtoupper(trim($d['dept_code'] ?? '')) === $dept_code) {
+        // Check duplicate code or name against other records
+        $check = $pdo->prepare("SELECT id, dept_code, name FROM departments WHERE id != :id AND (UPPER(dept_code) = :c OR LOWER(name) = :n) LIMIT 1");
+        $check->execute([':id' => $id, ':c' => $dept_code, ':n' => strtolower($name)]);
+        $duplicate = $check->fetch(PDO::FETCH_ASSOC);
+
+        if ($duplicate) {
+            if (strtoupper($duplicate['dept_code']) === $dept_code) {
                 return ['success' => false, 'message' => "Department code '{$dept_code}' is already used by another department."];
             }
-            if (strcasecmp(trim($d['name'] ?? ''), $name) === 0) {
-                return ['success' => false, 'message' => "Department name '{$name}' is already used by another department."];
-            }
+            return ['success' => false, 'message' => "Department name '{$name}' is already used by another department."];
         }
-    }
 
-    if (empty($slug)) {
-        $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $dept_code));
-    }
-    if (empty($page_url)) {
-        $page_url = 'department.php?slug=' . $slug;
-    }
+        if (empty($slug)) {
+            $slug = strtolower(preg_replace('/[^a-zA-Z0-9]+/', '-', $dept_code));
+        }
+        if (empty($page_url)) {
+            $page_url = 'department.php?slug=' . $slug;
+        }
 
-    if ($pdo instanceof PDO) {
         try {
             $update_sql = "UPDATE departments SET
                 dept_code = :dept_code,
@@ -540,94 +437,70 @@ function update_department($id, $dept_code, $name = '', $slug = '', $degree_leve
                 display_order = :display_order,
                 is_active = :is_active";
             $update_params = [
-                ':id' => $id,
-                ':dept_code' => $dept_code,
-                ':name' => $name,
-                ':slug' => $slug,
-                ':degree_level' => $degree_level,
-                ':intake' => $intake,
-                ':duration' => $duration,
+                ':id'               => $id,
+                ':dept_code'        => $dept_code,
+                ':name'             => $name,
+                ':slug'             => $slug,
+                ':degree_level'     => $degree_level,
+                ':intake'           => $intake,
+                ':duration'         => $duration,
                 ':established_year' => (int) $established_year,
-                ':icon_class' => $icon_class,
-                ':theme_class' => $theme_class,
-                ':description' => $description,
-                ':vision' => $vision,
-                ':mission' => $mission,
-                ':page_url' => $page_url,
-                ':display_order' => (int) $display_order,
-                ':is_active' => (int) $is_active
+                ':icon_class'       => $icon_class,
+                ':theme_class'      => $theme_class,
+                ':description'      => $description,
+                ':vision'           => $vision,
+                ':mission'          => $mission,
+                ':page_url'         => $page_url,
+                ':display_order'    => (int) $display_order,
+                ':is_active'        => (int) $is_active
             ];
+
             if ($banner_image !== null) {
                 $update_sql .= ", banner_image = :banner_image";
                 $update_params[':banner_image'] = $banner_image;
             }
+            if ($tags !== null) {
+                $update_sql .= ", tags = :tags";
+                $update_params[':tags'] = $tags;
+            }
+            if ($syllabus_url !== null) {
+                $update_sql .= ", syllabus_url = :syllabus_url";
+                $update_params[':syllabus_url'] = $syllabus_url;
+            }
+            if ($peos_url !== null) {
+                $update_sql .= ", peos_url = :peos_url";
+                $update_params[':peos_url'] = $peos_url;
+            }
+            if ($gallery_images !== null) {
+                $update_sql .= ", gallery_images = :gallery_images";
+                $update_params[':gallery_images'] = $gallery_images;
+            }
+
             $update_sql .= ", updated_at = NOW() WHERE id = :id";
             $stmt = $pdo->prepare($update_sql);
             $stmt->execute($update_params);
 
             // Sync faculty dept_code if department code changed
             if ($old_code && $old_code !== $dept_code) {
-                $upd_staff = $pdo->prepare("UPDATE staff SET dept_code = :new_code WHERE dept_code = :old_code");
+                $upd_staff = $pdo->prepare("UPDATE staff SET dept_code = :new_code WHERE UPPER(dept_code) = :old_code");
                 $upd_staff->execute([':new_code' => $dept_code, ':old_code' => $old_code]);
             }
-        } catch (PDOException $e) {
-            error_log("Failed to update department in MySQL: " . $e->getMessage());
-        }
-    }
 
-    $all[$found_key]['dept_code'] = $dept_code;
-    $all[$found_key]['name'] = $name;
-    $all[$found_key]['slug'] = $slug;
-    $all[$found_key]['degree_level'] = $degree_level;
-    $all[$found_key]['intake'] = $intake;
-    $all[$found_key]['duration'] = $duration;
-    $all[$found_key]['established_year'] = (int) $established_year;
-    $all[$found_key]['icon_class'] = $icon_class;
-    $all[$found_key]['theme_class'] = $theme_class;
-    $all[$found_key]['description'] = $description;
-    $all[$found_key]['vision'] = $vision;
-    $all[$found_key]['mission'] = $mission;
-    $all[$found_key]['page_url'] = $page_url;
-    $all[$found_key]['display_order'] = (int) $display_order;
-    $all[$found_key]['is_active'] = (int) $is_active;
-    if ($banner_image !== null) {
-        $all[$found_key]['banner_image'] = $banner_image;
-        $all[$found_key]['dept_logo'] = $banner_image;
-        $all[$found_key]['logo'] = $banner_image;
-    }
-    if ($tags !== null) {
-        $all[$found_key]['tags'] = $tags;
-    }
-    if ($syllabus_url !== null) {
-        $all[$found_key]['syllabus_url'] = $syllabus_url;
-    }
-    if ($peos_url !== null) {
-        $all[$found_key]['peos_url'] = $peos_url;
-    }
-    if ($gallery_images !== null) {
-        $all[$found_key]['gallery_images'] = $gallery_images;
-    }
-    $all[$found_key]['updated_at'] = date('Y-m-d H:i:s');
-    save_departments_to_store($all);
-
-    // Sync faculty dept_code in JSON store if code changed
-    if ($old_code && $old_code !== $dept_code) {
-        $staff = load_staff_from_store();
-        $staff_modified = false;
-        foreach ($staff as &$s) {
-            if (strtoupper(trim($s['dept_code'] ?? '')) === $old_code) {
-                $s['dept_code'] = $dept_code;
-                $staff_modified = true;
+            if (function_exists('record_content_update')) {
+                record_content_update('departments');
+                record_content_update('courses');
             }
-        }
-        unset($s);
-        if ($staff_modified) {
-            save_staff_to_store($staff);
+            if (function_exists('log_activity')) {
+                log_activity('Updated', 'Departments', $name, "Updated department {$dept_code}", $id);
+            }
+            return ['success' => true, 'message' => "Department '{$name}' updated successfully."];
+        } catch (Throwable $e) {
+            error_log("Failed to update department in MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    log_activity('Updated', 'Departments', $name, "Updated department {$dept_code}", $id);
-    return ['success' => true, 'message' => "Department '{$name}' updated successfully."];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**
@@ -645,11 +518,10 @@ function delete_department($id)
     $dept_code = strtoupper(trim($dept['dept_code'] ?? ''));
     $faculty_count = count_department_faculty($dept_code);
 
-    // Guard: Prevent deletion if faculty are still attached
     if ($faculty_count > 0) {
         return [
             'success' => false,
-            'message' => "Cannot delete department '{$dept['name']}' ({$dept_code}): It has {$faculty_count} associated faculty member(s). Please reassign or delete the faculty members first."
+            'message' => "Cannot delete department '{$dept['name']}' ({$dept_code}) because it has {$faculty_count} active faculty member(s) assigned. Please reassign or remove faculty first."
         ];
     }
 
@@ -657,86 +529,63 @@ function delete_department($id)
         try {
             $stmt = $pdo->prepare("DELETE FROM departments WHERE id = :id");
             $stmt->execute([':id' => $id]);
-        } catch (PDOException $e) {
+
+            if (function_exists('record_content_update')) {
+                record_content_update('departments');
+                record_content_update('courses');
+            }
+            if (function_exists('log_activity')) {
+                log_activity('Deleted', 'Departments', $dept['name'], "Deleted department {$dept_code}", $id);
+            }
+            return ['success' => true, 'message' => "Department '{$dept['name']}' deleted successfully."];
+        } catch (Throwable $e) {
             error_log("Failed to delete department from MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    $all = load_departments_from_store();
-    $filtered = array_filter($all, function ($d) use ($id) {
-        return (int) ($d['id'] ?? 0) !== $id;
-    });
-    save_departments_to_store($filtered);
-
-    log_activity('Deleted', 'Departments', $dept['name'], "Deleted department {$dept_code}", $id);
-    return ['success' => true, 'message' => "Department '{$dept['name']}' deleted successfully."];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
-// ==============================================================
-// 3. FACULTY & STAFF MANAGEMENT CORE FUNCTIONS
-// ==============================================================
-
 /**
- * Internal helper: Demote any existing active HOD for a department
- * Ensures at most one active HOD exists per department
+ * Demote any current active HOD of a department
  */
 function demote_existing_department_hod($dept_code, $exclude_id = null)
 {
     global $pdo;
     $dept_code = strtoupper(trim((string) $dept_code));
-
     if ($pdo instanceof PDO) {
         try {
-            $sql = "UPDATE staff SET is_hod = 0, 
-                    role_category = CASE WHEN role_category = 'HOD' THEN 'Faculty – Senior (SR)' ELSE role_category END
-                    WHERE UPPER(dept_code) = :code AND is_hod = 1";
+            $sql = "UPDATE staff SET is_hod = 0, role_category = 'Faculty – Senior (SR)' WHERE UPPER(dept_code) = :code AND is_hod = 1";
             $params = [':code' => $dept_code];
-            if ($exclude_id !== null) {
-                $sql .= " AND id != :exclude_id";
-                $params[':exclude_id'] = (int) $exclude_id;
+            if ($exclude_id !== null && $exclude_id > 0) {
+                $sql .= " AND id != :exId";
+                $params[':exId'] = (int)$exclude_id;
             }
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
-        } catch (PDOException $e) {
-            error_log("Failed to demote HOD in MySQL: " . $e->getMessage());
+        } catch (Throwable $e) {
+            error_log("Failed to demote department HOD in MySQL: " . $e->getMessage());
         }
-    }
-
-    $staff = load_staff_from_store();
-    $modified = false;
-    foreach ($staff as &$s) {
-        if (strtoupper(trim($s['dept_code'] ?? '')) === $dept_code) {
-            if ($exclude_id !== null && (int) ($s['id'] ?? 0) === (int) $exclude_id) {
-                continue;
-            }
-            if (!empty($s['is_hod'])) {
-                $s['is_hod'] = 0;
-                if (($s['role_category'] ?? '') === 'HOD') {
-                    $s['role_category'] = 'Faculty – Senior (SR)';
-                }
-                $modified = true;
-            }
-        }
-    }
-    unset($s);
-    if ($modified) {
-        save_staff_to_store($staff);
     }
 }
 
+// ==============================================================
+// 2. FACULTY DIRECTORY MANAGEMENT (MYSQL POWERED)
+// ==============================================================
+
 /**
- * Retrieve faculty members with comprehensive filter options
+ * Retrieve faculty members matching filter criteria directly from MySQL
  *
  * @param array $filters [
- *   'department'    => 'CSE' | 'all',
- *   'dept_code'     => 'CSE' | 'all',
- *   'search'        => string,
- *   'role_category' => 'HOD' | 'Faculty – Junior (JR)' | ... | 'all',
- *   'is_hod'        => '1' | '0' | 'all',
- *   'is_rnd'        => '1' | '0' | 'all',
- *   'is_active'     => 1 | 0 | null,
- *   'sort_by'       => 'name' | 'experience' | 'order' | 'id',
- *   'sort_dir'      => 'asc' | 'desc'
+ *    'department'    => string ('all' or 'CSE', etc.)
+ *    'search'        => string
+ *    'role_category' => string
+ *    'is_hod'        => string ('all', '1', '0')
+ *    'is_rnd'        => string ('all', '1', '0')
+ *    'is_active'     => int|null
+ *    'sort_by'       => 'order'|'name'|'experience'|'id'
+ *    'sort_dir'      => 'asc'|'desc'
  * ]
  * @return array
  */
@@ -786,7 +635,7 @@ function get_faculty_members($filters = [])
                 $params[':is_active'] = $active_filter;
             }
 
-            $sql = "SELECT s.*, d.name AS department_name FROM staff s 
+            $sql = "SELECT s.*, COALESCE(d.name, s.department) AS department_name FROM staff s 
                     LEFT JOIN departments d ON UPPER(d.dept_code) = UPPER(s.dept_code)";
             if (!empty($where)) {
                 $sql .= " WHERE " . implode(' AND ', $where);
@@ -805,105 +654,18 @@ function get_faculty_members($filters = [])
             $stmt = $pdo->prepare($sql);
             $stmt->execute($params);
             $faculty = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            $faculty = [];
+
+            foreach ($faculty as &$f) {
+                $f['id'] = (int)$f['id'];
+                $f['is_hod'] = (int)($f['is_hod'] ?? 0);
+                $f['is_rnd'] = (int)($f['is_rnd'] ?? 0);
+                $f['is_active'] = (int)($f['is_active'] ?? 1);
+                $f['display_order'] = (int)($f['display_order'] ?? 0);
+            }
+            unset($f);
+        } catch (Throwable $e) {
+            error_log("Failed to query faculty from MySQL: " . $e->getMessage());
         }
-    }
-
-    if (empty($faculty)) {
-        $all = load_staff_from_store();
-        $departments = get_departments(false);
-        $dept_map = [];
-        foreach ($departments as $d) {
-            $dept_map[strtoupper(trim($d['dept_code'] ?? ''))] = $d['name'] ?? '';
-        }
-
-        $filtered = [];
-        foreach ($all as $item) {
-            $item_code = strtoupper(trim($item['dept_code'] ?? ''));
-            $item['department_name'] = $dept_map[$item_code] ?? ($item['department'] ?? $item_code);
-
-            // Dept filter
-            if ($dept_filter !== '' && strtolower($dept_filter) !== 'all') {
-                if ($item_code !== strtoupper($dept_filter)) {
-                    continue;
-                }
-            }
-
-            // Search filter
-            if ($search !== '') {
-                $haystack = ($item['full_name'] ?? '') . ' ' .
-                    ($item['email'] ?? '') . ' ' .
-                    ($item['jntuh_reg_id'] ?? '') . ' ' .
-                    ($item['qualification'] ?? '') . ' ' .
-                    ($item['designation'] ?? '');
-                if (stripos($haystack, $search) === false) {
-                    continue;
-                }
-            }
-
-            // Role Category filter
-            if ($role_filter !== '' && strtolower($role_filter) !== 'all') {
-                if (($item['role_category'] ?? '') !== $role_filter) {
-                    continue;
-                }
-            }
-
-            // HOD filter
-            if ($hod_filter === '1' && empty($item['is_hod'])) {
-                continue;
-            }
-            if ($hod_filter === '0' && !empty($item['is_hod'])) {
-                continue;
-            }
-
-            // R&D filter
-            $is_rnd = !empty($item['is_rnd']) || (stripos($item['role_category'] ?? '', 'R&D') !== false);
-            if ($rnd_filter === '1' && !$is_rnd) {
-                continue;
-            }
-            if ($rnd_filter === '0' && $is_rnd) {
-                continue;
-            }
-
-            // Active filter
-            if ($active_filter !== null && (int) ($item['is_active'] ?? 1) !== $active_filter) {
-                continue;
-            }
-
-            $filtered[] = $item;
-        }
-
-        // Sorting
-        usort($filtered, function ($a, $b) use ($sort_by, $sort_dir) {
-            if ($sort_by === 'name') {
-                $res = strcasecmp($a['full_name'] ?? '', $b['full_name'] ?? '');
-                return $sort_dir === 'desc' ? -$res : $res;
-            }
-            if ($sort_by === 'experience') {
-                $res = strcasecmp($a['experience'] ?? '', $b['experience'] ?? '');
-                return $sort_dir === 'desc' ? -$res : $res;
-            }
-            if ($sort_by === 'id') {
-                $res = ((int) ($a['id'] ?? 0)) <=> ((int) ($b['id'] ?? 0));
-                return $sort_dir === 'desc' ? -$res : $res;
-            }
-
-            // Default: HOD first, then display_order ASC, then name ASC
-            $hodA = !empty($a['is_hod']) ? 1 : 0;
-            $hodB = !empty($b['is_hod']) ? 1 : 0;
-            if ($hodA !== $hodB) {
-                return $hodB <=> $hodA; // HOD first
-            }
-            $ordA = (int) ($a['display_order'] ?? 0);
-            $ordB = (int) ($b['display_order'] ?? 0);
-            if ($ordA !== $ordB) {
-                return $ordA <=> $ordB;
-            }
-            return strcasecmp($a['full_name'] ?? '', $b['full_name'] ?? '');
-        });
-
-        $faculty = $filtered;
     }
 
     return $faculty;
@@ -922,15 +684,29 @@ function get_faculty_paginated($page = 1, $per_page = 10, $filters = [])
 }
 
 /**
- * Retrieve faculty member by ID
+ * Retrieve faculty member by ID directly from MySQL
  */
 function get_faculty_by_id($id)
 {
-    $id = (int) $id;
-    $all = get_faculty_members([]);
-    foreach ($all as $f) {
-        if ((int) ($f['id'] ?? 0) === $id) {
-            return $f;
+    global $pdo;
+    $id = (int)$id;
+    if ($id <= 0) return null;
+
+    if ($pdo instanceof PDO) {
+        try {
+            $stmt = $pdo->prepare("SELECT s.*, COALESCE(d.name, s.department) AS department_name FROM staff s LEFT JOIN departments d ON UPPER(d.dept_code) = UPPER(s.dept_code) WHERE s.id = :id LIMIT 1");
+            $stmt->execute([':id' => $id]);
+            $f = $stmt->fetch(PDO::FETCH_ASSOC);
+            if ($f) {
+                $f['id'] = (int)$f['id'];
+                $f['is_hod'] = (int)($f['is_hod'] ?? 0);
+                $f['is_rnd'] = (int)($f['is_rnd'] ?? 0);
+                $f['is_active'] = (int)($f['is_active'] ?? 1);
+                $f['display_order'] = (int)($f['display_order'] ?? 0);
+                return $f;
+            }
+        } catch (Throwable $e) {
+            error_log("Failed to query faculty by ID: " . $e->getMessage());
         }
     }
     return null;
@@ -938,19 +714,18 @@ function get_faculty_by_id($id)
 
 /**
  * Public website integration: Retrieve all active faculty for a specific department
- * Guaranteed single source of truth for dept-*.php pages
  */
 function get_department_faculty($dept_code, $active_only = true)
 {
     return get_faculty_members([
         'dept_code' => $dept_code,
         'is_active' => $active_only ? 1 : null,
-        'sort_by' => 'order'
+        'sort_by'   => 'order'
     ]);
 }
 
 /**
- * Public website integration: Retrieve active HOD profile for a specific department
+ * Retrieve current active HOD of a department
  */
 function get_department_hod($dept_code)
 {
@@ -960,12 +735,11 @@ function get_department_hod($dept_code)
             return $f;
         }
     }
-    // Fallback: return first faculty if no explicit HOD flag
     return !empty($faculty) ? $faculty[0] : null;
 }
 
 /**
- * Add a new faculty member with HOD exclusivity and R&D role assignment
+ * Add a new faculty member directly in MySQL
  */
 function add_faculty_member($full_name, $dept_code = '', $designation = '', $role_category = 'Faculty – Junior (JR)', $is_hod = 0, $is_rnd = 0, $qualification = 'M.Tech', $jntuh_reg_id = 'N/A', $experience = '5+ Years', $email = '', $phone = '', $profile_image = null, $bio = '', $display_order = 0)
 {
@@ -1008,11 +782,9 @@ function add_faculty_member($full_name, $dept_code = '', $designation = '', $rol
         $designation = ($role_category === 'HOD') ? 'Head of Department' : 'Assistant Professor';
     }
 
-    // Role category mapping & HOD exclusivity enforcement
     if ($role_category === 'HOD' || !empty($is_hod)) {
         $is_hod = 1;
         $role_category = 'HOD';
-        // Enforce at most ONE active HOD in this department
         demote_existing_department_hod($dept_code);
     } else {
         $is_hod = 0;
@@ -1024,44 +796,12 @@ function add_faculty_member($full_name, $dept_code = '', $designation = '', $rol
         $is_rnd = 0;
     }
 
-    // Default image if none provided
     if (empty($profile_image) || $profile_image === 'assets/Dept/faculty-avatar.png') {
         $profile_image = null;
     }
 
     $dept_obj = get_department_by_code($dept_code);
     $full_dept_name = $dept_obj['name'] ?? $dept_code;
-
-    $all = load_staff_from_store();
-    $max_id = 0;
-    foreach ($all as $s) {
-        if ((int) ($s['id'] ?? 0) > $max_id) {
-            $max_id = (int) $s['id'];
-        }
-    }
-    $new_id = $max_id + 1;
-
-    $record = [
-        'id' => $new_id,
-        'full_name' => $full_name,
-        'dept_code' => $dept_code,
-        'department' => $full_dept_name,
-        'designation' => $designation,
-        'role_category' => $role_category,
-        'is_hod' => $is_hod,
-        'is_rnd' => $is_rnd,
-        'qualification' => $qualification ?: 'M.Tech',
-        'jntuh_reg_id' => $jntuh_reg_id ?: 'N/A',
-        'experience' => $experience ?: '5+ Years',
-        'email' => $email ?: (strtolower(preg_replace('/[^a-z0-9]/', '', $full_name)) . '@tcek.in'),
-        'phone' => $phone ?: '98480' . sprintf('%05d', $new_id),
-        'profile_image' => $profile_image,
-        'bio' => $bio ?: "Faculty member in the Department of {$full_dept_name} at TCEK, actively engaging in classroom teaching, student mentorship, and lab practical guidance.",
-        'display_order' => (int) $display_order,
-        'is_active' => 1,
-        'created_at' => date('Y-m-d H:i:s'),
-        'updated_at' => date('Y-m-d H:i:s')
-    ];
 
     if ($pdo instanceof PDO) {
         try {
@@ -1070,43 +810,52 @@ function add_faculty_member($full_name, $dept_code = '', $designation = '', $rol
                 VALUES 
                 (:full_name, :dept_code, :department, :designation, :role_category, :is_hod, :is_rnd, :qualification, :jntuh_reg_id, :experience, :email, :phone, :profile_image, :bio, :display_order, 1, NOW())");
             $stmt->execute([
-                ':full_name' => $full_name,
-                ':dept_code' => $dept_code,
-                ':department' => $full_dept_name,
-                ':designation' => $designation,
+                ':full_name'     => $full_name,
+                ':dept_code'     => $dept_code,
+                ':department'    => $full_dept_name,
+                ':designation'   => $designation,
                 ':role_category' => $role_category,
-                ':is_hod' => $is_hod,
-                ':is_rnd' => $is_rnd,
-                ':qualification' => $record['qualification'],
-                ':jntuh_reg_id' => $record['jntuh_reg_id'],
-                ':experience' => $record['experience'],
-                ':email' => $record['email'],
-                ':phone' => $record['phone'],
-                ':profile_image' => $record['profile_image'],
-                ':bio' => $record['bio'],
+                ':is_hod'        => $is_hod,
+                ':is_rnd'        => $is_rnd,
+                ':qualification' => $qualification ?: 'M.Tech',
+                ':jntuh_reg_id'  => $jntuh_reg_id ?: 'N/A',
+                ':experience'    => $experience ?: '5+ Years',
+                ':email'         => $email ?: (strtolower(preg_replace('/[^a-z0-9]/', '', $full_name)) . '@tcek.in'),
+                ':phone'         => $phone ?: '',
+                ':profile_image' => $profile_image,
+                ':bio'           => $bio ?: "Faculty member in the Department of {$full_dept_name} at TCEK.",
                 ':display_order' => (int) $display_order
             ]);
-            $record['id'] = (int) $pdo->lastInsertId();
-            $new_id = $record['id'];
-        } catch (PDOException $e) {
+            $new_id = (int) $pdo->lastInsertId();
+
+            if (function_exists('record_content_update')) {
+                record_content_update('faculty');
+                record_content_update('departments');
+            }
+            if (function_exists('log_activity')) {
+                log_activity('Added', 'Faculty', $full_name, "Added faculty member to {$dept_code} ({$role_category})", $new_id);
+            }
+            return ['success' => true, 'message' => "Faculty member '{$full_name}' added to {$dept_code} successfully.", 'id' => $new_id];
+        } catch (Throwable $e) {
             error_log("Failed to insert staff into MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    $all[] = $record;
-    save_staff_to_store($all);
-
-    log_activity('Added', 'Faculty', $full_name, "Added faculty member to {$dept_code} ({$role_category})", $new_id);
-    return ['success' => true, 'message' => "Faculty member '{$full_name}' added to {$dept_code} successfully.", 'id' => $new_id];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**
- * Update faculty details with HOD single-active check and activity log
+ * Update faculty details directly in MySQL
  */
 function update_faculty_member($id, $full_name, $dept_code = '', $designation = '', $role_category = 'Faculty – Junior (JR)', $is_hod = 0, $is_rnd = 0, $qualification = '', $jntuh_reg_id = '', $experience = '', $email = '', $phone = '', $profile_image = null, $bio = '', $display_order = 0, $is_active = 1)
 {
     global $pdo;
     $id = (int) $id;
+
+    if ($id <= 0) {
+        return ['success' => false, 'message' => 'Invalid faculty ID.'];
+    }
 
     if (is_array($full_name)) {
         $data = $full_name;
@@ -1138,45 +887,38 @@ function update_faculty_member($id, $full_name, $dept_code = '', $designation = 
     $phone = trim((string) $phone);
     $bio = trim((string) $bio);
 
-    $all = load_staff_from_store();
-    $found_key = null;
-    foreach ($all as $k => $s) {
-        if ((int) ($s['id'] ?? 0) === $id) {
-            $found_key = $k;
-            break;
-        }
-    }
-
-    if ($found_key === null) {
-        return ['success' => false, 'message' => 'Faculty member not found.'];
-    }
-
-    // Role category mapping & HOD exclusivity enforcement
-    if ($role_category === 'HOD' || !empty($is_hod)) {
-        $is_hod = 1;
-        $role_category = 'HOD';
-        // Demote other HOD in this department
-        demote_existing_department_hod($dept_code, $id);
-    } else {
-        $is_hod = 0;
-    }
-
-    if (stripos($role_category, 'R&D') !== false || !empty($is_rnd)) {
-        $is_rnd = 1;
-    } else {
-        $is_rnd = 0;
-    }
-
-    $existing_img = $all[$found_key]['profile_image'] ?? null;
-    if ($existing_img === 'assets/Dept/faculty-avatar.png') {
-        $existing_img = null;
-    }
-    $final_img = (!empty($profile_image)) ? $profile_image : $existing_img;
-
-    $dept_obj = get_department_by_code($dept_code);
-    $full_dept_name = $dept_obj['name'] ?? $dept_code;
-
     if ($pdo instanceof PDO) {
+        $cur = $pdo->prepare("SELECT * FROM staff WHERE id = :id LIMIT 1");
+        $cur->execute([':id' => $id]);
+        $existing = $cur->fetch(PDO::FETCH_ASSOC);
+
+        if (!$existing) {
+            return ['success' => false, 'message' => 'Faculty member not found.'];
+        }
+
+        if ($role_category === 'HOD' || !empty($is_hod)) {
+            $is_hod = 1;
+            $role_category = 'HOD';
+            demote_existing_department_hod($dept_code, $id);
+        } else {
+            $is_hod = 0;
+        }
+
+        if (stripos($role_category, 'R&D') !== false || !empty($is_rnd)) {
+            $is_rnd = 1;
+        } else {
+            $is_rnd = 0;
+        }
+
+        $existing_img = $existing['profile_image'] ?? null;
+        if ($existing_img === 'assets/Dept/faculty-avatar.png') {
+            $existing_img = null;
+        }
+        $final_img = (!empty($profile_image)) ? $profile_image : $existing_img;
+
+        $dept_obj = get_department_by_code($dept_code);
+        $full_dept_name = $dept_obj['name'] ?? $dept_code;
+
         try {
             $stmt = $pdo->prepare("UPDATE staff SET
                 full_name = :full_name,
@@ -1198,59 +940,53 @@ function update_faculty_member($id, $full_name, $dept_code = '', $designation = 
                 updated_at = NOW()
                 WHERE id = :id");
             $stmt->execute([
-                ':id' => $id,
-                ':full_name' => $full_name,
-                ':dept_code' => $dept_code,
-                ':department' => $full_dept_name,
-                ':designation' => $designation,
+                ':id'            => $id,
+                ':full_name'     => $full_name,
+                ':dept_code'     => $dept_code,
+                ':department'    => $full_dept_name,
+                ':designation'   => $designation,
                 ':role_category' => $role_category,
-                ':is_hod' => $is_hod,
-                ':is_rnd' => $is_rnd,
+                ':is_hod'        => $is_hod,
+                ':is_rnd'        => $is_rnd,
                 ':qualification' => $qualification,
-                ':jntuh_reg_id' => $jntuh_reg_id,
-                ':experience' => $experience,
-                ':email' => $email,
-                ':phone' => $phone,
+                ':jntuh_reg_id'  => $jntuh_reg_id,
+                ':experience'    => $experience,
+                ':email'         => $email,
+                ':phone'         => $phone,
                 ':profile_image' => $final_img,
-                ':bio' => $bio,
+                ':bio'           => $bio,
                 ':display_order' => (int) $display_order,
-                ':is_active' => (int) $is_active
+                ':is_active'     => (int) $is_active
             ]);
-        } catch (PDOException $e) {
+
+            if (function_exists('record_content_update')) {
+                record_content_update('faculty');
+                record_content_update('departments');
+            }
+            if (function_exists('log_activity')) {
+                log_activity('Updated', 'Faculty', $full_name, "Updated faculty profile in {$dept_code} ({$role_category})", $id);
+            }
+            return ['success' => true, 'message' => "Faculty member '{$full_name}' updated successfully."];
+        } catch (Throwable $e) {
             error_log("Failed to update staff in MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    $all[$found_key]['full_name'] = $full_name;
-    $all[$found_key]['dept_code'] = $dept_code;
-    $all[$found_key]['department'] = $full_dept_name;
-    $all[$found_key]['designation'] = $designation;
-    $all[$found_key]['role_category'] = $role_category;
-    $all[$found_key]['is_hod'] = $is_hod;
-    $all[$found_key]['is_rnd'] = $is_rnd;
-    $all[$found_key]['qualification'] = $qualification;
-    $all[$found_key]['jntuh_reg_id'] = $jntuh_reg_id;
-    $all[$found_key]['experience'] = $experience;
-    $all[$found_key]['email'] = $email;
-    $all[$found_key]['phone'] = $phone;
-    $all[$found_key]['profile_image'] = $final_img;
-    $all[$found_key]['bio'] = $bio;
-    $all[$found_key]['display_order'] = (int) $display_order;
-    $all[$found_key]['is_active'] = (int) $is_active;
-    $all[$found_key]['updated_at'] = date('Y-m-d H:i:s');
-    save_staff_to_store($all);
-
-    log_activity('Updated', 'Faculty', $full_name, "Updated faculty profile in {$dept_code} ({$role_category})", $id);
-    return ['success' => true, 'message' => "Faculty member '{$full_name}' updated successfully."];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**
- * Delete a faculty member with activity log
+ * Delete a faculty member directly in MySQL
  */
 function delete_faculty_member($id)
 {
     global $pdo;
     $id = (int) $id;
+    if ($id <= 0) {
+        return ['success' => false, 'message' => 'Invalid faculty ID.'];
+    }
+
     $f = get_faculty_by_id($id);
     if (!$f) {
         return ['success' => false, 'message' => 'Faculty member not found.'];
@@ -1260,24 +996,26 @@ function delete_faculty_member($id)
         try {
             $stmt = $pdo->prepare("DELETE FROM staff WHERE id = :id");
             $stmt->execute([':id' => $id]);
-        } catch (PDOException $e) {
+
+            if (function_exists('record_content_update')) {
+                record_content_update('faculty');
+                record_content_update('departments');
+            }
+            if (function_exists('log_activity')) {
+                log_activity('Deleted', 'Faculty', $f['full_name'], "Deleted faculty member from department {$f['dept_code']}", $id);
+            }
+            return ['success' => true, 'message' => "Faculty member '{$f['full_name']}' deleted successfully."];
+        } catch (Throwable $e) {
             error_log("Failed to delete staff from MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    $all = load_staff_from_store();
-    $filtered = array_filter($all, function ($item) use ($id) {
-        return (int) ($item['id'] ?? 0) !== $id;
-    });
-    save_staff_to_store($filtered);
-
-    log_activity('Deleted', 'Faculty', $f['full_name'], "Deleted faculty member from department {$f['dept_code']}", $id);
-    return ['success' => true, 'message' => "Faculty member '{$f['full_name']}' deleted successfully."];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**
- * Dedicated operation: Set a specific faculty member as active HOD of their department
- * Demotes the previous HOD and sets the new HOD
+ * Appoint a specific faculty member as active HOD of their department in MySQL
  */
 function assign_department_hod($dept_code, $faculty_id)
 {
@@ -1290,157 +1028,182 @@ function assign_department_hod($dept_code, $faculty_id)
         return ['success' => false, 'message' => 'Faculty member not found.'];
     }
 
-    // Demote any existing HOD for this department
     demote_existing_department_hod($dept_code, $faculty_id);
 
-    // Update target member as HOD
     if ($pdo instanceof PDO) {
         try {
-            $stmt = $pdo->prepare("UPDATE staff SET dept_code = :code, is_hod = 1, role_category = 'HOD' WHERE id = :id");
+            $stmt = $pdo->prepare("UPDATE staff SET dept_code = :code, is_hod = 1, role_category = 'HOD', updated_at = NOW() WHERE id = :id");
             $stmt->execute([':code' => $dept_code, ':id' => $faculty_id]);
-        } catch (PDOException $e) {
+
+            if (function_exists('record_content_update')) {
+                record_content_update('faculty');
+                record_content_update('departments');
+            }
+            if (function_exists('log_activity')) {
+                log_activity('Updated', 'Faculty', $target['full_name'], "Assigned as Head of Department for {$dept_code}", $faculty_id);
+            }
+            return ['success' => true, 'message' => "Successfully appointed '{$target['full_name']}' as active HOD for department {$dept_code}."];
+        } catch (Throwable $e) {
             error_log("Failed to assign HOD in MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    $staff = load_staff_from_store();
-    foreach ($staff as &$s) {
-        if ((int) ($s['id'] ?? 0) === $faculty_id) {
-            $s['dept_code'] = $dept_code;
-            $s['is_hod'] = 1;
-            $s['role_category'] = 'HOD';
-            break;
-        }
-    }
-    unset($s);
-    save_staff_to_store($staff);
-
-    log_activity('Updated', 'Faculty', $target['full_name'], "Assigned as Head of Department for {$dept_code}", $faculty_id);
-    return ['success' => true, 'message' => "Successfully appointed '{$target['full_name']}' as active HOD for department {$dept_code}."];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 // ==============================================================
-// 4. DEPARTMENT-WISE EXCEL EXPORT (SPREADSHEETML WITH FORMULA ESCAPING)
+// 3. DEPARTMENT-WISE EXCEL EXPORT (SPREADSHEETML WITH FORMULA ESCAPING)
 // ==============================================================
 
 /**
  * Clean cell value to prevent CSV/Spreadsheet formula injection
- *
- * @param mixed $val
- * @return string
  */
 function sanitize_excel_cell($val): string
 {
     if ($val === null) {
         return '';
     }
-    $s = (string) $val;
-    // Prefix single quote if starts with =, +, -, @ to neutralize formulas
-    if (isset($s[0]) && in_array($s[0], ['=', '+', '-', '@'], true)) {
-        $s = "'" . $s;
+    $str = (string) $val;
+    $trimmed = ltrim($str);
+    if ($trimmed !== '' && in_array($trimmed[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+        $str = "'" . $str;
     }
-    return htmlspecialchars($s, ENT_XML1, 'UTF-8');
+    return htmlspecialchars($str, ENT_QUOTES | ENT_XML1, 'UTF-8');
 }
 
 /**
- * Generate formatted Excel XML (SpreadsheetML) spreadsheet string
- * Includes formula injection sanitization on all output cells
- *
- * @param array $filters Query filters matching active UI state
- * @return string
+ * Generate native Excel XML 2003 (SpreadsheetML) representation of the faculty directory
  */
 function generate_faculty_excel_xml($filters = []): string
 {
-    $items = get_faculty_members($filters);
+    $faculty = get_faculty_members($filters);
+    $dept = $filters['department'] ?? ($filters['dept_code'] ?? 'All');
+    $dept_label = strtoupper($dept) === 'ALL' ? 'All Departments' : strtoupper($dept);
+    $gen_date = date('d-M-Y H:i:s');
 
     ob_start();
     echo '<?xml version="1.0" encoding="UTF-8"?>' . "\n";
     echo '<?mso-application progid="Excel.Sheet"?>' . "\n";
+    echo '<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+    echo '          xmlns:o="urn:schemas-microsoft-com:office:office"' . "\n";
+    echo '          xmlns:x="urn:schemas-microsoft-com:office:excel"' . "\n";
+    echo '          xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"' . "\n";
+    echo '          xmlns:html="http://www.w3.org/TR/REC-html40">' . "\n";
+    echo '<Styles>' . "\n";
+    echo '<Style ss:ID="Header">' . "\n";
+    echo '<Font ss:Bold="1" ss:Color="#FFFFFF" ss:FontName="Segoe UI" ss:Size="11"/>' . "\n";
+    echo '<Interior ss:Color="#0F3854" ss:Pattern="Solid"/>' . "\n";
+    echo '<Alignment ss:Horizontal="Center" ss:Vertical="Center" ss:WrapText="1"/>' . "\n";
+    echo '<Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#000000"/></Borders>' . "\n";
+    echo '</Style>' . "\n";
+    echo '<Style ss:ID="Title">' . "\n";
+    echo '<Font ss:Bold="1" ss:Color="#0F3854" ss:FontName="Segoe UI" ss:Size="14"/>' . "\n";
+    echo '<Alignment ss:Horizontal="Left" ss:Vertical="Center"/>' . "\n";
+    echo '</Style>' . "\n";
+    echo '<Style ss:ID="RowEven">' . "\n";
+    echo '<Font ss:FontName="Segoe UI" ss:Size="10"/>' . "\n";
+    echo '<Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/>' . "\n";
+    echo '<Alignment ss:Vertical="Center"/>' . "\n";
+    echo '</Style>' . "\n";
+    echo '<Style ss:ID="RowOdd">' . "\n";
+    echo '<Font ss:FontName="Segoe UI" ss:Size="10"/>' . "\n";
+    echo '<Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/>' . "\n";
+    echo '<Alignment ss:Vertical="Center"/>' . "\n";
+    echo '</Style>' . "\n";
+    echo '<Style ss:ID="BadgeHOD">' . "\n";
+    echo '<Font ss:Bold="1" ss:Color="#854D0E" ss:FontName="Segoe UI" ss:Size="10"/>' . "\n";
+    echo '<Interior ss:Color="#FEF08A" ss:Pattern="Solid"/>' . "\n";
+    echo '<Alignment ss:Horizontal="Center" ss:Vertical="Center"/>' . "\n";
+    echo '</Style>' . "\n";
+    echo '</Styles>' . "\n";
     ?>
-    <Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office"
-        xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
-        xmlns:html="http://www.w3.org/TR/REC-html40">
-        <Styles>
-            <Style ss:ID="Header">
-                <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#FFFFFF" ss:Bold="1" /><Interior ss:Color="#00B894" ss:Pattern="Solid" /><Alignment ss:Horizontal="Center" ss:Vertical="Center" /><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1" /><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1" /><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1" /><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#CBD5E1" /></Borders>
-            </Style>
-            <Style ss:ID="Data">
-                <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#1E293B" /><Alignment ss:Vertical="Center" /><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0" /><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0" /><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0" /><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E2E8F0" /></Borders>
-            </Style>
-            <Style ss:ID="DataHOD">
-                <Font ss:FontName="Calibri" ss:Size="10" ss:Color="#0F766E" ss:Bold="1" /><Interior ss:Color="#F0FDFA" ss:Pattern="Solid" /><Alignment ss:Vertical="Center" /><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#99F6E4" /><Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#99F6E4" /><Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#99F6E4" /><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#99F6E4" /></Borders>
-            </Style>
-        </Styles>
         <Worksheet ss:Name="Faculty Directory">
-            <Table>
-                <Row ss:StyleID="Header" ss:Height="24">
+
+
+            <Table ss:DefaultRowHeight="20">
+                <Column ss:Width="40"/>
+                <Column ss:Width="170"/>
+                <Column ss:Width="60"/>
+                <Column ss:Width="160"/>
+                <Column ss:Width="160"/>
+                <Column ss:Width="130"/>
+                <Column ss:Width="110"/>
+                <Column ss:Width="80"/>
+                <Column ss:Width="180"/>
+                <Column ss:Width="100"/>
+                <Column ss:Width="60"/>
+
+                <Row ss:Height="26">
+                    <Cell ss:MergeAcross="10" ss:StyleID="Title">
+                        <Data ss:Type="String">Trinity College of Engineering &amp; Technology (TCEK) — Faculty Directory (<?php echo sanitize_excel_cell($dept_label); ?>)</Data>
+                    </Cell>
+                </Row>
+                <Row ss:Height="18">
+                    <Cell ss:MergeAcross="10">
+                        <Data ss:Type="String">Generated on <?php echo $gen_date; ?> • Total Records: <?php echo count($faculty); ?></Data>
+                    </Cell>
+                </Row>
+                <Row></Row>
+
+                <Row ss:Height="24" ss:StyleID="Header">
                     <Cell><Data ss:Type="String">S.No</Data></Cell>
-                    <Cell><Data ss:Type="String">Department Code</Data></Cell>
+                    <Cell><Data ss:Type="String">Full Name</Data></Cell>
+                    <Cell><Data ss:Type="String">Dept</Data></Cell>
                     <Cell><Data ss:Type="String">Department Name</Data></Cell>
-                    <Cell><Data ss:Type="String">Faculty Full Name</Data></Cell>
                     <Cell><Data ss:Type="String">Designation</Data></Cell>
                     <Cell><Data ss:Type="String">Role Category</Data></Cell>
-                    <Cell><Data ss:Type="String">HOD Status</Data></Cell>
-                    <Cell><Data ss:Type="String">R&amp;D Affiliation</Data></Cell>
                     <Cell><Data ss:Type="String">Qualification</Data></Cell>
-                    <Cell><Data ss:Type="String">JNTUH Reg. ID</Data></Cell>
                     <Cell><Data ss:Type="String">Experience</Data></Cell>
-                    <Cell><Data ss:Type="String">Email</Data></Cell>
-                    <Cell><Data ss:Type="String">Phone</Data></Cell>
+                    <Cell><Data ss:Type="String">Email Address</Data></Cell>
+                    <Cell><Data ss:Type="String">Phone Number</Data></Cell>
                     <Cell><Data ss:Type="String">Status</Data></Cell>
                 </Row>
-                <?php
+
+                <?php 
                 $sno = 1;
-                foreach ($items as $f):
-                    $is_hod_str = !empty($f['is_hod']) ? 'Yes (Active HOD)' : 'No';
-                    $is_rnd_str = (!empty($f['is_rnd']) || stripos($f['role_category'] ?? '', 'R&D') !== false) ? 'Yes' : 'No';
-                    $status_str = !empty($f['is_active']) ? 'Active' : 'Inactive';
-                    $style = !empty($f['is_hod']) ? 'DataHOD' : 'Data';
-                    ?>
-                    <Row ss:StyleID="<?php echo $style; ?>" ss:Height="20">
-                        <Cell><Data ss:Type="Number"><?php echo $sno++; ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['dept_code'] ?? ''); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['department_name'] ?? ($f['department'] ?? ($f['dept_code'] ?? ''))); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['full_name'] ?? ''); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['designation'] ?? ''); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['role_category'] ?? ''); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($is_hod_str); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($is_rnd_str); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['qualification'] ?? ''); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['jntuh_reg_id'] ?? ''); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['experience'] ?? ''); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['email'] ?? ''); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['phone'] ?? ''); ?></Data></Cell>
-                        <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($status_str); ?></Data></Cell>
-                    </Row>
+                foreach ($faculty as $f): 
+                    $rowStyle = !empty($f['is_hod']) ? 'BadgeHOD' : (($sno % 2 === 0) ? 'RowOdd' : 'RowEven');
+                ?>
+                <Row ss:Height="20" ss:StyleID="<?php echo $rowStyle; ?>">
+                    <Cell><Data ss:Type="Number"><?php echo $sno++; ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['full_name'] ?? ''); ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['dept_code'] ?? ''); ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['department_name'] ?? ($f['department'] ?? '')); ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['designation'] ?? ''); ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['role_category'] ?? ''); ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['qualification'] ?? 'N/A'); ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['experience'] ?? 'N/A'); ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['email'] ?? 'N/A'); ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo sanitize_excel_cell($f['phone'] ?? 'N/A'); ?></Data></Cell>
+                    <Cell><Data ss:Type="String"><?php echo !empty($f['is_active']) ? 'Active' : 'Inactive'; ?></Data></Cell>
+                </Row>
                 <?php endforeach; ?>
             </Table>
         </Worksheet>
     </Workbook>
     <?php
-    return (string) ob_get_clean();
+    return ob_get_clean();
 }
 
 /**
- * Stream clean, formatted Excel XML (.xls) spreadsheet to browser
- *
- * @param array $filters Query filters matching active UI state
+ * HTTP Stream: Export and download Excel spreadsheet for faculty directory
  */
 function export_faculty_excel($filters = []): void
 {
-    while (ob_get_level()) {
-        ob_end_clean();
+    $dept = $filters['department'] ?? ($filters['dept_code'] ?? 'all');
+    $dept_code = strtoupper(trim((string)$dept));
+    $filename = 'TCEK_Faculty_Directory_' . ($dept_code === 'ALL' ? 'All_Departments' : $dept_code) . '_' . date('Ymd_His') . '.xls';
+
+    $xml = generate_faculty_excel_xml($filters);
+
+    if (!headers_sent()) {
+        header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
+        header('Content-Disposition: attachment; filename="' . $filename . '"');
+        header('Cache-Control: max-age=0, no-cache, no-store, must-revalidate');
+        header('Pragma: no-cache');
+        header('Expires: 0');
     }
-
-    $dept_filter = trim((string) ($filters['department'] ?? ($filters['dept_code'] ?? 'all')));
-    $dept_label = ($dept_filter !== '' && strtolower($dept_filter) !== 'all') ? strtoupper($dept_filter) : 'All_Departments';
-    $filename = "TCEK_Faculty_{$dept_label}_" . date('Ymd_His') . ".xls";
-
-    header('Content-Type: application/vnd.ms-excel; charset=UTF-8');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    header('Cache-Control: max-age=0, no-cache, must-revalidate, proxy-revalidate');
-    header('Pragma: public');
-
-    echo generate_faculty_excel_xml($filters);
+    echo $xml;
     exit;
 }

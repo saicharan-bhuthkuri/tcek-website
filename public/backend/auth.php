@@ -75,19 +75,16 @@ function is_protected_account($user): bool {
 
     if (is_numeric($user)) {
         $id = (int)$user;
-        $usersFile = __DIR__ . '/config/users_data.json';
-        if (file_exists($usersFile)) {
-            $json = @file_get_contents($usersFile);
-            if ($json) {
-                $list = json_decode($json, true);
-                if (is_array($list)) {
-                    foreach ($list as $u) {
-                        if ((int)($u['id'] ?? 0) === $id) {
-                            return is_protected_account($u);
-                        }
-                    }
+        global $pdo;
+        if ($pdo instanceof PDO) {
+            try {
+                $stmt = $pdo->prepare("SELECT username, email FROM users WHERE id = :id LIMIT 1");
+                $stmt->execute([':id' => $id]);
+                $u = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($u) {
+                    return is_protected_account($u);
                 }
-            }
+            } catch (Throwable $e) {}
         }
         return false;
     }
@@ -245,12 +242,6 @@ function log_activity($action, $module, $record_name, $description = '', $record
         }
     }
 
-    // Mirror to JSON store if available
-    @include_once __DIR__ . '/crud.php';
-    if (function_exists('add_json_activity_log')) {
-        add_json_activity_log($action, $module, $record_name, $description, $record_id, $admin_name);
-    }
-
     return true;
 }
 
@@ -294,86 +285,10 @@ function verify_admin_login($username, $password): array {
     }
 
     if (!($pdo instanceof PDO)) {
-        // Fallback store authentication for development / offline mode
-        $usersFile = __DIR__ . '/config/users_data.json';
-        $localUsers = [];
-        if (file_exists($usersFile)) {
-            $json = @file_get_contents($usersFile);
-            if ($json) {
-                $localUsers = json_decode($json, true) ?: [];
-            }
-        }
-
-        $matchedUser = null;
-        foreach ($localUsers as $u) {
-            if (
-                strcasecmp($u['username'] ?? '', $username) === 0 ||
-                strcasecmp($u['email'] ?? '', $username) === 0
-            ) {
-                $matchedUser = $u;
-                break;
-            }
-        }
-
-        $isDefaultDev = (
-            strcasecmp($username, 'Charan') === 0 ||
-            strcasecmp($username, 'tcek') === 0 ||
-            strcasecmp($username, 'saivortex.dev@gmail.com') === 0 ||
-            strcasecmp($username, 'officetcek@gmail.com') === 0
-        ) && ($password === 'tcek@developer');
-
-        $isValid = false;
-        if ($matchedUser && !empty($matchedUser['password'])) {
-            if (password_verify($password, $matchedUser['password']) || $password === 'tcek@developer') {
-                $isValid = true;
-            }
-        } elseif ($isDefaultDev) {
-            $isValid = true;
-            $isTcek = (strcasecmp($username, 'tcek') === 0 || strcasecmp($username, 'officetcek@gmail.com') === 0);
-            $matchedUser = [
-                'id' => $isTcek ? 2 : 1,
-                'username' => $isTcek ? 'tcek' : 'Charan',
-                'full_name' => $isTcek ? 'TCEK Administrator' : 'Charan',
-                'email' => $isTcek ? 'officetcek@gmail.com' : 'saivortex.dev@gmail.com',
-                'role' => $isTcek ? 'admin' : 'developer',
-                'is_protected' => $isTcek ? 0 : 1
-            ];
-        }
-
-        if ($isValid && $matchedUser) {
-            RateLimiter::resetAuthLimits($username);
-            if (!headers_sent()) {
-                @session_regenerate_id(true);
-            }
-
-            $userRole = $matchedUser['role'] ?? 'admin';
-            if (is_protected_account($matchedUser)) {
-                $userRole = 'developer';
-            }
-
-            $_SESSION['tcek_admin_logged_in'] = true;
-            $_SESSION['tcek_admin_id']        = (int)($matchedUser['id'] ?? 1);
-            $_SESSION['tcek_admin_username']  = $matchedUser['username'] ?? $username;
-            $_SESSION['tcek_admin_name']      = $matchedUser['full_name'] ?? ($matchedUser['username'] ?? $username);
-            $_SESSION['tcek_admin_email']     = $matchedUser['email'] ?? 'saivortex.dev@gmail.com';
-            $_SESSION['tcek_admin_role']      = $userRole;
-
-            log_activity('Login', 'Users', $matchedUser['username'] ?? $username, 'User authenticated into admin portal (Local Store)', (int)$_SESSION['tcek_admin_id'], $_SESSION['tcek_admin_name']);
-
-            return ['success' => true, 'message' => 'Login successful.', 'retry_after' => 0];
-        }
-
-        // Record failed attempt with rate limiting
-        $failResult = RateLimiter::recordAuthFailure($username);
-        $message = 'Invalid username or password.';
-        if ($failResult['blocked']) {
-            $message .= " Too many failed attempts. Please wait {$failResult['retry_after']} seconds.";
-        }
-        log_activity('Failed Login', 'Users', $username, 'Failed login attempt recorded');
         return [
             'success'     => false,
-            'message'     => $message,
-            'retry_after' => $failResult['retry_after']
+            'message'     => 'Database connection unavailable. Please check MySQL server status.',
+            'retry_after' => 0
         ];
     }
 

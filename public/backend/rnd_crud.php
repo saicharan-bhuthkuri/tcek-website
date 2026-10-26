@@ -6,24 +6,20 @@
  * - Supports historical periods (Academic Year + Quarter)
  * - Validates duplicate entries for same department & period
  * - Automatically sorts cards by ranking position
- * - Atomic persistence to JSON store & MySQL database synchronization
+ * - 100% MySQL Database Powered Storage & Retrieval
  */
 
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/sync.php';
 
-if (!function_exists('get_rnd_store_file')) {
-    function get_rnd_store_file(): string {
-        return __DIR__ . '/config/rnd_rankings_data.json';
-    }
-}
-
 /**
- * Ensure MySQL table exists if database is connected
+ * Ensure MySQL tables exist if database is connected
  */
-function ensure_rnd_table_exists(): void {
-    global $pdo;
+function ensure_rnd_table_exists(?PDO $pdo = null): void {
+    if (!$pdo) {
+        $pdo = getDB();
+    }
     if ($pdo instanceof PDO) {
         try {
             $pdo->exec("
@@ -49,75 +45,32 @@ function ensure_rnd_table_exists(): void {
                     INDEX `idx_dept` (`department`),
                     INDEX `idx_status` (`status`)
                 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+                CREATE TABLE IF NOT EXISTS `rnd_settings` (
+                    `setting_key` VARCHAR(100) NOT NULL PRIMARY KEY,
+                    `setting_value` TEXT DEFAULT NULL,
+                    `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
             ");
-        } catch (Throwable $e) {
-            // Silently fall back to JSON store
-        }
+        } catch (Throwable $e) {}
     }
 }
 
 /**
- * Load all R&D rankings data from store
+ * Helper to parse achievements / tags (handles JSON or array)
  */
-function load_rnd_rankings_store(): array {
-    $file = get_rnd_store_file();
-    if (file_exists($file)) {
-        $json = @file_get_contents($file);
-        if ($json) {
-            $data = json_decode($json, true);
-            if (is_array($data) && isset($data['rankings']) && is_array($data['rankings'])) {
-                return $data;
-            }
-        }
+function parse_rnd_json_field($val): array {
+    if (empty($val)) return [];
+    if (is_array($val)) return $val;
+    $decoded = json_decode((string)$val, true);
+    if (is_array($decoded)) return $decoded;
+    $lines = explode("\n", (string)$val);
+    $arr = [];
+    foreach ($lines as $l) {
+        $l = trim($l, " \t\n\r\0\x0B•-*");
+        if ($l !== '') $arr[] = $l;
     }
-
-    return [
-        'settings' => [
-            'latest_academic_year' => '2025-26',
-            'latest_quarter' => 'Q4',
-            'auto_publish' => true,
-            'last_updated' => date('Y-m-d')
-        ],
-        'rankings' => []
-    ];
-}
-
-/**
- * Save R&D rankings data atomically to JSON store
- */
-function save_rnd_rankings_store(array $data): bool {
-    $file = get_rnd_store_file();
-    $dir = dirname($file);
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0755, true);
-    }
-
-    $data['settings']['last_updated'] = date('Y-m-d H:i:s');
-    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    if ($json === false) {
-        return false;
-    }
-
-    $tmp = $file . '.tmp.' . bin2hex(random_bytes(6));
-    $saved = false;
-    if (@file_put_contents($tmp, $json, LOCK_EX) !== false) {
-        if (@rename($tmp, $file)) {
-            @chmod($file, 0644);
-            $saved = true;
-        } else {
-            @unlink($tmp);
-        }
-    }
-
-    if (!$saved) {
-        $saved = (@file_put_contents($file, $json, LOCK_EX) !== false);
-    }
-
-    if ($saved && function_exists('record_content_update')) {
-        record_content_update('rnd');
-    }
-
-    return $saved;
+    return $arr;
 }
 
 /**
@@ -128,58 +81,139 @@ function compare_rnd_periods(string $yearA, string $quarterA, string $yearB, str
     if ($yearA !== $yearB) {
         return strcmp($yearB, $yearA); // Descending year
     }
-    // Extract quarter number
     $qNumA = (int) filter_var($quarterA, FILTER_SANITIZE_NUMBER_INT);
     $qNumB = (int) filter_var($quarterB, FILTER_SANITIZE_NUMBER_INT);
     return $qNumB <=> $qNumA; // Descending quarter
 }
 
 /**
+ * Load all R&D rankings data and settings directly from MySQL
+ */
+function load_rnd_rankings_store(): array {
+    global $pdo;
+
+    $settings = [
+        'latest_academic_year' => '2025-26',
+        'latest_quarter'       => 'Q4',
+        'auto_publish'         => true,
+        'last_updated'         => date('Y-m-d')
+    ];
+    $rankings = [];
+
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_rnd_table_exists($pdo);
+
+            // Load settings
+            $sStmt = $pdo->query("SELECT setting_key, setting_value FROM rnd_settings");
+            if ($sStmt) {
+                while ($row = $sStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $k = $row['setting_key'];
+                    $v = $row['setting_value'];
+                    if ($k === 'auto_publish') {
+                        $settings[$k] = (bool)$v;
+                    } else {
+                        $settings[$k] = $v;
+                    }
+                }
+            }
+
+            // Load rankings
+            $rStmt = $pdo->query("SELECT * FROM rnd_rankings ORDER BY rank ASC, id ASC");
+            if ($rStmt) {
+                while ($row = $rStmt->fetch(PDO::FETCH_ASSOC)) {
+                    $row['id']            = (int)$row['id'];
+                    $row['rank']          = (int)$row['rank'];
+                    $row['score']         = isset($row['score']) ? (float)$row['score'] : null;
+                    $row['achievements']  = parse_rnd_json_field($row['achievements']);
+                    $row['criteria_tags'] = parse_rnd_json_field($row['criteria_tags']);
+                    $rankings[] = $row;
+                }
+            }
+
+            return ['settings' => $settings, 'rankings' => $rankings];
+        } catch (Throwable $e) {
+            error_log("Failed to load R&D rankings from MySQL: " . $e->getMessage());
+        }
+    }
+
+    return ['settings' => $settings, 'rankings' => $rankings];
+}
+
+/**
+ * Update R&D system settings in MySQL
+ */
+function update_rnd_settings(array $newSettings): bool {
+    global $pdo;
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_rnd_table_exists($pdo);
+            $stmt = $pdo->prepare("INSERT INTO rnd_settings (setting_key, setting_value) VALUES (:k, :v) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = NOW()");
+            foreach ($newSettings as $k => $v) {
+                $stmt->execute([':k' => $k, ':v' => is_bool($v) ? ($v ? '1' : '0') : (string)$v]);
+            }
+            if (function_exists('record_content_update')) {
+                record_content_update('rnd');
+            }
+            return true;
+        } catch (Throwable $e) {
+            error_log("Failed to update R&D settings in MySQL: " . $e->getMessage());
+        }
+    }
+    return false;
+}
+
+/**
  * Get list of all distinct periods (academic year + quarter) sorted latest first
  */
 function get_distinct_rnd_periods(bool $onlyPublished = false): array {
-    $store = load_rnd_rankings_store();
-    $rankings = $store['rankings'] ?? [];
+    global $pdo;
 
-    $periodsMap = [];
-    foreach ($rankings as $r) {
-        if ($onlyPublished && ($r['status'] ?? 'published') !== 'published') {
-            continue;
-        }
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_rnd_table_exists($pdo);
+            $sql = "
+                SELECT academic_year, quarter, quarter_label, COUNT(*) AS `count`, MAX(publication_date) AS latest_date
+                FROM rnd_rankings
+            ";
+            if ($onlyPublished) {
+                $sql .= " WHERE status = 'published' ";
+            }
+            $sql .= " GROUP BY academic_year, quarter, quarter_label ";
 
-        $year = trim($r['academic_year'] ?? '');
-        $quarter = strtoupper(trim($r['quarter'] ?? ''));
-        if ($year === '' || $quarter === '') {
-            continue;
-        }
+            $stmt = $pdo->query($sql);
+            $periods = [];
+            if ($stmt) {
+                while ($r = $stmt->fetch(PDO::FETCH_ASSOC)) {
+                    $year = trim($r['academic_year'] ?? '');
+                    $quarter = strtoupper(trim($r['quarter'] ?? ''));
+                    if ($year === '' || $quarter === '') continue;
 
-        $key = $year . '|' . $quarter;
-        if (!isset($periodsMap[$key])) {
-            $periodsMap[$key] = [
-                'academic_year' => $year,
-                'quarter'       => $quarter,
-                'quarter_label' => trim($r['quarter_label'] ?? ''),
-                'count'         => 0,
-                'latest_date'   => $r['publication_date'] ?? ''
-            ];
-        }
-        $periodsMap[$key]['count']++;
-        if (!empty($r['publication_date']) && strcmp($r['publication_date'], $periodsMap[$key]['latest_date']) > 0) {
-            $periodsMap[$key]['latest_date'] = $r['publication_date'];
+                    $periods[] = [
+                        'academic_year' => $year,
+                        'quarter'       => $quarter,
+                        'quarter_label' => trim($r['quarter_label'] ?? ''),
+                        'count'         => (int)$r['count'],
+                        'latest_date'   => $r['latest_date'] ?? ''
+                    ];
+                }
+            }
+
+            usort($periods, function($a, $b) {
+                return compare_rnd_periods($a['academic_year'], $a['quarter'], $b['academic_year'], $b['quarter']);
+            });
+
+            if (!empty($periods)) {
+                $periods[0]['is_latest'] = true;
+            }
+
+            return $periods;
+        } catch (Throwable $e) {
+            error_log("Failed to query distinct R&D periods: " . $e->getMessage());
         }
     }
 
-    $periods = array_values($periodsMap);
-    usort($periods, function($a, $b) {
-        return compare_rnd_periods($a['academic_year'], $a['quarter'], $b['academic_year'], $b['quarter']);
-    });
-
-    // Mark the first one as latest
-    if (!empty($periods)) {
-        $periods[0]['is_latest'] = true;
-    }
-
-    return $periods;
+    return [];
 }
 
 /**
@@ -187,44 +221,58 @@ function get_distinct_rnd_periods(bool $onlyPublished = false): array {
  * Automatically sorted by rank ASC
  */
 function get_rnd_rankings_by_period(?string $academic_year = null, ?string $quarter = null, string $status = 'published'): array {
-    $store = load_rnd_rankings_store();
-    $rankings = $store['rankings'] ?? [];
+    global $pdo;
 
-    // Determine period to fetch
     if (empty($academic_year) || empty($quarter)) {
         $periods = get_distinct_rnd_periods($status === 'published');
         if (!empty($periods)) {
             $academic_year = $periods[0]['academic_year'];
             $quarter = $periods[0]['quarter'];
         } else {
-            $academic_year = $store['settings']['latest_academic_year'] ?? '2025-26';
-            $quarter = $store['settings']['latest_quarter'] ?? 'Q4';
+            $academic_year = '2025-26';
+            $quarter = 'Q4';
         }
     }
 
     $filtered = [];
-    foreach ($rankings as $r) {
-        if (strcasecmp($r['academic_year'] ?? '', $academic_year) !== 0) {
-            continue;
-        }
-        if (strcasecmp($r['quarter'] ?? '', $quarter) !== 0) {
-            continue;
-        }
-        if ($status !== 'all' && ($r['status'] ?? 'published') !== $status) {
-            continue;
-        }
-        $filtered[] = $r;
-    }
+    $quarter_label = '';
 
-    // Sort by rank ASC
-    usort($filtered, function($a, $b) {
-        return ((int)($a['rank'] ?? 99)) <=> ((int)($b['rank'] ?? 99));
-    });
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_rnd_table_exists($pdo);
+            $sql = "SELECT * FROM rnd_rankings WHERE academic_year = :y AND quarter = :q";
+            $params = [':y' => $academic_year, ':q' => $quarter];
+
+            if ($status !== 'all') {
+                $sql .= " AND status = :st";
+                $params[':st'] = $status;
+            }
+            $sql .= " ORDER BY rank ASC, id ASC";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($rows as $r) {
+                $r['id']            = (int)$r['id'];
+                $r['rank']          = (int)$r['rank'];
+                $r['score']         = isset($r['score']) ? (float)$r['score'] : null;
+                $r['achievements']  = parse_rnd_json_field($r['achievements']);
+                $r['criteria_tags'] = parse_rnd_json_field($r['criteria_tags']);
+                if (empty($quarter_label) && !empty($r['quarter_label'])) {
+                    $quarter_label = $r['quarter_label'];
+                }
+                $filtered[] = $r;
+            }
+        } catch (Throwable $e) {
+            error_log("Failed to query R&D rankings by period: " . $e->getMessage());
+        }
+    }
 
     return [
         'academic_year' => $academic_year,
         'quarter'       => $quarter,
-        'quarter_label' => !empty($filtered) ? ($filtered[0]['quarter_label'] ?? '') : '',
+        'quarter_label' => $quarter_label,
         'rankings'      => $filtered
     ];
 }
@@ -233,32 +281,40 @@ function get_rnd_rankings_by_period(?string $academic_year = null, ?string $quar
  * Check if a department already has a ranking in the given year & quarter
  */
 function check_rnd_duplicate(string $department, string $academic_year, string $quarter, ?int $excludeId = null): bool {
-    $store = load_rnd_rankings_store();
-    $rankings = $store['rankings'] ?? [];
+    global $pdo;
 
-    $deptClean = strtolower(trim($department));
-    $yearClean = strtolower(trim($academic_year));
-    $quarterClean = strtolower(trim($quarter));
+    $deptClean = trim($department);
+    $yearClean = trim($academic_year);
+    $quarterClean = trim($quarter);
 
-    foreach ($rankings as $r) {
-        if ($excludeId !== null && (int)($r['id'] ?? 0) === $excludeId) {
-            continue;
-        }
-        if (
-            strtolower(trim($r['department'] ?? '')) === $deptClean &&
-            strtolower(trim($r['academic_year'] ?? '')) === $yearClean &&
-            strtolower(trim($r['quarter'] ?? '')) === $quarterClean
-        ) {
-            return true;
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_rnd_table_exists($pdo);
+            $sql = "SELECT COUNT(*) FROM rnd_rankings WHERE LOWER(department) = LOWER(:d) AND LOWER(academic_year) = LOWER(:y) AND LOWER(quarter) = LOWER(:q)";
+            $params = [':d' => $deptClean, ':y' => $yearClean, ':q' => $quarterClean];
+
+            if ($excludeId !== null && $excludeId > 0) {
+                $sql .= " AND id != :exId";
+                $params[':exId'] = $excludeId;
+            }
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            return ((int)$stmt->fetchColumn()) > 0;
+        } catch (Throwable $e) {
+            error_log("Failed to check duplicate R&D ranking: " . $e->getMessage());
         }
     }
+
     return false;
 }
 
 /**
- * Add a new ranking result
+ * Add a new ranking result directly to MySQL
  */
 function add_rnd_ranking(array $data): array {
+    global $pdo;
+
     $department     = trim((string)($data['department'] ?? ''));
     $departmentName = trim((string)($data['department_name'] ?? ''));
     $academicYear   = trim((string)($data['academic_year'] ?? ''));
@@ -288,7 +344,7 @@ function add_rnd_ranking(array $data): array {
         ];
     }
 
-    // Achievements parsing (array or newline-separated string)
+    // Achievements parsing
     $achievements = [];
     if (isset($data['achievements'])) {
         if (is_array($data['achievements'])) {
@@ -297,19 +353,22 @@ function add_rnd_ranking(array $data): array {
             $lines = explode("\n", (string)$data['achievements']);
             foreach ($lines as $line) {
                 $line = trim($line, " \t\n\r\0\x0B•-*");
-                if ($line !== '') {
-                    $achievements[] = $line;
-                }
+                if ($line !== '') $achievements[] = $line;
             }
         }
     }
-
-    // Default achievements if blank
     if (empty($achievements)) {
         $achievements = ['Faculty Research Papers', 'Student Innovation Leads', 'NPTEL Enrolment Benchmark'];
     }
 
-    // Default award badge / category based on rank
+    $criteria_tags = [
+        'Research & Innovation',
+        'Patents & IPR',
+        'Scopus & IEEE Publications',
+        'NPTEL Honors',
+        'IIC Initiatives'
+    ];
+
     if (empty($awardCategory)) {
         $suffixes = [1 => 'st · Gold', 2 => 'nd · Bronze', 3 => 'rd · Bronze', 4 => 'th · Emerging', 5 => 'th · Emerging'];
         $awardCategory = ($rank) . ($suffixes[$rank] ?? 'th · Emerging');
@@ -319,197 +378,243 @@ function add_rnd_ranking(array $data): array {
         $awardBadge = $badges[$rank] ?? '🌱 Emerging';
     }
 
-    $store = load_rnd_rankings_store();
-    $maxId = 0;
-    foreach ($store['rankings'] as $r) {
-        if ((int)($r['id'] ?? 0) > $maxId) {
-            $maxId = (int)$r['id'];
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_rnd_table_exists($pdo);
+
+            $stmt = $pdo->prepare("
+                INSERT INTO rnd_rankings (
+                    academic_year, quarter, quarter_label, department, department_name,
+                    rank, award_category, award_badge, description, achievements, criteria_tags,
+                    status, publication_date, score, created_at, updated_at
+                ) VALUES (
+                    :y, :q, :ql, :dept, :dept_name,
+                    :rk, :ac, :ab, :desc, :ach, :ct,
+                    :st, :pd, :sc, NOW(), NOW()
+                )
+            ");
+            $saved = $stmt->execute([
+                ':y'         => $academicYear,
+                ':q'         => $quarter,
+                ':ql'        => $quarterLabel,
+                ':dept'      => $department,
+                ':dept_name' => $departmentName,
+                ':rk'        => $rank,
+                ':ac'        => $awardCategory,
+                ':ab'        => $awardBadge,
+                ':desc'      => $description,
+                ':ach'       => json_encode($achievements),
+                ':ct'        => json_encode($criteria_tags),
+                ':st'        => $status,
+                ':pd'        => $publicationDate,
+                ':sc'        => $score
+            ]);
+
+            if ($saved) {
+                $newId = (int)$pdo->lastInsertId();
+                if (function_exists('record_content_update')) {
+                    record_content_update('rnd');
+                }
+                if (function_exists('log_activity')) {
+                    log_activity('CREATE', 'R&D Rankings', "Rank {$rank}: {$department} ({$quarter} {$academicYear})", "Added new R&D ranking result for {$department}", $newId);
+                }
+                return ['success' => true, 'message' => "Successfully added R&D Ranking for {$department} (Rank {$rank}, {$quarter} {$academicYear})!", 'id' => $newId];
+            }
+        } catch (Throwable $e) {
+            error_log("Failed to insert R&D ranking into MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
-    $newId = $maxId + 1;
 
-    $newRecord = [
-        'id'               => $newId,
-        'academic_year'    => $academicYear,
-        'quarter'          => $quarter,
-        'quarter_label'    => $quarterLabel,
-        'department'       => $department,
-        'department_name'  => $departmentName,
-        'rank'             => $rank,
-        'award_category'   => $awardCategory,
-        'award_badge'      => $awardBadge,
-        'description'      => $description,
-        'achievements'     => $achievements,
-        'criteria_tags'    => [
-            'Research & Innovation',
-            'Patents & IPR',
-            'Scopus & IEEE Publications',
-            'NPTEL Honors',
-            'IIC Initiatives'
-        ],
-        'status'           => $status,
-        'publication_date' => $publicationDate,
-        'score'            => $score,
-        'created_at'       => date('Y-m-d H:i:s'),
-        'updated_at'       => date('Y-m-d H:i:s')
-    ];
-
-    $store['rankings'][] = $newRecord;
-
-    // Check if this new period is latest
-    $latestPeriod = get_distinct_rnd_periods()[0] ?? null;
-    if ($latestPeriod && compare_rnd_periods($academicYear, $quarter, $store['settings']['latest_academic_year'], $store['settings']['latest_quarter']) < 0) {
-        $store['settings']['latest_academic_year'] = $academicYear;
-        $store['settings']['latest_quarter'] = $quarter;
-    }
-
-    if (save_rnd_rankings_store($store)) {
-        if (function_exists('log_activity')) {
-            log_activity('CREATE', 'R&D Rankings', "Rank {$rank}: {$department} ({$quarter} {$academicYear})", "Added new R&D ranking result for {$department}", $newId);
-        }
-        return ['success' => true, 'message' => "Successfully added R&D Ranking for {$department} (Rank {$rank}, {$quarter} {$academicYear})!", 'id' => $newId];
-    }
-
-    return ['success' => false, 'message' => 'Failed to write ranking record to storage.'];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**
- * Update an existing ranking result
+ * Update an existing ranking result in MySQL
  */
 function update_rnd_ranking(int $id, array $data): array {
-    $store = load_rnd_rankings_store();
-    $foundIndex = -1;
+    global $pdo;
+    $id = (int)$id;
 
-    foreach ($store['rankings'] as $idx => $r) {
-        if ((int)($r['id'] ?? 0) === $id) {
-            $foundIndex = $idx;
-            break;
-        }
+    if ($id <= 0) {
+        return ['success' => false, 'message' => 'Invalid ranking ID.'];
     }
 
-    if ($foundIndex === -1) {
-        return ['success' => false, 'message' => 'Ranking record not found.'];
-    }
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_rnd_table_exists($pdo);
 
-    $existing = $store['rankings'][$foundIndex];
+            $stmt = $pdo->prepare("SELECT * FROM rnd_rankings WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $id]);
+            $existing = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    $department     = trim((string)($data['department'] ?? $existing['department']));
-    $departmentName = trim((string)($data['department_name'] ?? $existing['department_name']));
-    $academicYear   = trim((string)($data['academic_year'] ?? $existing['academic_year']));
-    $quarter        = strtoupper(trim((string)($data['quarter'] ?? $existing['quarter'])));
-    $quarterLabel   = isset($data['quarter_label']) ? trim((string)$data['quarter_label']) : ($existing['quarter_label'] ?? '');
-    $rank           = isset($data['rank']) ? max(1, (int)$data['rank']) : (int)($existing['rank'] ?? 1);
-    $awardCategory  = trim((string)($data['award_category'] ?? ($existing['award_category'] ?? '')));
-    $awardBadge     = trim((string)($data['award_badge'] ?? ($existing['award_badge'] ?? '')));
-    $description    = isset($data['description']) ? trim((string)$data['description']) : ($existing['description'] ?? '');
-    $status         = in_array($data['status'] ?? '', ['published', 'archived', 'draft'], true) ? $data['status'] : ($existing['status'] ?? 'published');
-    $publicationDate= !empty($data['publication_date']) ? trim($data['publication_date']) : ($existing['publication_date'] ?? date('Y-m-d'));
-    $score          = isset($data['score']) && is_numeric($data['score']) ? (float)$data['score'] : ($existing['score'] ?? null);
+            if (!$existing) {
+                return ['success' => false, 'message' => 'Ranking record not found.'];
+            }
 
-    // Duplicate check excluding self
-    if (check_rnd_duplicate($department, $academicYear, $quarter, $id)) {
-        return [
-            'success' => false,
-            'message' => "Another ranking result for Department '{$department}' in Academic Year '{$academicYear}' ({$quarter}) already exists."
-        ];
-    }
+            $department     = trim((string)($data['department'] ?? $existing['department']));
+            $departmentName = trim((string)($data['department_name'] ?? $existing['department_name']));
+            $academicYear   = trim((string)($data['academic_year'] ?? $existing['academic_year']));
+            $quarter        = strtoupper(trim((string)($data['quarter'] ?? $existing['quarter'])));
+            $quarterLabel   = isset($data['quarter_label']) ? trim((string)$data['quarter_label']) : ($existing['quarter_label'] ?? '');
+            $rank           = isset($data['rank']) ? max(1, (int)$data['rank']) : (int)($existing['rank'] ?? 1);
+            $awardCategory  = trim((string)($data['award_category'] ?? ($existing['award_category'] ?? '')));
+            $awardBadge     = trim((string)($data['award_badge'] ?? ($existing['award_badge'] ?? '')));
+            $description    = isset($data['description']) ? trim((string)$data['description']) : ($existing['description'] ?? '');
+            $status         = in_array($data['status'] ?? '', ['published', 'archived', 'draft'], true) ? $data['status'] : ($existing['status'] ?? 'published');
+            $publicationDate= !empty($data['publication_date']) ? trim($data['publication_date']) : ($existing['publication_date'] ?? date('Y-m-d'));
+            $score          = isset($data['score']) && is_numeric($data['score']) ? (float)$data['score'] : ($existing['score'] ?? null);
 
-    // Achievements parsing
-    $achievements = $existing['achievements'] ?? [];
-    if (isset($data['achievements'])) {
-        if (is_array($data['achievements'])) {
-            $achievements = array_values(array_filter(array_map('trim', $data['achievements'])));
-        } else {
-            $lines = explode("\n", (string)$data['achievements']);
-            $achievements = [];
-            foreach ($lines as $line) {
-                $line = trim($line, " \t\n\r\0\x0B•-*");
-                if ($line !== '') {
-                    $achievements[] = $line;
+            if (check_rnd_duplicate($department, $academicYear, $quarter, $id)) {
+                return [
+                    'success' => false,
+                    'message' => "Another ranking result for Department '{$department}' in Academic Year '{$academicYear}' ({$quarter}) already exists."
+                ];
+            }
+
+            // Achievements parsing
+            $achievements = parse_rnd_json_field($existing['achievements']);
+            if (isset($data['achievements'])) {
+                if (is_array($data['achievements'])) {
+                    $achievements = array_values(array_filter(array_map('trim', $data['achievements'])));
+                } else {
+                    $lines = explode("\n", (string)$data['achievements']);
+                    $achievements = [];
+                    foreach ($lines as $line) {
+                        $line = trim($line, " \t\n\r\0\x0B•-*");
+                        if ($line !== '') $achievements[] = $line;
+                    }
                 }
             }
+
+            $upStmt = $pdo->prepare("
+                UPDATE rnd_rankings SET
+                    academic_year = :y, quarter = :q, quarter_label = :ql,
+                    department = :dept, department_name = :dept_name,
+                    rank = :rk, award_category = :ac, award_badge = :ab,
+                    description = :desc, achievements = :ach,
+                    status = :st, publication_date = :pd, score = :sc,
+                    updated_at = NOW()
+                WHERE id = :id
+            ");
+            $saved = $upStmt->execute([
+                ':y'         => $academicYear,
+                ':q'         => $quarter,
+                ':ql'        => $quarterLabel,
+                ':dept'      => $department,
+                ':dept_name' => $departmentName,
+                ':rk'        => $rank,
+                ':ac'        => $awardCategory,
+                ':ab'        => $awardBadge,
+                ':desc'      => $description,
+                ':ach'       => json_encode($achievements),
+                ':st'        => $status,
+                ':pd'        => $publicationDate,
+                ':sc'        => $score,
+                ':id'        => $id
+            ]);
+
+            if ($saved) {
+                if (function_exists('record_content_update')) {
+                    record_content_update('rnd');
+                }
+                if (function_exists('log_activity')) {
+                    log_activity('UPDATE', 'R&D Rankings', "Rank {$rank}: {$department} ({$quarter} {$academicYear})", "Updated R&D ranking details for {$department}", $id);
+                }
+                return ['success' => true, 'message' => "Successfully updated R&D ranking for {$department}!"];
+            }
+        } catch (Throwable $e) {
+            error_log("Failed to update R&D ranking in MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    $store['rankings'][$foundIndex] = array_merge($existing, [
-        'academic_year'    => $academicYear,
-        'quarter'          => $quarter,
-        'quarter_label'    => $quarterLabel,
-        'department'       => $department,
-        'department_name'  => $departmentName,
-        'rank'             => $rank,
-        'award_category'   => $awardCategory,
-        'award_badge'      => $awardBadge,
-        'description'      => $description,
-        'achievements'     => $achievements,
-        'status'           => $status,
-        'publication_date' => $publicationDate,
-        'score'            => $score,
-        'updated_at'       => date('Y-m-d H:i:s')
-    ]);
-
-    if (save_rnd_rankings_store($store)) {
-        if (function_exists('log_activity')) {
-            log_activity('UPDATE', 'R&D Rankings', "Rank {$rank}: {$department} ({$quarter} {$academicYear})", "Updated R&D ranking details for {$department}", $id);
-        }
-        return ['success' => true, 'message' => "Successfully updated R&D ranking for {$department}!"];
-    }
-
-    return ['success' => false, 'message' => 'Failed to save updated ranking record.'];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**
- * Delete a ranking result
+ * Delete a ranking result in MySQL
  */
 function delete_rnd_ranking(int $id): array {
-    $store = load_rnd_rankings_store();
-    $foundIndex = -1;
-    $dept = '';
+    global $pdo;
+    $id = (int)$id;
 
-    foreach ($store['rankings'] as $idx => $r) {
-        if ((int)($r['id'] ?? 0) === $id) {
-            $foundIndex = $idx;
-            $dept = $r['department'] ?? "ID {$id}";
-            break;
+    if ($id <= 0) {
+        return ['success' => false, 'message' => 'Invalid ranking ID.'];
+    }
+
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_rnd_table_exists($pdo);
+
+            $stmt = $pdo->prepare("SELECT department FROM rnd_rankings WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $id]);
+            $dept = $stmt->fetchColumn() ?: "ID #{$id}";
+
+            $delStmt = $pdo->prepare("DELETE FROM rnd_rankings WHERE id = :id");
+            $saved = $delStmt->execute([':id' => $id]);
+
+            if ($saved) {
+                if (function_exists('record_content_update')) {
+                    record_content_update('rnd');
+                }
+                if (function_exists('log_activity')) {
+                    log_activity('DELETE', 'R&D Rankings', "Deleted Ranking #{$id}", "Removed R&D ranking record for {$dept}", $id);
+                }
+                return ['success' => true, 'message' => "Ranking result for {$dept} deleted successfully."];
+            }
+        } catch (Throwable $e) {
+            error_log("Failed to delete R&D ranking: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
 
-    if ($foundIndex === -1) {
-        return ['success' => false, 'message' => 'Ranking record not found.'];
-    }
-
-    array_splice($store['rankings'], $foundIndex, 1);
-
-    if (save_rnd_rankings_store($store)) {
-        if (function_exists('log_activity')) {
-            log_activity('DELETE', 'R&D Rankings', "Deleted Ranking #{$id}", "Removed R&D ranking record for {$dept}", $id);
-        }
-        return ['success' => true, 'message' => "Ranking result for {$dept} deleted successfully."];
-    }
-
-    return ['success' => false, 'message' => 'Failed to delete ranking record from store.'];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**
- * Toggle status between published and archived
+ * Toggle status between published and archived in MySQL
  */
 function toggle_rnd_ranking_status(int $id): array {
-    $store = load_rnd_rankings_store();
-    foreach ($store['rankings'] as &$r) {
-        if ((int)($r['id'] ?? 0) === $id) {
-            $newStatus = ($r['status'] === 'published') ? 'archived' : 'published';
-            $r['status'] = $newStatus;
-            $r['updated_at'] = date('Y-m-d H:i:s');
-            if (save_rnd_rankings_store($store)) {
+    global $pdo;
+    $id = (int)$id;
+
+    if ($id <= 0) {
+        return ['success' => false, 'message' => 'Invalid ranking ID.'];
+    }
+
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_rnd_table_exists($pdo);
+
+            $stmt = $pdo->prepare("SELECT department, status FROM rnd_rankings WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                return ['success' => false, 'message' => 'Ranking record not found.'];
+            }
+
+            $newStatus = ($row['status'] === 'published') ? 'archived' : 'published';
+            $up = $pdo->prepare("UPDATE rnd_rankings SET status = :s, updated_at = NOW() WHERE id = :id");
+            $saved = $up->execute([':s' => $newStatus, ':id' => $id]);
+
+            if ($saved) {
+                if (function_exists('record_content_update')) {
+                    record_content_update('rnd');
+                }
                 if (function_exists('log_activity')) {
-                    log_activity('STATUS_CHANGE', 'R&D Rankings', "{$r['department']} status to {$newStatus}", "Toggled status to {$newStatus}", $id);
+                    log_activity('STATUS_CHANGE', 'R&D Rankings', "{$row['department']} status to {$newStatus}", "Toggled status to {$newStatus}", $id);
                 }
                 return ['success' => true, 'message' => "Ranking status changed to {$newStatus}.", 'new_status' => $newStatus];
             }
-            return ['success' => false, 'message' => 'Failed to update status in store.'];
+        } catch (Throwable $e) {
+            error_log("Failed to toggle R&D ranking status: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
     }
-    return ['success' => false, 'message' => 'Ranking record not found.'];
+
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**

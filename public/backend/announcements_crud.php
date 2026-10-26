@@ -6,69 +6,95 @@
  * - Enable / Disable announcement bar visibility
  * - Scrolling speed configuration
  * - "Last Updated" date timestamp tracking
+ * - 100% MySQL Database Powered Storage & Retrieval
  */
 
-if (!function_exists('get_announcements_store_file')) {
-    function get_announcements_store_file(): string {
-        return __DIR__ . '/config/announcements_data.json';
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/sync.php';
+
+/**
+ * Ensure announcements table exists in MySQL
+ */
+function ensure_announcements_table(?PDO $pdo = null): void {
+    if (!$pdo) {
+        $pdo = getDB();
+    }
+    if ($pdo instanceof PDO) {
+        try {
+            $pdo->exec("
+                CREATE TABLE IF NOT EXISTS `announcements` (
+                  `id` INT AUTO_INCREMENT PRIMARY KEY,
+                  `announcement_text` TEXT NOT NULL,
+                  `link_url` VARCHAR(255) DEFAULT NULL,
+                  `is_enabled` TINYINT(1) DEFAULT 1,
+                  `scrolling_speed` INT DEFAULT 60,
+                  `last_updated` VARCHAR(50) DEFAULT NULL,
+                  `show_last_updated` TINYINT(1) DEFAULT 1,
+                  `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+                  `updated_at` DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+            ");
+        } catch (Throwable $e) {}
     }
 }
 
-require_once __DIR__ . '/sync.php';
-
-
 /**
- * Load announcement configuration from local store
+ * Load announcement configuration directly from MySQL database
  */
 function load_announcements_data(): array {
-    $file = get_announcements_store_file();
-    if (file_exists($file)) {
-        $json = @file_get_contents($file);
-        if ($json) {
-            $data = json_decode($json, true);
-            if (is_array($data)) {
-                // If legacy items array exists, extract the first item as main announcement
-                if (!isset($data['announcement_text'])) {
-                    $first_title = '';
-                    $first_link = '';
-                    if (!empty($data['items']) && is_array($data['items'])) {
-                        $first_title = $data['items'][0]['title'] ?? '';
-                        $first_link  = $data['items'][0]['link_url'] ?? '';
-                    }
-                    $data['announcement_text'] = $first_title ?: 'We Proudly Announce That We Got JNTUH & UGC AUTONOMOUS Status for Five Years From The Academic Year 2025-2026 to 2029-2030 • NAAC Accredited • Admissions Open for Diploma, BTech and MBA (For Admissions Contact: 7396903383, 8522954369)';
-                    $data['link_url'] = $first_link;
-                }
+    global $pdo;
+    $def_text = 'We Proudly Announce That We Got JNTUH & UGC AUTONOMOUS Status for Five Years From The Academic Year 2025-2026 to 2029-2030 • NAAC Accredited • Admissions Open for Diploma, BTech and MBA (For Admissions Contact: 7396903383, 8522954369)';
 
-                $is_enabled = isset($data['is_enabled']) ? (int)$data['is_enabled'] : (isset($data['settings']['is_enabled']) ? (int)$data['settings']['is_enabled'] : 1);
-                $speed      = isset($data['scrolling_speed']) ? (int)$data['scrolling_speed'] : (isset($data['settings']['scrolling_speed']) ? (int)$data['settings']['scrolling_speed'] : 60);
-                $last_up    = !empty($data['last_updated']) ? $data['last_updated'] : (!empty($data['settings']['last_updated']) ? $data['settings']['last_updated'] : date('d F Y'));
-                $show_up    = isset($data['show_last_updated']) ? (int)$data['show_last_updated'] : (isset($data['settings']['show_last_updated']) ? (int)$data['settings']['show_last_updated'] : 1);
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_announcements_table($pdo);
+            $stmt = $pdo->query("SELECT * FROM announcements ORDER BY id ASC LIMIT 1");
+            $row = $stmt ? $stmt->fetch(PDO::FETCH_ASSOC) : null;
 
-                $data['is_enabled']        = $is_enabled ? 1 : 0;
-                $data['scrolling_speed']   = max(10, min(300, $speed));
-                $data['last_updated']      = $last_up;
-                $data['show_last_updated'] = $show_up ? 1 : 0;
-                $data['announcement_text'] = trim($data['announcement_text'] ?? '');
-                $data['link_url']          = trim($data['link_url'] ?? '');
+            if ($row) {
+                $is_enabled = isset($row['is_enabled']) ? (int)$row['is_enabled'] : 1;
+                $speed      = isset($row['scrolling_speed']) ? (int)$row['scrolling_speed'] : 60;
+                $speed      = max(10, min(300, $speed));
+                $last_up    = !empty($row['last_updated']) ? $row['last_updated'] : date('d F Y');
+                $show_up    = isset($row['show_last_updated']) ? (int)$row['show_last_updated'] : 1;
+                $text       = trim($row['announcement_text'] ?? '') ?: $def_text;
+                $link       = trim($row['link_url'] ?? '');
 
-                // Keep $data['settings'] synced for any legacy templates
-                $data['settings'] = [
-                    'is_enabled'        => $data['is_enabled'],
-                    'scrolling_speed'   => $data['scrolling_speed'],
-                    'last_updated'      => $data['last_updated'],
-                    'show_last_updated' => $data['show_last_updated'],
-                    'announcement_text' => $data['announcement_text'],
-                    'link_url'          => $data['link_url']
+                return [
+                    'id'                => (int)($row['id'] ?? 1),
+                    'is_enabled'        => $is_enabled,
+                    'announcement_text' => $text,
+                    'link_url'          => $link,
+                    'scrolling_speed'   => $speed,
+                    'last_updated'      => $last_up,
+                    'show_last_updated' => $show_up,
+                    'updated_at'        => $row['updated_at'] ?? date('Y-m-d H:i:s'),
+                    'settings'          => [
+                        'is_enabled'        => $is_enabled,
+                        'scrolling_speed'   => $speed,
+                        'last_updated'      => $last_up,
+                        'show_last_updated' => $show_up,
+                        'announcement_text' => $text,
+                        'link_url'          => $link
+                    ]
                 ];
-
-                return $data;
+            } else {
+                // Seed default row into MySQL table
+                $ins = $pdo->prepare("
+                    INSERT INTO announcements (id, announcement_text, link_url, is_enabled, scrolling_speed, last_updated, show_last_updated, created_at)
+                    VALUES (1, :t, 'admission.php', 1, 60, :lu, 1, NOW())
+                ");
+                $nowDate = date('d F Y');
+                $ins->execute([':t' => $def_text, ':lu' => $nowDate]);
             }
+        } catch (Throwable $e) {
+            error_log("Failed to load announcements from MySQL: " . $e->getMessage());
         }
     }
 
-    // Default configuration if store file is missing
-    $def_text = 'We Proudly Announce That We Got JNTUH & UGC AUTONOMOUS Status for Five Years From The Academic Year 2025-2026 to 2029-2030 • NAAC Accredited • Admissions Open for Diploma, BTech and MBA (For Admissions Contact: 7396903383, 8522954369)';
+    // Fallback in-memory defaults if DB connection is initializing
     return [
+        'id'                => 1,
         'is_enabled'        => 1,
         'announcement_text' => $def_text,
         'link_url'          => 'admission.php',
@@ -88,23 +114,6 @@ function load_announcements_data(): array {
 }
 
 /**
- * Save announcement data atomically
- */
-function save_announcements_data(array $data): bool {
-    $file = get_announcements_store_file();
-    $dir  = dirname($file);
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0755, true);
-    }
-    $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-    $saved = @file_put_contents($file, $json, LOCK_EX) !== false;
-    if ($saved && function_exists('record_content_update')) {
-        record_content_update('announcements');
-    }
-    return $saved;
-}
-
-/**
  * Public accessor for website headers and dashboard
  */
 function get_announcement_data(): array {
@@ -112,8 +121,7 @@ function get_announcement_data(): array {
 }
 
 /**
- * Save / Update the single main scrolling announcement
- * Replaces the existing announcement message and updates settings.
+ * Save / Update the single main scrolling announcement in MySQL database
  */
 function save_main_announcement(
     string $announcement_text,
@@ -123,6 +131,8 @@ function save_main_announcement(
     string $last_updated = '',
     int $show_last_updated = 1
 ): array {
+    global $pdo;
+
     $announcement_text = trim($announcement_text);
     if ($announcement_text === '') {
         return ['success' => false, 'message' => 'Announcement message cannot be empty.'];
@@ -133,56 +143,81 @@ function save_main_announcement(
     if ($last_updated === '') {
         $last_updated = date('d F Y');
     }
+    $is_enabled = $is_enabled ? 1 : 0;
+    $show_last_updated = $show_last_updated ? 1 : 0;
+    $link_url = trim($link_url);
 
-    $data = [
-        'is_enabled'        => $is_enabled ? 1 : 0,
-        'announcement_text' => $announcement_text,
-        'link_url'          => trim($link_url),
-        'scrolling_speed'   => $scrolling_speed,
-        'last_updated'      => $last_updated,
-        'show_last_updated' => $show_last_updated ? 1 : 0,
-        'updated_at'        => date('Y-m-d H:i:s'),
-        'settings'          => [
-            'is_enabled'        => $is_enabled ? 1 : 0,
-            'scrolling_speed'   => $scrolling_speed,
-            'last_updated'      => $last_updated,
-            'show_last_updated' => $show_last_updated ? 1 : 0,
-            'announcement_text' => $announcement_text,
-            'link_url'          => trim($link_url)
-        ]
-    ];
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_announcements_table($pdo);
+            $stmt = $pdo->prepare("
+                INSERT INTO announcements (id, announcement_text, link_url, is_enabled, scrolling_speed, last_updated, show_last_updated, updated_at)
+                VALUES (1, :t, :l, :e, :s, :lu, :su, NOW())
+                ON DUPLICATE KEY UPDATE
+                    announcement_text = VALUES(announcement_text),
+                    link_url = VALUES(link_url),
+                    is_enabled = VALUES(is_enabled),
+                    scrolling_speed = VALUES(scrolling_speed),
+                    last_updated = VALUES(last_updated),
+                    show_last_updated = VALUES(show_last_updated),
+                    updated_at = NOW()
+            ");
+            $saved = $stmt->execute([
+                ':t'  => $announcement_text,
+                ':l'  => $link_url,
+                ':e'  => $is_enabled,
+                ':s'  => $scrolling_speed,
+                ':lu' => $last_updated,
+                ':su' => $show_last_updated
+            ]);
 
-    $saved = save_announcements_data($data);
-    if ($saved) {
-        if (function_exists('log_activity')) {
-            $status_str = $is_enabled ? 'Enabled' : 'Disabled';
-            log_activity('Updated', 'Announcements', 'Main Announcement', "Status: {$status_str}, Speed: {$scrolling_speed}s, Date: {$last_updated}");
+            if ($saved) {
+                if (function_exists('record_content_update')) {
+                    record_content_update('announcements');
+                }
+                if (function_exists('log_activity')) {
+                    $status_str = $is_enabled ? 'Enabled' : 'Disabled';
+                    log_activity('Updated', 'Announcements', 'Main Announcement', "Status: {$status_str}, Speed: {$scrolling_speed}s, Date: {$last_updated}");
+                }
+                return ['success' => true, 'message' => 'Main announcement updated and live on website!'];
+            }
+        } catch (Throwable $e) {
+            error_log("Failed to save announcement to MySQL: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error while saving announcement: ' . $e->getMessage()];
         }
-        return ['success' => true, 'message' => 'Main announcement updated and live on website!'];
     }
-    return ['success' => false, 'message' => 'Failed to save announcement settings.'];
+
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**
- * Toggle announcement bar visibility on/off
+ * Toggle announcement bar visibility on/off in MySQL
  */
 function toggle_announcement_bar_visibility(): array {
+    global $pdo;
     $data = load_announcements_data();
     $current = !empty($data['is_enabled']) ? 1 : 0;
     $new = $current ? 0 : 1;
 
-    $data['is_enabled'] = $new;
-    $data['settings']['is_enabled'] = $new;
-    $data['updated_at'] = date('Y-m-d H:i:s');
-
-    $saved = save_announcements_data($data);
-    if ($saved) {
-        if (function_exists('log_activity')) {
-            log_activity('Updated', 'Announcements', 'Announcement Bar', "Visibility set to " . ($new ? 'Enabled' : 'Disabled'));
+    if ($pdo instanceof PDO) {
+        try {
+            ensure_announcements_table($pdo);
+            $stmt = $pdo->prepare("UPDATE announcements SET is_enabled = :e, updated_at = NOW() WHERE id = :id");
+            $saved = $stmt->execute([':e' => $new, ':id' => (int)($data['id'] ?? 1)]);
+            if ($saved) {
+                if (function_exists('record_content_update')) {
+                    record_content_update('announcements');
+                }
+                if (function_exists('log_activity')) {
+                    log_activity('Updated', 'Announcements', 'Announcement Bar', "Visibility set to " . ($new ? 'Enabled' : 'Disabled'));
+                }
+                return ['success' => true, 'message' => 'Announcement bar ' . ($new ? 'enabled (live on website)' : 'disabled (hidden from website)') . '!'];
+            }
+        } catch (Throwable $e) {
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
         }
-        return ['success' => true, 'message' => 'Announcement bar ' . ($new ? 'enabled (live on website)' : 'disabled (hidden from website)') . '!'];
     }
-    return ['success' => false, 'message' => 'Failed to update visibility.'];
+    return ['success' => false, 'message' => 'Database connection unavailable.'];
 }
 
 /**

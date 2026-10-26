@@ -1,10 +1,14 @@
 <?php
 require_once __DIR__ . '/../public/backend/config/database.php';
-$db = getDB();
-if ($db instanceof PDO) {
-    echo "DB Connected Successfully!\n";
-    $tables = $db->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-    echo "Existing tables: " . implode(', ', $tables) . "\n";
-} else {
-    echo "DB Offline / Not connected.\n";
+
+echo "Database connection test:\n";
+try {
+    $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+    echo "Found " . count($tables) . " tables:\n";
+    foreach ($tables as $t) {
+        $count = $pdo->query("SELECT COUNT(*) FROM `{$t}`")->fetchColumn();
+        echo " - {$t}: {$count} records\n";
+    }
+} catch (Exception $e) {
+    echo "Error: " . $e->getMessage() . "\n";
 }

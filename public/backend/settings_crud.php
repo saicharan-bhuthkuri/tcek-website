@@ -5,24 +5,20 @@
  * 
  * Strict Access Controls:
  * - Only the authorized Developer account (saivortex.dev@gmail.com) can view or modify Global 404 Error Page Settings
- * - Persistent MySQL `system_settings` table with automatic sync to `public/backend/config/system_settings.json`
+ * - Persistent MySQL `system_settings` table for all settings storage and retrieval
  * - Unauthorized requests (including Admin, Superadmin, and Staff) are strictly rejected with HTTP 403 Forbidden
  */
 
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/auth.php';
 
-if (!function_exists('get_system_settings_file')) {
-    function get_system_settings_file(): string {
-        return __DIR__ . '/config/system_settings.json';
-    }
-}
-
 /**
  * Ensure the MySQL system_settings table exists
  */
-function ensure_system_settings_table(): void {
-    global $pdo;
+function ensure_system_settings_table(?PDO $pdo = null): void {
+    if (!$pdo) {
+        $pdo = getDB();
+    }
     if ($pdo instanceof PDO) {
         try {
             $pdo->exec("
@@ -42,32 +38,20 @@ function ensure_system_settings_table(): void {
 }
 
 /**
- * Load system settings from MySQL database with JSON storage fallback
+ * Load system settings directly from MySQL database
  */
 function load_system_settings(): array {
     $defaults = [
-        'global_404_enabled' => 1,
+        'global_404_enabled' => 0,
         'global_404_custom_message' => 'The page you are looking for does not exist or has been moved.',
         'updated_at' => date('Y-m-d H:i:s'),
         'updated_by' => 'saivortex.dev@gmail.com'
     ];
 
-    $file = get_system_settings_file();
-    $fileSettings = [];
-    if (file_exists($file)) {
-        $json = @file_get_contents($file);
-        if ($json) {
-            $parsed = json_decode($json, true);
-            if (is_array($parsed)) {
-                $fileSettings = $parsed;
-            }
-        }
-    }
-
     global $pdo;
     $dbSettings = [];
     if ($pdo instanceof PDO) {
-        ensure_system_settings_table();
+        ensure_system_settings_table($pdo);
         try {
             $stmt = $pdo->query("SELECT setting_key, setting_value, updated_by, updated_at FROM system_settings");
             if ($stmt) {
@@ -96,8 +80,8 @@ function load_system_settings(): array {
         }
     }
 
-    $merged = array_merge($defaults, $fileSettings, $dbSettings);
-    $merged['global_404_enabled'] = isset($merged['global_404_enabled']) ? (int)$merged['global_404_enabled'] : 1;
+    $merged = array_merge($defaults, $dbSettings);
+    $merged['global_404_enabled'] = isset($merged['global_404_enabled']) ? (int)$merged['global_404_enabled'] : 0;
 
     return $merged;
 }
@@ -112,7 +96,7 @@ function get_global_404_status(): bool {
 }
 
 /**
- * Update the Global 404 Error Page Setting
+ * Update the Global 404 Error Page Setting in MySQL
  * STRICTLY restricted to the authorized Developer account (saivortex.dev@gmail.com)
  * Rejects unauthorized users with HTTP 403 Forbidden.
  * 
@@ -140,29 +124,15 @@ function update_global_404_setting(int $enabled, string $updatedBy = ''): array 
         $updatedBy = $admin['email'] ?? 'saivortex.dev@gmail.com';
     }
 
-    $now = date('Y-m-d H:i:s');
-    $file = get_system_settings_file();
-    $current = load_system_settings();
-    $current['global_404_enabled'] = $enabled;
-    $current['updated_at'] = $now;
-    $current['updated_by'] = $updatedBy;
-
-    // 2. Persist to JSON File
-    $dir = dirname($file);
-    if (!is_dir($dir)) {
-        @mkdir($dir, 0755, true);
-    }
-    @file_put_contents($file, json_encode($current, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX);
-
-    // 3. Persist to MySQL Database if available
+    // 2. Persist directly to MySQL Database
     global $pdo;
     if ($pdo instanceof PDO) {
-        ensure_system_settings_table();
+        ensure_system_settings_table($pdo);
         try {
             $stmt = $pdo->prepare("
                 INSERT INTO system_settings (setting_key, setting_value, updated_by, updated_at)
                 VALUES ('global_404_enabled', :val, :by, NOW())
-                ON DUPLICATE KEY UPDATE setting_value = :val, updated_by = :by, updated_at = NOW()
+                ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_by = VALUES(updated_by), updated_at = NOW()
             ");
             $stmt->execute([
                 ':val' => (string)$enabled,
@@ -172,16 +142,21 @@ function update_global_404_setting(int $enabled, string $updatedBy = ''): array 
             if (class_exists('ErrorHandler')) {
                 ErrorHandler::log('ERROR', 'Failed to update system_settings in MySQL', $e);
             }
+            return [
+                'success' => false,
+                'status'  => 500,
+                'message' => 'Database error: ' . $e->getMessage()
+            ];
         }
     }
 
-    // 4. Audit Log Entry
+    // 3. Audit Log Entry
     if (function_exists('log_activity')) {
         $statusLabel = $enabled ? 'ENABLED (ON)' : 'DISABLED (OFF)';
         log_activity('Updated', 'System Settings', 'Global 404 Error Page', "Changed Global 404 Error Page status to {$statusLabel}", null, $updatedBy);
     }
 
-    // 5. Trigger live synchronization ping
+    // 4. Trigger live synchronization ping
     if (function_exists('record_content_update')) {
         record_content_update('global');
     }
