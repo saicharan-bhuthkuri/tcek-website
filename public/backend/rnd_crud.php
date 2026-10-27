@@ -58,8 +58,11 @@ function ensure_rnd_table_exists(?PDO $pdo = null): void {
 
 /**
  * Helper to parse achievements / tags (handles JSON or array)
+ *
+ * @param mixed $val Array, JSON string, or newline-separated text
+ * @return array
  */
-function parse_rnd_json_field($val): array {
+function parse_rnd_json_field(mixed $val): array {
     if (empty($val)) return [];
     if (is_array($val)) return $val;
     $decoded = json_decode((string)$val, true);
@@ -635,7 +638,7 @@ function handle_rnd_request(): void {
     if (function_exists('verify_csrf_token') && !verify_csrf_token($csrfToken)) {
         $_SESSION['flash_type'] = 'danger';
         $_SESSION['flash_msg'] = 'Security validation failed (CSRF token mismatch). Please reload and try again.';
-        header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? 'dashboard.php?tab=rnd_rankings'));
+        header('Location: ' . ($_SERVER['HTTP_REFERER'] ?? '../admin/dashboard.php?tab=rnd_rankings'));
         exit;
     }
 
@@ -665,7 +668,7 @@ function handle_rnd_request(): void {
     $_SESSION['flash_type'] = $res['success'] ? 'success' : 'danger';
     $_SESSION['flash_msg']  = $res['message'];
 
-    $redirect = 'dashboard.php?tab=rnd_rankings';
+    $redirect = '../admin/dashboard.php?tab=rnd_rankings';
     if (!empty($_POST['academic_year']) && !empty($_POST['quarter'])) {
         $redirect .= '&filter_year=' . urlencode($_POST['academic_year']) . '&filter_quarter=' . urlencode($_POST['quarter']);
     }
